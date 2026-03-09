@@ -1,6 +1,6 @@
 """
-ULTRA-COMPREHENSIVE Feature Test Script for Sphincs ERP + POS
-Tests EVERYTHING: models, CRUD, business logic, validations, calculations,
+ULTRA-COMPREHENSIVE Feature Test Script for Sphincs ERP.
+Tests models, CRUD, business logic, validations, calculations,
 API endpoints, UI components, workflows, error handling, performance, and more.
 """
 
@@ -1012,7 +1012,6 @@ def test_gui_imports():
         ("Financial Management", "src.gui.financial_management", "FinancialManagementView"),
         ("Settings View", "src.gui.settings_view", "SettingsView"),
         ("Mobile View", "src.gui.mobile_view", "MobileView"),
-        ("POS Window", "src.gui.pos_window", "POSWindow"),
         ("Operations Hub", "src.gui.operations_hub", "AdvancedOperationsView"),
         ("Retail E-Commerce", "src.gui.retail_ecommerce_view", "RetailECommerceView"),
         ("Healthcare", "src.gui.healthcare_view", "HealthcareView"),
@@ -1375,7 +1374,7 @@ def generate_report():
     report_file = f"test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
     try:
         with open(report_file, 'w', encoding='utf-8') as f:
-            f.write("SPHINCS ERP + POS - ULTRA-COMPREHENSIVE TEST REPORT\n")
+            f.write("SPHINCS ERP - ULTRA-COMPREHENSIVE TEST REPORT\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("="*80 + "\n\n")
             
@@ -1422,7 +1421,7 @@ def generate_report():
 def main():
     """Run all comprehensive tests"""
     print("="*80)
-    print("SPHINCS ERP + POS - ULTRA-COMPREHENSIVE FEATURE TEST")
+    print("SPHINCS ERP - ULTRA-COMPREHENSIVE FEATURE TEST")
     print("="*80)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     print("This test suite will validate:")

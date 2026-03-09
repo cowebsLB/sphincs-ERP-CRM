@@ -1,4 +1,2 @@
-"""
-Utility modules for Sphincs ERP + POS
-"""
+"""Utility modules for Sphincs ERP."""
 

@@ -1,4 +1,2 @@
-"""
-GUI components for Sphincs ERP + POS
-"""
+"""GUI components for Sphincs ERP."""
 

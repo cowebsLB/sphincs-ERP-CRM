@@ -1,6 +1,4 @@
-"""
-Build script for creating executables from Sphincs ERP + POS
-"""
+"""Build script for creating the Sphincs ERP executable."""
 
 import subprocess
 import sys
@@ -29,22 +27,17 @@ def build_executable(spec_file: str, app_name: str):
 def main():
     """Main build function"""
     print("="*60)
-    print("Sphincs ERP + POS - Executable Builder")
+    print("Sphincs ERP - Executable Builder")
     print("="*60)
     
     # Check if spec files exist
     erp_spec = Path("erp.spec")
-    pos_spec = Path("pos.spec")
     
     if not erp_spec.exists():
         print(f"Error: {erp_spec} not found!")
         return 1
     
-    if not pos_spec.exists():
-        print(f"Error: {pos_spec} not found!")
-        return 1
-    
-    # Build both executables
+    # Build ERP executable
     success = True
     
     if build_executable("erp.spec", "SphincsERP"):
@@ -52,18 +45,12 @@ def main():
     else:
         success = False
     
-    if build_executable("pos.spec", "SphincsPOS"):
-        print("POS build completed successfully")
-    else:
-        success = False
-    
     if success:
         print("\n" + "="*60)
-        print("All builds completed successfully!")
+        print("Build completed successfully!")
         print("="*60)
         print("\nExecutables are in the 'dist' folder:")
         print("  - dist/SphincsERP.exe")
-        print("  - dist/SphincsPOS.exe")
         print("\nYou can distribute these files to users.")
         print("Note: The first run may take a moment to initialize the database.")
         return 0

@@ -239,3 +239,47 @@ Publish a single reference doc that summarizes the full ERP implementation cycle
 ### Next step
 
 Use this summary as the commit reference and handoff note before module-by-module style unification.
+
+## 2026-03-09 (ERP-Only Migration and Structure Cleanup)
+
+### Scope
+
+Retire POS from active runtime and normalize repository structure to ERP-only operation.
+
+### Summary
+
+- Archived POS runtime/build assets under `archive/pos/`.
+- Replaced active `src/pos_main.py` with a retirement stub that exits with ERP guidance.
+- Updated `build_exe.py` to build ERP only.
+- Updated `test_all_features.py` to remove POS GUI import checks and ERP-only naming.
+- Added ERP folder-structure documentation (`docs/erp/folder-structure.md`) and linked it from docs indexes.
+- Updated README and build instructions to reflect ERP-only launch/build flow.
+
+### Files touched
+
+- `archive/pos/README.md`
+- `archive/pos/src/pos_main.py`
+- `archive/pos/src/gui/pos_login.py`
+- `archive/pos/src/gui/pos_window.py`
+- `archive/pos/build/pos.spec`
+- `archive/pos/build/sphincs_icon_pos.ico`
+- `src/pos_main.py`
+- `build_exe.py`
+- `test_all_features.py`
+- `BUILD_INSTRUCTIONS.md`
+- `README.md`
+- `docs/INDEX.md`
+- `docs/erp/folder-structure.md`
+- `docs/erp/worklog.md`
+- `src/gui/__init__.py`
+- `src/utils/__init__.py`
+- `src/gui/splash_screen.py`
+
+### Validation
+
+- Search check: no active POS runtime imports (`src.gui.pos_*`) remain in active `src/` modules.
+- Search check: README/build tooling now references ERP-only build/launch path.
+
+### Next step
+
+Optionally perform a second cleanup pass to rename remaining legacy strings like `Sphincs ERP+POS` in config-path comments for branding consistency (while preserving path compatibility if desired).

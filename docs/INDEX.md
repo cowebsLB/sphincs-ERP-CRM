@@ -10,6 +10,7 @@ This folder tracks implementation decisions and active work.
 - [ERP UI/UX Phase 2 Global Refresh](erp/uiux-phase2-global-refresh.md)
 - [ERP Worklog](erp/worklog.md)
 - [ERP Implementation Summary (2026-03-09)](erp/implementation-summary-2026-03-09.md)
+- [ERP Folder Structure](erp/folder-structure.md)
 - [ERP Module Map](erp/module-map.md)
 
 ## Legacy Project Docs

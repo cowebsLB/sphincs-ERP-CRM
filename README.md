@@ -1,19 +1,16 @@
-# Sphincs ERP + POS
+# Sphincs ERP
 
-Integrated Enterprise Resource Planning and Point of Sale system for Windows.
+Integrated Enterprise Resource Planning system for Windows.
 
 ## Overview
 
-Sphincs ERP + POS is a comprehensive business management system consisting of two separate Windows applications:
+Sphincs ERP is a comprehensive business management system for inventory, staff, reporting, finance, and operations.
 
-- **Sphincs ERP**: Enterprise Resource Planning for inventory, staff, reporting, and management
-- **Sphincs POS**: Point of Sale for fast transaction processing, kitchen integration, and sales
-
-Both applications share the same local SQLite database and sync with a cloud database.
+Legacy POS code has been retired from active runtime and archived under `archive/pos/`.
 
 ### Fully Integrated Architecture
 
-- **Single Source of Truth**: Every ERP, POS, mobile, and analytics component reads/writes through the same SQLAlchemy models, so data stays consistent automatically.
+- **Single Source of Truth**: Every ERP, mobile, and analytics component reads/writes through the same SQLAlchemy models, so data stays consistent automatically.
 - **Advanced Operations Hub**: A dedicated module inside the ERP consolidates Reservations, Vendor Contracts, Training, Audits, Maintenance, Delivery, Menu Engineering, Events, and Safety workflows with matching UI styling and shared permissions.
 - **Shared Services**: Authentication, roles/permissions, logging, audit trails, PDF generation, predictive analytics, and integrations are reused across modules (desktop + mobile + API).
 
@@ -26,6 +23,7 @@ Both applications share the same local SQLite database and sync with a cloud dat
 - [ERP UI/UX Phase 2 Global Refresh](docs/erp/uiux-phase2-global-refresh.md)
 - [ERP Worklog](docs/erp/worklog.md)
 - [ERP Implementation Summary (2026-03-09)](docs/erp/implementation-summary-2026-03-09.md)
+- [ERP Folder Structure](docs/erp/folder-structure.md)
 - [ERP Module Map](docs/erp/module-map.md)
 - [Design Notes](design.md)
 - [Project Plan](plan.md)
@@ -266,24 +264,6 @@ Both applications share the same local SQLite database and sync with a cloud dat
   - Session management
   - Full audit trail logging
 
-### Sphincs POS
-
-- Fast transaction processing
-- Product loading from database
-- Multiple payment methods (Cash, Credit Card, Debit Card, Mobile Payment, Gift Card)
-- Payment dialog with change calculation
-- Discount application (percentage or fixed amount)
-- Hold order functionality
-- Kitchen order integration
-- Receipt printing (saves to Documents/Sphincs Receipts)
-- Offline capability
-- Daily sales reports
-- Real-time inventory checks
-- Barcode scanning support
-- Keyboard hotkeys for fast operations (Ctrl+C for cash, Ctrl+D for card, Ctrl+H for hold, Ctrl+X for clear)
-- Splash screen with update checking
-- Auto-update from GitHub releases
-
 ## Requirements
 
 - Python 3.9 or higher
@@ -322,16 +302,11 @@ python src/utils/create_admin_staff.py
 - Operational / Staff (8 roles)
 - Specialized / Optional (4 roles)
 
-### 4. Launch Applications
+### 4. Launch ERP
 
 **Sphincs ERP:**
 ```bash
 python src/erp_main.py
-```
-
-**Sphincs POS:**
-```bash
-python src/pos_main.py
 ```
 
 ## Automated Testing
@@ -343,12 +318,12 @@ python test_all_features.py
 ```
 
 - Produces real-time console output plus a timestamped report file (e.g. `test_report_YYYYMMDD_HHMMSS.txt`) summarizing pass/fail counts per category.
-- Covers 380+ assertions, ensuring recent changes haven’t broken ERP, POS, or API modules.
+- Covers 380+ assertions, ensuring recent changes haven’t broken ERP or API modules.
 - Optional dependencies: install `pyotp` and `qrcode[pil]` if you want Two-Factor Authentication tests to run as well.
 
 ## Building Executables
 
-The project ships PyInstaller specs (`erp.spec`, `pos.spec`) and a helper script (`build_exe.py`) so you can generate Windows executables for both ERP and POS.
+The project ships an ERP PyInstaller spec (`erp.spec`) and a helper script (`build_exe.py`) so you can generate a Windows executable for ERP.
 
 1. Install PyInstaller (once per environment):
    ```bash
@@ -359,7 +334,7 @@ The project ships PyInstaller specs (`erp.spec`, `pos.spec`) and a helper script
    python build_exe.py
    ```
 
-The script runs both spec files, bundles icons plus configuration assets, and drops `SphincsERP.exe` and `SphincsPOS.exe` into `dist/`. See `BUILD_INSTRUCTIONS.md` for advanced packaging notes (custom icons, hidden imports, signing, etc.).
+The script runs the ERP spec, bundles icons plus configuration assets, and drops `SphincsERP.exe` into `dist/`. See `BUILD_INSTRUCTIONS.md` for advanced packaging notes (custom icons, hidden imports, signing, etc.).
 
 ## First Run Setup
 
@@ -486,7 +461,7 @@ Use the Staff Management module in the ERP to add new staff members. Each staff 
 sphincs-erp-pos/
 ├── src/
 │   ├── erp_main.py              # Sphincs ERP entry point
-│   ├── pos_main.py              # Sphincs POS entry point
+│   ├── pos_main.py              # POS retired stub (prints migration note)
 │   ├── __init__.py              # Package initialization
 │   │
 │   ├── gui/                     # GUI components
@@ -535,7 +510,6 @@ sphincs-erp-pos/
 │   │   ├── education_view.py    # Education/Training module
 │   │   ├── manufacturing_view.py # Manufacturing module
 │   │   ├── logistics_view.py    # Logistics/Fleet module
-│   │   ├── pos_login.py         # POS login screen
 │   │   ├── staff_attendance.py  # Staff attendance view
 │   │   ├── add_account_dialog.py # Add Account dialog
 │   │   ├── create_invoice_dialog.py # Create Invoice dialog
@@ -834,3 +808,4 @@ Current Version: **1.0.0**
 For detailed architecture and implementation plans, see `plan.md`.
 
 For quick setup instructions, see `QUICKSTART.md`.
+

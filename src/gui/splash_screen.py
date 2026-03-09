@@ -161,7 +161,7 @@ class SplashScreen(QSplashScreen):
         Initialize splash screen
         
         Args:
-            app_name: Application name (e.g., "Sphincs ERP" or "Sphincs POS")
+            app_name: Application name (e.g., "Sphincs ERP")
             app_version: Application version (e.g., "1.2.3")
             app_icon: Application icon pixmap
         """
@@ -341,4 +341,3 @@ class SplashScreen(QSplashScreen):
         if self.update_module:
             self.update_module.hide()
         self.update_status("Ready!")
-
