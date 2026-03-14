@@ -54,7 +54,10 @@ def main():
     install_workspace_theme(app)
     
     # Set application icon
-    icon_path = project_root / "sphincs_icon.ico"
+    icon_path = project_root / "assets" / "icons" / "sphincs_icon.ico"
+    if not icon_path.exists():
+        # Backward-compat fallback for older layouts.
+        icon_path = project_root / "sphincs_icon.ico"
     splash_icon_pixmap = None
     if icon_path.exists():
         icon = QIcon(str(icon_path))

@@ -274,7 +274,10 @@ class ERPDashboard(QMainWindow):
         self.setMinimumSize(1200, 800)
         
         # Set window icon
-        icon_path = Path(__file__).parent.parent.parent / "sphincs_icon.ico"
+        project_root = Path(__file__).parent.parent.parent
+        icon_path = project_root / "assets" / "icons" / "sphincs_icon.ico"
+        if not icon_path.exists():
+            icon_path = project_root / "sphincs_icon.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         

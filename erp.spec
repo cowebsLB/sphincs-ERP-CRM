@@ -17,7 +17,7 @@ except NameError:
 
 # Collect all data files
 datas = [
-    ('sphincs_icon.ico', '.'),
+    ('assets/icons/sphincs_icon.ico', 'assets/icons'),
     ('src/config', 'src/config'),
 ]
 
@@ -112,6 +112,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='sphincs_icon.ico',
+    icon='assets/icons/sphincs_icon.ico',
 )
 
