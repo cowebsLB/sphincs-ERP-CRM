@@ -41,7 +41,7 @@ class RecipeManagementDialog(QDialog):
                 font-size: 16px;
                 font-weight: 600;
                 padding: 10px;
-                background-color: #F3F4F6;
+                background-color: #EDF3FC;
                 border-radius: 6px;
             }
         """)
@@ -56,7 +56,7 @@ class RecipeManagementDialog(QDialog):
             QLabel {
                 font-size: 18px;
                 font-weight: 700;
-                color: #2563EB;
+                color: #2F7DFF;
             }
         """)
         cost_layout.addWidget(self.total_cost_label)
@@ -65,7 +65,7 @@ class RecipeManagementDialog(QDialog):
         update_cost_btn = QPushButton("Update Product Cost")
         update_cost_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -92,15 +92,15 @@ class RecipeManagementDialog(QDialog):
         ])
         self.recipes_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -114,7 +114,7 @@ class RecipeManagementDialog(QDialog):
         add_btn = QPushButton("Add Ingredient")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -122,7 +122,7 @@ class RecipeManagementDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_ingredient)
@@ -131,7 +131,7 @@ class RecipeManagementDialog(QDialog):
         remove_btn = QPushButton("Remove Selected")
         remove_btn.setStyleSheet("""
             QPushButton {
-                background-color: #EF4444;
+                background-color: #D92D20;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -148,7 +148,7 @@ class RecipeManagementDialog(QDialog):
         close_btn = QPushButton("Close")
         close_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6B7280;
+                background-color: #5D6F8B;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -300,7 +300,7 @@ class AddRecipeItemDialog(QDialog):
         save_btn = QPushButton("Add")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

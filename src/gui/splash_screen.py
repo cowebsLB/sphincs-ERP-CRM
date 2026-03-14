@@ -57,9 +57,9 @@ class UpdateNotificationModule(QFrame):
         self.setFixedSize(400, 300)
         self.setStyleSheet("""
             QFrame {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
+                background-color: rgba(255, 255, 255, 0.90);
+                border: 1px solid rgba(140, 166, 205, 0.42);
+                border-radius: 18px;
             }
         """)
         
@@ -68,12 +68,12 @@ class UpdateNotificationModule(QFrame):
         layout.setSpacing(16)
         
         # Header
-        header_label = QLabel("🔄 New Update Available")
+        header_label = QLabel("New Update Available")
         header_font = QFont()
         header_font.setPointSize(18)
         header_font.setBold(True)
         header_label.setFont(header_font)
-        header_label.setStyleSheet("color: #374151;")
+        header_label.setStyleSheet("color: #10264A;")
         layout.addWidget(header_label)
         
         # Version info
@@ -81,14 +81,14 @@ class UpdateNotificationModule(QFrame):
         version_layout.setSpacing(8)
         
         current_label = QLabel(f"Current version: v{self.update_info.get('current_version', 'N/A')}")
-        current_label.setStyleSheet("color: #6B7280; font-size: 14px;")
+        current_label.setStyleSheet("color: #5D6F8B; font-size: 14px;")
         version_layout.addWidget(current_label)
         
         new_label = QLabel(f"New version: v{self.update_info.get('latest_version', 'N/A')}")
         new_font = QFont()
         new_font.setBold(True)
         new_label.setFont(new_font)
-        new_label.setStyleSheet("color: #2563EB; font-size: 14px;")
+        new_label.setStyleSheet("color: #2F7DFF; font-size: 14px;")
         version_layout.addWidget(new_label)
         
         layout.addLayout(version_layout)
@@ -101,7 +101,7 @@ class UpdateNotificationModule(QFrame):
         
         desc_label = QLabel(brief_description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #374151; font-size: 12px;")
+        desc_label.setStyleSheet("color: #2A3A55; font-size: 12px;")
         desc_label.setMaximumHeight(80)
         layout.addWidget(desc_label)
         
@@ -115,15 +115,15 @@ class UpdateNotificationModule(QFrame):
         install_later_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                border: 1px solid #E5E7EB;
-                color: #374151;
+                border: 1px solid rgba(140, 166, 205, 0.42);
+                color: #1F3150;
                 padding: 12px 24px;
-                border-radius: 6px;
+                border-radius: 10px;
                 font-size: 14px;
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #F3F4F6;
+                background-color: rgba(255, 255, 255, 0.92);
             }
         """)
         install_later_btn.clicked.connect(self.install_later_clicked.emit)
@@ -132,19 +132,19 @@ class UpdateNotificationModule(QFrame):
         install_now_btn = QPushButton("Install Now")
         install_now_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
-                color: white;
+                background-color: #2F7DFF;
+                color: #F8FBFF;
                 border: none;
                 padding: 12px 24px;
-                border-radius: 6px;
+                border-radius: 10px;
                 font-size: 14px;
-                font-weight: 600;
+                font-weight: 700;
             }
             QPushButton:hover {
-                background-color: #3B82F6;
+                background-color: #4A8CFF;
             }
             QPushButton:pressed {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         install_now_btn.clicked.connect(self.install_now_clicked.emit)
@@ -166,8 +166,8 @@ class SplashScreen(QSplashScreen):
             app_icon: Application icon pixmap
         """
         # Create pixmap for splash screen
-        pixmap = QPixmap(600, 400)
-        pixmap.fill(QColor(255, 255, 255))
+        pixmap = QPixmap(620, 420)
+        pixmap.fill(QColor(245, 250, 255))
         
         super().__init__(pixmap)
         
@@ -184,36 +184,39 @@ class SplashScreen(QSplashScreen):
     def setup_ui(self):
         """Setup splash screen UI"""
         # Create a new pixmap to avoid painting on active device
-        pixmap = QPixmap(600, 400)
-        pixmap.fill(QColor(255, 255, 255))
+        pixmap = QPixmap(620, 420)
+        pixmap.fill(QColor(245, 250, 255))
         
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # Draw background (white)
-        painter.fillRect(pixmap.rect(), QColor(255, 255, 255))
+        # Draw background and translucent plate
+        painter.fillRect(pixmap.rect(), QColor(245, 250, 255))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(223, 233, 248, 110))
+        painter.drawRoundedRect(12, 12, pixmap.width() - 24, pixmap.height() - 24, 24, 24)
         
         # Draw logo area (if icon provided)
         if self.app_icon:
             icon_rect = self.app_icon.rect()
             icon_x = (pixmap.width() - icon_rect.width()) // 2
-            icon_y = 32
+            icon_y = 40
             painter.drawPixmap(icon_x, icon_y, self.app_icon)
-            text_y = icon_y + icon_rect.height() + 16
+            text_y = icon_y + icon_rect.height() + 26
         else:
             # Draw text logo if no icon
-            painter.setPen(QColor(37, 99, 235))  # Primary blue
-            font = QFont("Segoe UI", 32, QFont.Weight.Bold)
+            painter.setPen(QColor(47, 125, 255))
+            font = QFont("Segoe UI Variable Text", 34, QFont.Weight.Bold)
             painter.setFont(font)
             text_rect = painter.fontMetrics().boundingRect(self.app_name)
             text_x = (pixmap.width() - text_rect.width()) // 2
-            text_y = 80
+            text_y = 106
             painter.drawText(text_x, text_y, self.app_name)
             text_y += 40
         
         # Draw app name
-        painter.setPen(QColor(37, 99, 235))  # Primary blue
-        font = QFont("Segoe UI", 24, QFont.Weight.DemiBold)
+        painter.setPen(QColor(16, 38, 74))
+        font = QFont("Segoe UI Variable Text", 28, QFont.Weight.DemiBold)
         painter.setFont(font)
         name_rect = painter.fontMetrics().boundingRect(self.app_name)
         name_x = (pixmap.width() - name_rect.width()) // 2
@@ -236,7 +239,7 @@ class SplashScreen(QSplashScreen):
         painter.setFont(font)
         status_rect = painter.fontMetrics().boundingRect(self.status_text)
         status_x = (pixmap.width() - status_rect.width()) // 2
-        painter.drawText(status_x, pixmap.height() - 50, self.status_text)
+        painter.drawText(status_x, pixmap.height() - 34, self.status_text)
         
         painter.end()
         
@@ -290,7 +293,7 @@ class SplashScreen(QSplashScreen):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Clear status area (bottom section)
-        painter.fillRect(0, new_pixmap.height() - 80, new_pixmap.width(), 80, QColor(255, 255, 255))
+        painter.fillRect(0, new_pixmap.height() - 90, new_pixmap.width(), 90, QColor(245, 250, 255))
         
         # Draw new status text
         painter.setPen(QColor(107, 114, 128))
@@ -298,7 +301,7 @@ class SplashScreen(QSplashScreen):
         painter.setFont(font)
         status_rect = painter.fontMetrics().boundingRect(self.status_text)
         status_x = (new_pixmap.width() - status_rect.width()) // 2
-        painter.drawText(status_x, new_pixmap.height() - 50, self.status_text)
+        painter.drawText(status_x, new_pixmap.height() - 34, self.status_text)
         
         painter.end()
         

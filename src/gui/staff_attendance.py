@@ -33,7 +33,7 @@ class StaffAttendanceView(QWidget):
         
         title = QLabel("Staff Attendance")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -50,7 +50,7 @@ class StaffAttendanceView(QWidget):
         
         filter_label = QLabel("View Date:")
         filter_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -76,17 +76,17 @@ class StaffAttendanceView(QWidget):
         self.attendance_table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
-                color: #374151;
+                color: #2A3A55;
                 font-weight: 600;
                 padding: 12px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
             }
         """)
         

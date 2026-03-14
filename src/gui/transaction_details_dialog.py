@@ -35,7 +35,7 @@ class TransactionDetailsDialog(QDialog):
         info_frame.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 16px;
             }
@@ -45,7 +45,7 @@ class TransactionDetailsDialog(QDialog):
         
         self.order_info_label = QLabel()
         self.order_info_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 14px;
         """)
         info_layout.addWidget(self.order_info_label)
@@ -55,7 +55,7 @@ class TransactionDetailsDialog(QDialog):
         # Order items table
         items_label = QLabel("Order Items")
         items_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -69,7 +69,7 @@ class TransactionDetailsDialog(QDialog):
         self.items_table.horizontalHeader().setStretchLastSection(True)
         self.items_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -87,7 +87,7 @@ class TransactionDetailsDialog(QDialog):
         total_frame.setStyleSheet("""
             QFrame {
                 background-color: #F9FAFB;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 16px;
             }
@@ -96,7 +96,7 @@ class TransactionDetailsDialog(QDialog):
         
         total_label = QLabel("Total Amount:")
         total_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -105,7 +105,7 @@ class TransactionDetailsDialog(QDialog):
         
         self.total_label = QLabel("$0.00")
         self.total_label.setStyleSheet("""
-            color: #2563EB;
+            color: #2F7DFF;
             font-size: 20px;
             font-weight: 700;
         """)
@@ -120,7 +120,7 @@ class TransactionDetailsDialog(QDialog):
         close_btn = QPushButton("Close")
         close_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6B7280;
+                background-color: #5D6F8B;
                 color: white;
                 border: none;
                 border-radius: 6px;

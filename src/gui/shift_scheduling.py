@@ -4,7 +4,7 @@ Shift Scheduling - Staff shift scheduling and management
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDialog, QComboBox,
+    QTableWidget, QTableWidgetItem, QDialog, QComboBox, QFrame,
     QDateEdit, QTimeEdit, QMessageBox, QFormLayout, QSpinBox, QTextEdit
 )
 from PyQt6.QtCore import Qt, QDate, QTime
@@ -13,6 +13,14 @@ from loguru import logger
 from datetime import date, time, datetime, timedelta
 from src.database.connection import get_db_session
 from src.database.models import ShiftSchedule, Staff
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class ShiftSchedulingView(QWidget):
@@ -30,99 +38,53 @@ class ShiftSchedulingView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header actions
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Shift Scheduling")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
         header_layout.addStretch()
         
         # Add Shift button
         add_btn = QPushButton("Add Shift")
-        add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         add_btn.clicked.connect(self.handle_add_shift)
         header_layout.addWidget(add_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Week navigation
-        week_nav_layout = QHBoxLayout()
+        week_nav_card = QFrame()
+        week_nav_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        week_nav_layout = QHBoxLayout(week_nav_card)
+        week_nav_layout.setContentsMargins(14, 10, 14, 10)
         week_nav_layout.setSpacing(12)
         
         # Previous week button
-        prev_week_btn = QPushButton("◀ Previous Week")
-        prev_week_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-        """)
+        prev_week_btn = QPushButton("< Previous Week")
+        prev_week_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         prev_week_btn.clicked.connect(self.previous_week)
         week_nav_layout.addWidget(prev_week_btn)
         
         # Week display
         self.week_label = QLabel()
-        self.week_label.setStyleSheet("""
-            color: #111827;
-            font-size: 18px;
-            font-weight: 600;
-        """)
+        self.week_label.setStyleSheet("font-size: 18px; font-weight: 700;")
         self.week_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         week_nav_layout.addWidget(self.week_label)
         
         # Today button
         today_btn = QPushButton("Today")
-        today_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-        """)
+        today_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         today_btn.clicked.connect(self.go_to_today)
         week_nav_layout.addWidget(today_btn)
         
         # Next week button
-        next_week_btn = QPushButton("Next Week ▶")
-        next_week_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-        """)
+        next_week_btn = QPushButton("Next Week >")
+        next_week_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         next_week_btn.clicked.connect(self.next_week)
         week_nav_layout.addWidget(next_week_btn)
         
         week_nav_layout.addStretch()
-        layout.addLayout(week_nav_layout)
-        layout.addSpacing(16)
+        layout.addWidget(week_nav_card)
+        layout.addSpacing(12)
         
         # Weekly schedule table
         self.schedules_table = QTableWidget()
@@ -131,21 +93,8 @@ class ShiftSchedulingView(QWidget):
         self.schedules_table.setHorizontalHeaderLabels([
             "Staff", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
         ])
-        self.schedules_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-                font-weight: 600;
-            }
-        """)
-        self.schedules_table.horizontalHeader().setStretchLastSection(True)
+        self.schedules_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.schedules_table)
         self.schedules_table.setAlternatingRowColors(True)
         self.schedules_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectItems)
         self.schedules_table.cellDoubleClicked.connect(self.handle_cell_double_click)
@@ -156,38 +105,12 @@ class ShiftSchedulingView(QWidget):
         actions_layout.addStretch()
         
         edit_btn = QPushButton("Edit Selected")
-        edit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        edit_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         edit_btn.clicked.connect(self.handle_edit_shift)
         actions_layout.addWidget(edit_btn)
         
         delete_btn = QPushButton("Delete Selected")
-        delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EF4444;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DC2626;
-            }
-        """)
+        delete_btn.setStyleSheet(DANGER_BUTTON_STYLE)
         delete_btn.clicked.connect(self.handle_delete_shift)
         actions_layout.addWidget(delete_btn)
         
@@ -307,11 +230,11 @@ class ShiftSchedulingView(QWidget):
                         
                         # Color code based on status
                         if any(s.status == "cancelled" for s in shifts_dict[key]):
-                            cell_item.setForeground(QColor("#EF4444"))
+                            cell_item.setForeground(QColor("#D92D20"))
                         elif any(s.status == "completed" for s in shifts_dict[key]):
-                            cell_item.setForeground(QColor("#10B981"))
+                            cell_item.setForeground(QColor("#14B8A6"))
                         else:
-                            cell_item.setForeground(QColor("#2563EB"))
+                            cell_item.setForeground(QColor("#2F7DFF"))
                         
                         # Store all schedule IDs as a list (for multiple shifts per day)
                         cell_item.setData(Qt.ItemDataRole.UserRole, shift_ids)
@@ -593,7 +516,7 @@ class ShiftDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -651,4 +574,6 @@ class ShiftDialog(QDialog):
         except Exception as e:
             logger.error(f"Error saving shift: {e}")
             QMessageBox.critical(self, "Error", f"Failed to save shift: {str(e)}")
+
+
 

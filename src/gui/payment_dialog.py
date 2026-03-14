@@ -38,7 +38,7 @@ class PaymentDialog(QDialog):
         # Order total
         total_label = QLabel(f"Order Total: ${self.order_total:.2f}")
         total_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 700;
             padding: 12px;
@@ -96,7 +96,7 @@ class PaymentDialog(QDialog):
         process_btn = QPushButton("Process Payment")
         process_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -126,7 +126,7 @@ class PaymentDialog(QDialog):
             """)
         else:
             self.change_label.setStyleSheet("""
-                color: #6B7280;
+                color: #5D6F8B;
                 font-size: 16px;
                 font-weight: 600;
             """)

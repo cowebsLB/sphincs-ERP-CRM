@@ -87,7 +87,7 @@ class EditIngredientDialog(QDialog):
         save_btn = QPushButton("Save Changes")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

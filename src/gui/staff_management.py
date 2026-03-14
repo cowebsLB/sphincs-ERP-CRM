@@ -4,16 +4,26 @@ Staff Management Module - Staff List, Scheduling, and Attendance
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QStackedWidget, QTabWidget
+    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QFrame, QTabWidget
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from loguru import logger
 from src.database.connection import get_db_session
 from src.database.models import Staff
 from src.gui.attendance_management import AttendanceManagementView
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SEARCH_INPUT_STYLE,
+    TAB_WIDGET_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
 from src.gui.shift_scheduling import ShiftSchedulingView
 from src.gui.payroll_management import PayrollManagementView
 from src.gui.staff_performance_reports import StaffPerformanceReportsView
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class StaffManagementView(QWidget):
@@ -33,61 +43,19 @@ class StaffManagementView(QWidget):
         
         # Header
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Staff Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
-        
         header_layout.addStretch()
-        
-        # Add Staff button
+
         self.add_btn = QPushButton("Add Staff")
-        self.add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        self.add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.add_btn.clicked.connect(self.handle_add_staff)
         header_layout.addWidget(self.add_btn)
-        
+
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Tabs for Staff List and Attendance
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                color: #2563EB;
-                font-weight: 600;
-            }
-        """)
+        self.tabs.setStyleSheet(TAB_WIDGET_STYLE)
         
         # Staff List tab
         self.staff_list_widget = self.create_staff_list_widget()
@@ -119,12 +87,15 @@ class StaffManagementView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Search bar
-        search_layout = QHBoxLayout()
+        search_card = QFrame()
+        search_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        search_layout = QHBoxLayout(search_card)
+        search_layout.setContentsMargins(14, 10, 14, 10)
         search_layout.setSpacing(12)
         
         search_label = QLabel("Search:")
         search_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -132,23 +103,12 @@ class StaffManagementView(QWidget):
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, department, position, or employee ID...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #2563EB;
-            }
-        """)
+        self.search_input.setStyleSheet(SEARCH_INPUT_STYLE)
         self.search_input.textChanged.connect(self.filter_staff_list)
         search_layout.addWidget(self.search_input)
         
-        layout.addLayout(search_layout)
-        layout.addSpacing(16)
+        layout.addWidget(search_card)
+        layout.addSpacing(12)
         
         # Staff table
         self.staff_table = QTableWidget()
@@ -157,24 +117,8 @@ class StaffManagementView(QWidget):
             "Staff ID", "Name", "Username", "Role", "Email", "Status"
         ])
         
-        self.staff_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
-        
-        self.staff_table.horizontalHeader().setStretchLastSection(True)
+        self.staff_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.staff_table)
         self.staff_table.setAlternatingRowColors(True)
         self.staff_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.staff_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -187,47 +131,13 @@ class StaffManagementView(QWidget):
         actions_layout.addStretch()
         
         self.edit_btn = QPushButton("Edit Selected")
-        self.edit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.edit_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.edit_btn.clicked.connect(self.handle_edit_selected)
         self.edit_btn.setEnabled(False)
         actions_layout.addWidget(self.edit_btn)
         
         self.delete_btn = QPushButton("Delete Selected")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EF4444;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DC2626;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.delete_btn.setStyleSheet(DANGER_BUTTON_STYLE)
         self.delete_btn.clicked.connect(self.handle_delete_selected)
         self.delete_btn.setEnabled(False)
         actions_layout.addWidget(self.delete_btn)
@@ -264,7 +174,15 @@ class StaffManagementView(QWidget):
                 role_name = staff.role.role_name
             self.staff_table.setItem(row, 3, QTableWidgetItem(role_name))
             self.staff_table.setItem(row, 4, QTableWidgetItem(staff.email or "-"))
-            self.staff_table.setItem(row, 5, QTableWidgetItem(staff.status))
+            status_item = QTableWidgetItem((staff.status or "unknown").capitalize())
+            status = (staff.status or "").lower()
+            if status == "active":
+                status_item.setForeground(QColor("#34D399"))
+            elif status in {"inactive", "suspended"}:
+                status_item.setForeground(QColor("#F59E0B"))
+            else:
+                status_item.setForeground(QColor("#E5E7EB"))
+            self.staff_table.setItem(row, 5, status_item)
     
     def filter_staff_list(self, search_text: str):
         """Filter staff list based on search text"""

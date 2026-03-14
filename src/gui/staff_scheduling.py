@@ -34,7 +34,7 @@ class StaffSchedulingView(QWidget):
         
         title = QLabel("Staff Scheduling")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -46,7 +46,7 @@ class StaffSchedulingView(QWidget):
         add_btn = QPushButton("Add Schedule")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -55,7 +55,7 @@ class StaffSchedulingView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_schedule)
@@ -70,7 +70,7 @@ class StaffSchedulingView(QWidget):
         
         filter_label = QLabel("View Date:")
         filter_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -96,17 +96,17 @@ class StaffSchedulingView(QWidget):
         self.schedules_table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
-                color: #374151;
+                color: #2A3A55;
                 font-weight: 600;
                 padding: 12px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
             }
         """)
         

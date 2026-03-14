@@ -34,7 +34,7 @@ class SupplierRatingView(QWidget):
         
         title = QLabel("Supplier Ratings")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -45,7 +45,7 @@ class SupplierRatingView(QWidget):
         add_btn = QPushButton("Add Rating")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -54,7 +54,7 @@ class SupplierRatingView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_rating)
@@ -91,7 +91,7 @@ class SupplierRatingView(QWidget):
         filter_btn = QPushButton("Filter")
         filter_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6B7280;
+                background-color: #5D6F8B;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -113,15 +113,15 @@ class SupplierRatingView(QWidget):
         ])
         self.ratings_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -137,7 +137,7 @@ class SupplierRatingView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -147,7 +147,7 @@ class SupplierRatingView(QWidget):
         
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -155,7 +155,7 @@ class SupplierRatingView(QWidget):
         
         value_label = QLabel(value)
         value_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -341,7 +341,7 @@ class AddSupplierRatingDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

@@ -33,7 +33,7 @@ class CloudSyncView(QWidget):
         
         title = QLabel("Cloud Sync Configuration")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -49,7 +49,7 @@ class CloudSyncView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -79,7 +79,7 @@ class CloudSyncView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -92,7 +92,7 @@ class CloudSyncView(QWidget):
         sync_orders_btn = QPushButton("Sync Orders")
         sync_orders_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -105,7 +105,7 @@ class CloudSyncView(QWidget):
         sync_inventory_btn = QPushButton("Sync Inventory")
         sync_inventory_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -118,7 +118,7 @@ class CloudSyncView(QWidget):
         sync_products_btn = QPushButton("Sync Products")
         sync_products_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -131,7 +131,7 @@ class CloudSyncView(QWidget):
         full_sync_btn = QPushButton("Full Sync")
         full_sync_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -150,7 +150,7 @@ class CloudSyncView(QWidget):
         self.status_text.setMaximumHeight(150)
         self.status_text.setStyleSheet("""
             background-color: #F9FAFB;
-            border: 1px solid #E5E7EB;
+            border: 1px solid #C8D4E8;
             border-radius: 6px;
             font-family: monospace;
             font-size: 12px;
@@ -167,7 +167,7 @@ class CloudSyncView(QWidget):
         save_btn = QPushButton("Save Configuration")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

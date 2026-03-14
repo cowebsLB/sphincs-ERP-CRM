@@ -79,7 +79,7 @@ class AddScheduleDialog(QDialog):
         save_btn = QPushButton("Add Schedule")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -87,7 +87,7 @@ class AddScheduleDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         save_btn.clicked.connect(self.handle_save)

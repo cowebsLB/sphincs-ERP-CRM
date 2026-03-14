@@ -41,7 +41,7 @@ class MobileView(QWidget):
         header_layout = QHBoxLayout()
         header = QLabel("📱 Mobile Dashboard")
         header.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 28px;
             font-weight: 700;
             padding: 16px 0;
@@ -54,14 +54,14 @@ class MobileView(QWidget):
         refresh_btn.setFixedSize(40, 40)
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 20px;
                 font-size: 18px;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         refresh_btn.clicked.connect(self.load_dashboard_data)
@@ -73,13 +73,13 @@ class MobileView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
-                background-color: #F3F4F6;
+                background-color: #EDF3FC;
             }
             QTabBar::tab {
                 background-color: white;
-                color: #6B7280;
+                color: #5D6F8B;
                 padding: 12px 20px;
                 margin-right: 4px;
                 border-top-left-radius: 12px;
@@ -88,7 +88,7 @@ class MobileView(QWidget):
                 font-weight: 600;
             }
             QTabBar::tab:selected {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
             }
         """)
@@ -145,16 +145,16 @@ class MobileView(QWidget):
         summary_grid = QGridLayout()
         summary_grid.setSpacing(12)
         
-        self.sales_card = self.create_mobile_card("Today's Sales", "$0.00", "#10B981")
+        self.sales_card = self.create_mobile_card("Today's Sales", "$0.00", "#14B8A6")
         summary_grid.addWidget(self.sales_card, 0, 0)
         
-        self.orders_card = self.create_mobile_card("Orders", "0", "#2563EB")
+        self.orders_card = self.create_mobile_card("Orders", "0", "#2F7DFF")
         summary_grid.addWidget(self.orders_card, 0, 1)
         
         self.staff_card = self.create_mobile_card("Staff", "0/0", "#F59E0B")
         summary_grid.addWidget(self.staff_card, 1, 0)
         
-        self.alerts_card = self.create_mobile_card("Alerts", "0", "#EF4444")
+        self.alerts_card = self.create_mobile_card("Alerts", "0", "#D92D20")
         summary_grid.addWidget(self.alerts_card, 1, 1)
         
         content_layout.addLayout(summary_grid)
@@ -164,7 +164,7 @@ class MobileView(QWidget):
         actions_label.setStyleSheet("""
             font-size: 20px;
             font-weight: 600;
-            color: #111827;
+            color: #162640;
             padding-top: 16px;
         """)
         content_layout.addWidget(actions_label)
@@ -195,7 +195,7 @@ class MobileView(QWidget):
         orders_label.setStyleSheet("""
             font-size: 20px;
             font-weight: 600;
-            color: #111827;
+            color: #162640;
             padding-top: 16px;
         """)
         content_layout.addWidget(orders_label)
@@ -204,20 +204,20 @@ class MobileView(QWidget):
         self.orders_list.setStyleSheet("""
             QListWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
                 padding: 8px;
             }
             QListWidget::item {
                 background-color: white;
-                border: 1px solid #F3F4F6;
+                border: 1px solid #EDF3FC;
                 border-radius: 8px;
                 padding: 12px;
                 margin: 4px;
             }
             QListWidget::item:selected {
                 background-color: #EFF6FF;
-                border: 2px solid #2563EB;
+                border: 2px solid #2F7DFF;
             }
         """)
         self.orders_list.setMaximumHeight(300)
@@ -231,7 +231,7 @@ class MobileView(QWidget):
         api_section.setStyleSheet("""
             QFrame {
                 background-color: #F9FAFB;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
                 padding: 16px;
             }
@@ -243,14 +243,14 @@ class MobileView(QWidget):
         api_layout.addWidget(api_label)
         
         api_info = QLabel("API URL: http://localhost:5000/api/mobile")
-        api_info.setStyleSheet("color: #6B7280; font-size: 12px;")
+        api_info.setStyleSheet("color: #5D6F8B; font-size: 12px;")
         api_info.setWordWrap(True)
         api_layout.addWidget(api_info)
         
         api_settings_btn = QPushButton("⚙️ API Settings")
         api_settings_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -286,7 +286,7 @@ class MobileView(QWidget):
         
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -311,16 +311,16 @@ class MobileView(QWidget):
         btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 16px;
                 padding: 16px;
                 font-size: 16px;
                 font-weight: 600;
-                color: #111827;
+                color: #162640;
             }
             QPushButton:hover {
                 background-color: #F9FAFB;
-                border-color: #2563EB;
+                border-color: #2F7DFF;
             }
             QPushButton:pressed {
                 background-color: #EFF6FF;
@@ -501,7 +501,7 @@ class MobileView(QWidget):
         new_order_btn = QPushButton("➕ New Order")
         new_order_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -523,15 +523,15 @@ class MobileView(QWidget):
         self.orders_table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 12px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
                 font-size: 14px;
             }
@@ -561,7 +561,7 @@ class MobileView(QWidget):
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -582,15 +582,15 @@ class MobileView(QWidget):
         self.inventory_table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 12px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
                 font-size: 14px;
             }
@@ -616,7 +616,7 @@ class MobileView(QWidget):
         clock_section.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 12px;
                 padding: 16px;
             }
@@ -632,7 +632,7 @@ class MobileView(QWidget):
         clock_in_btn = QPushButton("⏰ Clock In")
         clock_in_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -647,7 +647,7 @@ class MobileView(QWidget):
         clock_out_btn = QPushButton("⏰ Clock Out")
         clock_out_btn.setStyleSheet("""
             QPushButton {
-                background-color: #EF4444;
+                background-color: #D92D20;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -675,15 +675,15 @@ class MobileView(QWidget):
         self.attendance_table.setStyleSheet("""
             QTableWidget {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 12px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 12px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
                 font-size: 14px;
             }
@@ -714,7 +714,7 @@ class MobileView(QWidget):
                 
                 status_item = QTableWidgetItem(order.order_status)
                 if order.order_status == 'completed':
-                    status_item.setForeground(QColor("#10B981"))
+                    status_item.setForeground(QColor("#14B8A6"))
                 elif order.order_status == 'pending':
                     status_item.setForeground(QColor("#F59E0B"))
                 self.orders_table.setItem(row, 3, status_item)
@@ -742,7 +742,7 @@ class MobileView(QWidget):
                 self.inventory_table.setItem(row, 2, QTableWidgetItem(f"{inv.reorder_level} {inv.unit}"))
                 
                 status_item = QTableWidgetItem("Low Stock")
-                status_item.setForeground(QColor("#EF4444"))
+                status_item.setForeground(QColor("#D92D20"))
                 self.inventory_table.setItem(row, 3, status_item)
             
             db.close()
@@ -925,7 +925,7 @@ class CreateOrderDialog(QDialog):
         add_item_btn = QPushButton("➕ Add Item")
         add_item_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -937,7 +937,7 @@ class CreateOrderDialog(QDialog):
         
         # Total
         self.total_label = QLabel("Total: $0.00")
-        self.total_label.setStyleSheet("font-size: 18px; font-weight: 600; color: #10B981;")
+        self.total_label.setStyleSheet("font-size: 18px; font-weight: 600; color: #14B8A6;")
         layout.addWidget(self.total_label)
         
         # Buttons
@@ -951,7 +951,7 @@ class CreateOrderDialog(QDialog):
         create_btn = QPushButton("Create Order")
         create_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

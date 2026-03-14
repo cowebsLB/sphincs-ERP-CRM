@@ -11,8 +11,17 @@ from loguru import logger
 from src.database.connection import get_db_session
 from src.database.models import Order, OrderItem, Product
 from datetime import datetime, timedelta
+from src.gui.design_system import (
+    CARD_STYLE,
+    DATA_TABLE_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    TAB_WIDGET_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
 from src.gui.sales_analytics import SalesAnalyticsView
 from src.gui.custom_reports_builder import CustomReportsBuilderView
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class SalesReportsView(QWidget):
@@ -31,44 +40,16 @@ class SalesReportsView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header spacing row
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Sales Reports")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
-        
         header_layout.addStretch()
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Tabs
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                color: #2563EB;
-                font-weight: 600;
-            }
-        """)
+        self.tabs.setStyleSheet(TAB_WIDGET_STYLE)
         
         # Basic Reports tab
         reports_widget = self.create_reports_widget()
@@ -97,12 +78,15 @@ class SalesReportsView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Date range filter
-        filter_layout = QHBoxLayout()
+        filter_card = QFrame()
+        filter_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        filter_layout = QHBoxLayout(filter_card)
+        filter_layout.setContentsMargins(14, 10, 14, 10)
         filter_layout.setSpacing(12)
         
         filter_label = QLabel("Date Range:")
         filter_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -112,14 +96,7 @@ class SalesReportsView(QWidget):
         self.from_date = QDateEdit()
         self.from_date.setDate(QDate.currentDate().addDays(-7))  # Last 7 days
         self.from_date.setCalendarPopup(True)
-        self.from_date.setStyleSheet("""
-            QDateEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: white;
-            }
-        """)
+        self.from_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.from_date)
         
         to_label = QLabel("to")
@@ -129,38 +106,18 @@ class SalesReportsView(QWidget):
         self.to_date = QDateEdit()
         self.to_date.setDate(QDate.currentDate())
         self.to_date.setCalendarPopup(True)
-        self.to_date.setStyleSheet("""
-            QDateEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: white;
-            }
-        """)
+        self.to_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.to_date)
         
         # Refresh button
         refresh_btn = QPushButton("Refresh")
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        refresh_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         refresh_btn.clicked.connect(self.load_sales_data)
         filter_layout.addWidget(refresh_btn)
         
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-        layout.addSpacing(24)
+        layout.addWidget(filter_card)
+        layout.addSpacing(16)
         
         # Summary cards
         summary_layout = QHBoxLayout()
@@ -176,15 +133,11 @@ class SalesReportsView(QWidget):
         summary_layout.addStretch()
         
         layout.addLayout(summary_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(16)
         
         # Sales table
         table_label = QLabel("Recent Transactions")
-        table_label.setStyleSheet("""
-            color: #111827;
-            font-size: 18px;
-            font-weight: 600;
-        """)
+        table_label.setStyleSheet("font-size: 18px; font-weight: 700;")
         layout.addWidget(table_label)
         
         self.sales_table = QTableWidget()
@@ -193,24 +146,8 @@ class SalesReportsView(QWidget):
             "Transaction ID", "Date", "Total", "Payment Method", "Items"
         ])
         
-        self.sales_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
-        
-        self.sales_table.horizontalHeader().setStretchLastSection(True)
+        self.sales_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.sales_table)
         self.sales_table.setAlternatingRowColors(True)
         self.sales_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.sales_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -220,33 +157,18 @@ class SalesReportsView(QWidget):
     def create_summary_card(self, title: str, value: str) -> QFrame:
         """Create a summary card"""
         card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                padding: 20px;
-            }
-        """)
+        card.setStyleSheet(CARD_STYLE)
         card.setFixedWidth(200)
         
         layout = QVBoxLayout(card)
         layout.setSpacing(8)
         
         title_label = QLabel(title)
-        title_label.setStyleSheet("""
-            color: #6B7280;
-            font-size: 14px;
-            font-weight: 500;
-        """)
+        title_label.setStyleSheet("color: #9AAFD3; font-size: 13px; font-weight: 600;")
         layout.addWidget(title_label)
         
         value_label = QLabel(value)
-        value_label.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
+        value_label.setStyleSheet("font-size: 26px; font-weight: 700;")
         layout.addWidget(value_label)
         
         layout.addStretch()

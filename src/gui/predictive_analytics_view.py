@@ -35,7 +35,7 @@ class PredictiveAnalyticsView(QWidget):
         
         title = QLabel("Predictive Analytics - Inventory Forecasting")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -54,7 +54,7 @@ class PredictiveAnalyticsView(QWidget):
         refresh_btn = QPushButton("Refresh")
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -70,10 +70,10 @@ class PredictiveAnalyticsView(QWidget):
         # Info label
         info_label = QLabel("Predictions based on historical usage patterns. Low confidence indicates insufficient data.")
         info_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 12px;
             padding: 12px;
-            background-color: #F3F4F6;
+            background-color: #EDF3FC;
             border-radius: 6px;
         """)
         layout.addWidget(info_label)
@@ -88,15 +88,15 @@ class PredictiveAnalyticsView(QWidget):
         ])
         self.predictions_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -138,7 +138,7 @@ class PredictiveAnalyticsView(QWidget):
                 
                 days_item = QTableWidgetItem(str(pred['days_until_out_of_stock']))
                 if pred['days_until_out_of_stock'] < days_ahead:
-                    days_item.setForeground(QColor("#EF4444"))  # Red for urgent
+                    days_item.setForeground(QColor("#D92D20"))  # Red for urgent
                 elif pred['days_until_out_of_stock'] < days_ahead * 1.5:
                     days_item.setForeground(QColor("#F59E0B"))  # Orange for warning
                 self.predictions_table.setItem(row, 4, days_item)
@@ -147,11 +147,11 @@ class PredictiveAnalyticsView(QWidget):
                 
                 confidence_item = QTableWidgetItem(pred['confidence_level'])
                 if pred['confidence_level'] == "High":
-                    confidence_item.setForeground(QColor("#10B981"))  # Green
+                    confidence_item.setForeground(QColor("#14B8A6"))  # Green
                 elif pred['confidence_level'] == "Medium":
                     confidence_item.setForeground(QColor("#F59E0B"))  # Orange
                 else:
-                    confidence_item.setForeground(QColor("#6B7280"))  # Gray
+                    confidence_item.setForeground(QColor("#5D6F8B"))  # Gray
                 self.predictions_table.setItem(row, 6, confidence_item)
             
             db.close()

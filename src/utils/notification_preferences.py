@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 from loguru import logger
 
 from src.database.connection import get_db_session
-from src.database.models import NotificationPreference
+from src.database.models import NotificationPreference, Staff
 
 
 def _utc_now_naive() -> datetime:
@@ -84,14 +84,42 @@ def _ensure_default_preferences(session, staff_id: int):
         session.commit()
 
 
+def _resolve_valid_staff_id(session, staff_id: int) -> Optional[int]:
+    """Return a valid staff_id or None when the provided id is invalid."""
+    if not staff_id:
+        return None
+    exists = (
+        session.query(Staff.staff_id)
+        .filter(Staff.staff_id == staff_id)
+        .first()
+    )
+    return staff_id if exists else None
+
+
+def _build_default_preferences_map() -> Dict[str, ChannelPreference]:
+    """Build in-memory default preferences for graceful fallback."""
+    return {
+        channel: ChannelPreference(channel=channel)
+        for channel, _ in DEFAULT_CHANNELS
+    }
+
+
 def get_notification_preferences(staff_id: int) -> Dict[str, ChannelPreference]:
     """Return preference objects keyed by channel name."""
     session = get_db_session()
     try:
-        _ensure_default_preferences(session, staff_id)
+        valid_staff_id = _resolve_valid_staff_id(session, staff_id)
+        if not valid_staff_id:
+            logger.warning(
+                "Notification preferences skipped: invalid staff_id={}; using in-memory defaults.",
+                staff_id,
+            )
+            return _build_default_preferences_map()
+
+        _ensure_default_preferences(session, valid_staff_id)
         records = (
             session.query(NotificationPreference)
-            .filter(NotificationPreference.staff_id == staff_id)
+            .filter(NotificationPreference.staff_id == valid_staff_id)
             .all()
         )
         prefs: Dict[str, ChannelPreference] = {}
@@ -107,7 +135,7 @@ def get_notification_preferences(staff_id: int) -> Dict[str, ChannelPreference]:
         return prefs
     except Exception as exc:
         logger.error(f"Failed to load notification preferences: {exc}")
-        return {}
+        return _build_default_preferences_map()
     finally:
         session.close()
 
@@ -123,17 +151,22 @@ def set_channel_settings(
 ):
     session = get_db_session()
     try:
+        valid_staff_id = _resolve_valid_staff_id(session, staff_id)
+        if not valid_staff_id:
+            logger.warning("Skipping preference update; invalid staff_id={}", staff_id)
+            return
+
         pref = (
             session.query(NotificationPreference)
             .filter(
-                NotificationPreference.staff_id == staff_id,
+                NotificationPreference.staff_id == valid_staff_id,
                 NotificationPreference.channel == channel,
             )
             .first()
         )
         if not pref:
             pref = NotificationPreference(
-                staff_id=staff_id,
+                staff_id=valid_staff_id,
                 channel=channel,
             )
             session.add(pref)
@@ -158,9 +191,14 @@ def snooze_channels(staff_id: int, minutes: int, channels: Optional[List[str]] =
     """Snooze specific channels (or all) for a duration."""
     session = get_db_session()
     try:
-        _ensure_default_preferences(session, staff_id)
+        valid_staff_id = _resolve_valid_staff_id(session, staff_id)
+        if not valid_staff_id:
+            logger.warning("Skipping snooze; invalid staff_id={}", staff_id)
+            return
+
+        _ensure_default_preferences(session, valid_staff_id)
         query = session.query(NotificationPreference).filter(
-            NotificationPreference.staff_id == staff_id
+            NotificationPreference.staff_id == valid_staff_id
         )
         if channels:
             query = query.filter(NotificationPreference.channel.in_(channels))
@@ -179,8 +217,13 @@ def clear_snooze(staff_id: int, channels: Optional[List[str]] = None):
     """Clear snooze for channels or all."""
     session = get_db_session()
     try:
+        valid_staff_id = _resolve_valid_staff_id(session, staff_id)
+        if not valid_staff_id:
+            logger.warning("Skipping clear snooze; invalid staff_id={}", staff_id)
+            return
+
         query = session.query(NotificationPreference).filter(
-            NotificationPreference.staff_id == staff_id
+            NotificationPreference.staff_id == valid_staff_id
         )
         if channels:
             query = query.filter(NotificationPreference.channel.in_(channels))

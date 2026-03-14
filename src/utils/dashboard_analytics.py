@@ -195,3 +195,34 @@ def get_sales_trend(days: int = 7) -> list:
         logger.error(f"Error getting sales trend: {e}")
         return []
 
+
+def get_recent_orders(limit: int = 8) -> list:
+    """Get recent orders for dashboard table."""
+    try:
+        db = get_db_session()
+        orders = (
+            db.query(Order)
+            .order_by(Order.order_datetime.desc())
+            .limit(limit)
+            .all()
+        )
+        rows = []
+        for order in orders:
+            customer_name = "Walk-in"
+            if order.customer:
+                customer_name = f"{order.customer.first_name} {order.customer.last_name}"
+            rows.append(
+                {
+                    "order_id": order.order_id,
+                    "customer": customer_name,
+                    "amount": round(order.total_amount, 2),
+                    "status": order.order_status,
+                    "time": order.order_datetime,
+                }
+            )
+        db.close()
+        return rows
+    except Exception as e:
+        logger.error(f"Error loading recent orders: {e}")
+        return []
+

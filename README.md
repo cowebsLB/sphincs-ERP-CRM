@@ -23,6 +23,7 @@ Legacy POS code has been retired from active runtime and archived under `archive
 - [ERP UI/UX Phase 2 Global Refresh](docs/erp/uiux-phase2-global-refresh.md)
 - [ERP Worklog](docs/erp/worklog.md)
 - [ERP Implementation Summary (2026-03-09)](docs/erp/implementation-summary-2026-03-09.md)
+- [ERP Implementation Summary (2026-03-14)](docs/erp/implementation-summary-2026-03-14.md)
 - [ERP Folder Structure](docs/erp/folder-structure.md)
 - [ERP Module Map](docs/erp/module-map.md)
 - [Design Notes](design.md)

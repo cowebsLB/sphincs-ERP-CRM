@@ -31,7 +31,7 @@ class IntegrationsView(QWidget):
         
         title = QLabel("Integrations")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -45,13 +45,13 @@ class IntegrationsView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -59,7 +59,7 @@ class IntegrationsView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -87,7 +87,7 @@ class IntegrationsView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -122,7 +122,7 @@ class IntegrationsView(QWidget):
         fetch_orders_btn = QPushButton("Fetch Orders")
         fetch_orders_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -135,7 +135,7 @@ class IntegrationsView(QWidget):
         sync_menu_btn = QPushButton("Sync Menu")
         sync_menu_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -150,7 +150,7 @@ class IntegrationsView(QWidget):
         save_btn = QPushButton("Save Configuration")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -179,7 +179,7 @@ class IntegrationsView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -222,7 +222,7 @@ class IntegrationsView(QWidget):
         sync_invoices_btn = QPushButton("Sync Invoices")
         sync_invoices_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -235,7 +235,7 @@ class IntegrationsView(QWidget):
         sync_expenses_btn = QPushButton("Sync Expenses")
         sync_expenses_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -250,7 +250,7 @@ class IntegrationsView(QWidget):
         save_btn = QPushButton("Save Configuration")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

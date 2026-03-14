@@ -31,7 +31,7 @@ class LogisticsView(QWidget):
         header_layout = QHBoxLayout()
         title = QLabel("Logistics & Fleet Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -44,13 +44,13 @@ class LogisticsView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -58,7 +58,7 @@ class LogisticsView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -96,10 +96,10 @@ class LogisticsView(QWidget):
         cards_layout.setSpacing(16)
         
         cards = [
-            ("Total Vehicles", "0", "#2563EB"),
-            ("In Use", "0", "#10B981"),
+            ("Total Vehicles", "0", "#2F7DFF"),
+            ("In Use", "0", "#14B8A6"),
             ("Available", "0", "#F59E0B"),
-            ("Maintenance", "0", "#EF4444")
+            ("Maintenance", "0", "#D92D20")
         ]
         
         for title, value, color in cards:
@@ -118,7 +118,7 @@ class LogisticsView(QWidget):
         self.vehicles_table.horizontalHeader().setStretchLastSection(True)
         self.vehicles_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -142,7 +142,7 @@ class LogisticsView(QWidget):
         self.deliveries_table.horizontalHeader().setStretchLastSection(True)
         self.deliveries_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -166,7 +166,7 @@ class LogisticsView(QWidget):
         self.routes_table.horizontalHeader().setStretchLastSection(True)
         self.routes_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -190,7 +190,7 @@ class LogisticsView(QWidget):
         self.warehouse_table.horizontalHeader().setStretchLastSection(True)
         self.warehouse_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -214,7 +214,7 @@ class LogisticsView(QWidget):
         self.drivers_table.horizontalHeader().setStretchLastSection(True)
         self.drivers_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -230,7 +230,7 @@ class LogisticsView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -240,7 +240,7 @@ class LogisticsView(QWidget):
         layout = QVBoxLayout(card)
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)

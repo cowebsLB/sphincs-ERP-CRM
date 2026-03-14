@@ -4,7 +4,7 @@ Product Management Module - Manage products/dishes
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QComboBox,
+    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QComboBox, QFrame,
     QDoubleSpinBox, QCheckBox, QFormLayout, QMessageBox
 )
 from PyQt6.QtCore import Qt
@@ -12,6 +12,16 @@ from PyQt6.QtGui import QColor
 from loguru import logger
 from src.database.connection import get_db_session
 from src.database.models import Product, Category
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SEARCH_INPUT_STYLE,
+    SUCCESS_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+    apply_module_title,
+)
 from src.gui.recipe_management import RecipeManagementDialog
 
 
@@ -27,51 +37,38 @@ class ProductManagementView(QWidget):
     def setup_ui(self):
         """Setup product management UI"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(0)
+        layout.setSpacing(16)
         layout.setContentsMargins(32, 32, 32, 32)
         
         # Header
         header_layout = QHBoxLayout()
         
         title = QLabel("Product Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
+        apply_module_title(title)
         header_layout.addWidget(title)
         
         header_layout.addStretch()
         
         # Add Product button
         add_btn = QPushButton("Add Product")
-        add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         add_btn.clicked.connect(self.handle_add_product)
         header_layout.addWidget(add_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
         
-        # Search bar
+        toolbar_card = QFrame()
+        toolbar_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        toolbar_layout = QVBoxLayout(toolbar_card)
+        toolbar_layout.setContentsMargins(18, 14, 18, 14)
+        toolbar_layout.setSpacing(8)
+
         search_layout = QHBoxLayout()
         search_layout.setSpacing(12)
         
         search_label = QLabel("Search:")
         search_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -79,25 +76,14 @@ class ProductManagementView(QWidget):
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, category, barcode...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #2563EB;
-            }
-        """)
+        self.search_input.setStyleSheet(SEARCH_INPUT_STYLE)
         self.search_input.textChanged.connect(self.filter_products)
         search_layout.addWidget(self.search_input)
         
         # Category filter
         category_label = QLabel("Category:")
         category_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -107,19 +93,12 @@ class ProductManagementView(QWidget):
         self.category_filter.addItem("All")
         self.load_categories()
         self.category_filter.currentTextChanged.connect(self.filter_products)
-        self.category_filter.setStyleSheet("""
-            QComboBox {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: white;
-            }
-        """)
+        self.category_filter.setStyleSheet(FILTER_COMBO_STYLE)
         search_layout.addWidget(self.category_filter)
         
         search_layout.addStretch()
-        layout.addLayout(search_layout)
-        layout.addSpacing(16)
+        toolbar_layout.addLayout(search_layout)
+        layout.addWidget(toolbar_card)
         
         # Products table
         self.products_table = QTableWidget()
@@ -128,22 +107,7 @@ class ProductManagementView(QWidget):
             "ID", "Name", "Category", "Price", "Status"
         ])
         
-        self.products_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
+        self.products_table.setStyleSheet(DATA_TABLE_STYLE)
         
         self.products_table.horizontalHeader().setStretchLastSection(True)
         self.products_table.setAlternatingRowColors(True)
@@ -158,70 +122,19 @@ class ProductManagementView(QWidget):
         actions_layout.addStretch()
         
         self.edit_btn = QPushButton("Edit Selected")
-        self.edit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.edit_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.edit_btn.clicked.connect(self.handle_edit_selected)
         self.edit_btn.setEnabled(False)
         actions_layout.addWidget(self.edit_btn)
         
         self.delete_btn = QPushButton("Delete Selected")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EF4444;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DC2626;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.delete_btn.setStyleSheet(DANGER_BUTTON_STYLE)
         self.delete_btn.clicked.connect(self.handle_delete_selected)
         self.delete_btn.setEnabled(False)
         actions_layout.addWidget(self.delete_btn)
         
         self.recipe_btn = QPushButton("Manage Recipe")
-        self.recipe_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.recipe_btn.setStyleSheet(SUCCESS_BUTTON_STYLE)
         self.recipe_btn.clicked.connect(self.handle_manage_recipe)
         self.recipe_btn.setEnabled(False)
         actions_layout.addWidget(self.recipe_btn)
@@ -258,7 +171,7 @@ class ProductManagementView(QWidget):
             # Status
             status_item = QTableWidgetItem("Active" if product.is_active else "Inactive")
             if not product.is_active:
-                status_item.setForeground(QColor("#9CA3AF"))
+                status_item.setForeground(QColor("#8FA2BF"))
             self.products_table.setItem(row, 4, status_item)
     
     def load_categories(self):
@@ -491,7 +404,7 @@ class AddProductDialog(QDialog):
         save_btn = QPushButton("Add Product")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -663,7 +576,7 @@ class EditProductDialog(QDialog):
         save_btn = QPushButton("Save Changes")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

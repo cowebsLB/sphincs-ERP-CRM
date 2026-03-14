@@ -30,7 +30,7 @@ class ManufacturingView(QWidget):
         header_layout = QHBoxLayout()
         title = QLabel("Manufacturing Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -43,13 +43,13 @@ class ManufacturingView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -57,7 +57,7 @@ class ManufacturingView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -95,10 +95,10 @@ class ManufacturingView(QWidget):
         cards_layout.setSpacing(16)
         
         cards = [
-            ("Active Orders", "0", "#2563EB"),
-            ("In Production", "0", "#10B981"),
+            ("Active Orders", "0", "#2F7DFF"),
+            ("In Production", "0", "#14B8A6"),
             ("Completed Today", "0", "#F59E0B"),
-            ("On-Time Rate", "0%", "#EF4444")
+            ("On-Time Rate", "0%", "#D92D20")
         ]
         
         for title, value, color in cards:
@@ -117,7 +117,7 @@ class ManufacturingView(QWidget):
         self.production_table.horizontalHeader().setStretchLastSection(True)
         self.production_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -141,7 +141,7 @@ class ManufacturingView(QWidget):
         self.materials_table.horizontalHeader().setStretchLastSection(True)
         self.materials_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -165,7 +165,7 @@ class ManufacturingView(QWidget):
         self.finished_goods_table.horizontalHeader().setStretchLastSection(True)
         self.finished_goods_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -189,7 +189,7 @@ class ManufacturingView(QWidget):
         self.quality_table.horizontalHeader().setStretchLastSection(True)
         self.quality_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -213,7 +213,7 @@ class ManufacturingView(QWidget):
         self.forecasting_table.horizontalHeader().setStretchLastSection(True)
         self.forecasting_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -229,7 +229,7 @@ class ManufacturingView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -239,7 +239,7 @@ class ManufacturingView(QWidget):
         layout = QVBoxLayout(card)
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)

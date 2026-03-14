@@ -33,10 +33,10 @@ class RetailECommerceView(QWidget):
         self.setStyleSheet("""
             QWidget#retailRoot {
                 background-color: #F8FAFC;
-                color: #0F172A;
+                color: #12203A;
             }
             QLabel {
-                color: #0F172A;
+                color: #12203A;
             }
         """)
 
@@ -48,7 +48,7 @@ class RetailECommerceView(QWidget):
         header_layout = QHBoxLayout()
         title = QLabel("Retail & E-Commerce")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -61,13 +61,13 @@ class RetailECommerceView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #1F2937;
+                background-color: #EDF3FC;
+                color: #243754;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -75,7 +75,7 @@ class RetailECommerceView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -109,10 +109,10 @@ class RetailECommerceView(QWidget):
         cards_layout.setSpacing(16)
 
         cards = [
-            ("Total Online Sales", "$0.00", "#2563EB"),
-            ("Orders Today", "0", "#10B981"),
+            ("Total Online Sales", "$0.00", "#2F7DFF"),
+            ("Orders Today", "0", "#14B8A6"),
             ("Avg Order Value", "$0.00", "#F59E0B"),
-            ("Conversion Rate", "0%", "#EF4444")
+            ("Conversion Rate", "0%", "#D92D20")
         ]
 
         for title, value, color in cards:
@@ -125,7 +125,7 @@ class RetailECommerceView(QWidget):
         # Online orders table
         table_label = QLabel("Recent Online Orders")
         table_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 600;
         """)
@@ -151,7 +151,7 @@ class RetailECommerceView(QWidget):
 
         info_label = QLabel("E-Commerce Platform Integrations")
         info_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 16px;
@@ -170,7 +170,7 @@ class RetailECommerceView(QWidget):
             platform_card.setStyleSheet(f"""
                 QFrame {{
                     background-color: white;
-                    border: 2px solid #E5E7EB;
+                    border: 2px solid #C8D4E8;
                     border-radius: 8px;
                     padding: 16px;
                 }}
@@ -180,13 +180,13 @@ class RetailECommerceView(QWidget):
             info_layout = QVBoxLayout()
             name_label = QLabel(platform_name)
             name_label.setStyleSheet("""
-                color: #111827;
+                color: #162640;
                 font-size: 16px;
                 font-weight: 600;
             """)
             desc_label = QLabel(description)
             desc_label.setStyleSheet("""
-                color: #6B7280;
+                color: #5D6F8B;
                 font-size: 14px;
             """)
             info_layout.addWidget(name_label)
@@ -225,7 +225,7 @@ class RetailECommerceView(QWidget):
 
         table_label = QLabel("Warehouse Inventory")
         table_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 600;
         """)
@@ -251,7 +251,7 @@ class RetailECommerceView(QWidget):
 
         table_label = QLabel("Predictive Restocking Recommendations")
         table_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 600;
         """)
@@ -275,7 +275,7 @@ class RetailECommerceView(QWidget):
         card.setStyleSheet(f"""
             QFrame {{
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }}
@@ -285,7 +285,7 @@ class RetailECommerceView(QWidget):
         layout = QVBoxLayout(card)
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -306,26 +306,26 @@ class RetailECommerceView(QWidget):
         """Shared high-contrast table style for light cards."""
         return """
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
-                color: #111827;
-                gridline-color: #E5E7EB;
-                selection-background-color: #DBEAFE;
-                selection-color: #0F172A;
+                color: #162640;
+                gridline-color: #C8D4E8;
+                selection-background-color: #DDEAFF;
+                selection-color: #12203A;
                 alternate-background-color: #F8FAFC;
             }
             QHeaderView::section {
-                background-color: #F3F4F6;
-                color: #111827;
+                background-color: #EDF3FC;
+                color: #162640;
                 padding: 10px;
                 border: none;
-                border-bottom: 1px solid #E5E7EB;
+                border-bottom: 1px solid #C8D4E8;
                 font-weight: 600;
             }
             QTableCornerButton::section {
-                background-color: #F3F4F6;
+                background-color: #EDF3FC;
                 border: none;
-                border-bottom: 1px solid #E5E7EB;
+                border-bottom: 1px solid #C8D4E8;
             }
         """

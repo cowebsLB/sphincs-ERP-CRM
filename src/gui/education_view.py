@@ -30,7 +30,7 @@ class EducationView(QWidget):
         header_layout = QHBoxLayout()
         title = QLabel("Education & Training Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -43,13 +43,13 @@ class EducationView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -57,7 +57,7 @@ class EducationView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -99,10 +99,10 @@ class EducationView(QWidget):
         cards_layout.setSpacing(16)
         
         cards = [
-            ("Total Students", "0", "#2563EB"),
-            ("Active Enrollments", "0", "#10B981"),
+            ("Total Students", "0", "#2F7DFF"),
+            ("Active Enrollments", "0", "#14B8A6"),
             ("Classes Today", "0", "#F59E0B"),
-            ("Attendance Rate", "0%", "#EF4444")
+            ("Attendance Rate", "0%", "#D92D20")
         ]
         
         for title, value, color in cards:
@@ -121,7 +121,7 @@ class EducationView(QWidget):
         self.students_table.horizontalHeader().setStretchLastSection(True)
         self.students_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -145,7 +145,7 @@ class EducationView(QWidget):
         self.courses_table.horizontalHeader().setStretchLastSection(True)
         self.courses_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -169,7 +169,7 @@ class EducationView(QWidget):
         self.classes_table.horizontalHeader().setStretchLastSection(True)
         self.classes_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -193,7 +193,7 @@ class EducationView(QWidget):
         self.attendance_table.horizontalHeader().setStretchLastSection(True)
         self.attendance_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -217,7 +217,7 @@ class EducationView(QWidget):
         self.performance_table.horizontalHeader().setStretchLastSection(True)
         self.performance_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -241,7 +241,7 @@ class EducationView(QWidget):
         self.events_table.horizontalHeader().setStretchLastSection(True)
         self.events_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -257,7 +257,7 @@ class EducationView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -267,7 +267,7 @@ class EducationView(QWidget):
         layout = QVBoxLayout(card)
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)

@@ -17,6 +17,12 @@ from src.database.models import (
     Customer, Supplier, Order
 )
 from src.gui.add_expense_dialog import AddExpenseDialog
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    TAB_WIDGET_STYLE,
+)
 from src.gui.table_utils import enable_table_auto_resize
 
 
@@ -35,43 +41,16 @@ class FinancialManagementView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header spacing alignment
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Financial Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
         header_layout.addStretch()
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Tabs
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                color: #2563EB;
-                font-weight: 600;
-            }
-        """)
+        self.tabs.setStyleSheet(TAB_WIDGET_STYLE)
         
         # Accounts Tab
         self.accounts_tab = self.create_accounts_tab()
@@ -278,12 +257,14 @@ class FinancialManagementView(QWidget):
         self.report_from_date = QDateEdit()
         self.report_from_date.setDate(QDate.currentDate().addMonths(-1))
         self.report_from_date.setCalendarPopup(True)
+        self.report_from_date.setStyleSheet(FILTER_COMBO_STYLE)
         date_layout.addWidget(self.report_from_date)
         
         date_layout.addWidget(QLabel("To:"))
         self.report_to_date = QDateEdit()
         self.report_to_date.setDate(QDate.currentDate())
         self.report_to_date.setCalendarPopup(True)
+        self.report_to_date.setStyleSheet(FILTER_COMBO_STYLE)
         date_layout.addWidget(self.report_to_date)
         
         date_layout.addStretch()
@@ -292,15 +273,11 @@ class FinancialManagementView(QWidget):
         # Report display area
         self.report_text = QTextEdit()
         self.report_text.setReadOnly(True)
-        self.report_text.setStyleSheet("""
-            QTextEdit {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                padding: 16px;
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-            }
-        """)
+        self.report_text.setStyleSheet(
+            "QTextEdit { border: 1px solid rgba(147, 167, 198, 0.36); border-radius: 14px; "
+            "padding: 14px; font-family: 'Consolas', 'Cascadia Mono', monospace; font-size: 12px; "
+            "background-color: rgba(255, 255, 255, 0.92); }"
+        )
         layout.addWidget(self.report_text)
         
         return widget
@@ -329,7 +306,7 @@ class FinancialManagementView(QWidget):
                 self.accounts_table.setItem(row, 4, QTableWidgetItem(account.currency))
                 status_item = QTableWidgetItem("Active" if account.is_active else "Inactive")
                 if not account.is_active:
-                    status_item.setForeground(QColor("#EF4444"))
+                    status_item.setForeground(QColor("#D92D20"))
                 self.accounts_table.setItem(row, 5, status_item)
             
             db.close()
@@ -365,9 +342,9 @@ class FinancialManagementView(QWidget):
                 self.transactions_table.setItem(row, 2, QTableWidgetItem(trans.transaction_type))
                 amount_item = QTableWidgetItem(f"{trans.amount:,.2f}")
                 if trans.transaction_type == "debit":
-                    amount_item.setForeground(QColor("#EF4444"))
+                    amount_item.setForeground(QColor("#D92D20"))
                 else:
-                    amount_item.setForeground(QColor("#10B981"))
+                    amount_item.setForeground(QColor("#14B8A6"))
                 self.transactions_table.setItem(row, 3, amount_item)
                 self.transactions_table.setItem(row, 4, QTableWidgetItem(trans.currency))
                 self.transactions_table.setItem(row, 5, QTableWidgetItem(trans.description or ""))
@@ -403,9 +380,9 @@ class FinancialManagementView(QWidget):
                 
                 status_item = QTableWidgetItem(invoice.status)
                 if invoice.status == "paid":
-                    status_item.setForeground(QColor("#10B981"))
+                    status_item.setForeground(QColor("#14B8A6"))
                 elif invoice.status == "overdue":
-                    status_item.setForeground(QColor("#EF4444"))
+                    status_item.setForeground(QColor("#D92D20"))
                 self.invoices_table.setItem(row, 6, status_item)
                 
                 self.invoices_table.setItem(row, 7, QTableWidgetItem(
@@ -808,39 +785,9 @@ class FinancialManagementView(QWidget):
     
     def get_button_style(self):
         """Get standard button style"""
-        return """
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """
+        return PRIMARY_BUTTON_STYLE
     
     def get_table_style(self):
         """Get standard table style"""
-        return """
-            QTableWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-                gridline-color: #F3F4F6;
-            }
-            QTableWidget::item {
-                padding: 8px;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-                font-weight: 600;
-            }
-        """
+        return DATA_TABLE_STYLE
 

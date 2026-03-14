@@ -61,8 +61,8 @@ class EditStaffDialog(QDialog):
         self.username_input.setReadOnly(True)
         self.username_input.setStyleSheet("""
             QLineEdit {
-                background-color: #F3F4F6;
-                color: #6B7280;
+                background-color: #EDF3FC;
+                color: #5D6F8B;
             }
         """)
         form_layout.addRow("Username:", self.username_input)
@@ -131,7 +131,7 @@ class EditStaffDialog(QDialog):
         save_btn = QPushButton("Save Changes")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

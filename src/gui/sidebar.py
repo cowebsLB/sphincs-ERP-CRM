@@ -10,8 +10,14 @@ Documentation:
 - docs/erp/worklog.md
 """
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QStyle, QVBoxLayout, QWidget
+
+try:
+    import qtawesome as qta
+except Exception:  # pragma: no cover - optional dependency
+    qta = None
 
 from src.gui.design_system import (
     SIDEBAR_DANGER_ICON_BUTTON_STYLE,
@@ -32,68 +38,101 @@ class Sidebar(QWidget):
         self.expanded_width = 276
         self.collapsed_width = 84
         self.is_collapsed = False
+        self.icon_size = QSize(18, 18)
+        self.group_icon_map = {
+            "Overview": "fa6s.gauge-high",
+            "Sales & CRM": "fa6s.cart-shopping",
+            "Inventory & Supply": "fa6s.boxes-stacked",
+            "Staff & HR": "fa6s.users",
+            "Finance & Ops": "fa6s.chart-line",
+            "Industry Solutions": "fa6s.building",
+            "Platform": "fa6s.gear",
+        }
+        self.nav_icon_map = {
+            "Dashboard": "fa6s.gauge-high",
+            "Products": "fa6s.box-open",
+            "Customers": "fa6s.user-group",
+            "Sales": "fa6s.cash-register",
+            "Reports": "fa6s.chart-column",
+            "Inventory": "fa6s.warehouse",
+            "Suppliers": "fa6s.truck-ramp-box",
+            "Staff": "fa6s.user-tie",
+            "Attendance": "fa6s.clock",
+            "Shift Scheduling": "fa6s.calendar-days",
+            "Payroll": "fa6s.file-invoice-dollar",
+            "Performance": "fa6s.bullseye",
+            "Financial": "fa6s.coins",
+            "Operations": "fa6s.gears",
+            "Retail & E-Commerce": "fa6s.bag-shopping",
+            "Healthcare": "fa6s.briefcase-medical",
+            "Education": "fa6s.graduation-cap",
+            "Manufacturing": "fa6s.industry",
+            "Logistics": "fa6s.route",
+            "Mobile": "fa6s.mobile-screen-button",
+            "Settings": "fa6s.sliders",
+        }
         self.nav_structure = [
             {
                 "group": "Overview",
-                "icon": "OV",
+                "icon": "Overview",
                 "items": [
-                    {"name": "Dashboard", "icon": "DB"},
+                    {"name": "Dashboard", "icon": "Dashboard"},
                 ],
             },
             {
                 "group": "Sales & CRM",
-                "icon": "SC",
+                "icon": "Sales & CRM",
                 "items": [
-                    {"name": "Products", "icon": "PR"},
-                    {"name": "Customers", "icon": "CU"},
-                    {"name": "Sales", "icon": "SA"},
-                    {"name": "Reports", "icon": "RP"},
+                    {"name": "Products", "icon": "Products"},
+                    {"name": "Customers", "icon": "Customers"},
+                    {"name": "Sales", "icon": "Sales"},
+                    {"name": "Reports", "icon": "Reports"},
                 ],
             },
             {
                 "group": "Inventory & Supply",
-                "icon": "IS",
+                "icon": "Inventory & Supply",
                 "items": [
-                    {"name": "Inventory", "icon": "IV"},
-                    {"name": "Suppliers", "icon": "SU"},
+                    {"name": "Inventory", "icon": "Inventory"},
+                    {"name": "Suppliers", "icon": "Suppliers"},
                 ],
             },
             {
                 "group": "Staff & HR",
-                "icon": "HR",
+                "icon": "Staff & HR",
                 "items": [
-                    {"name": "Staff", "icon": "ST"},
-                    {"name": "Attendance", "icon": "AT"},
-                    {"name": "Shift Scheduling", "icon": "SH"},
-                    {"name": "Payroll", "icon": "PY"},
-                    {"name": "Performance", "icon": "PF"},
+                    {"name": "Staff", "icon": "Staff"},
+                    {"name": "Attendance", "icon": "Attendance"},
+                    {"name": "Shift Scheduling", "icon": "Shift Scheduling"},
+                    {"name": "Payroll", "icon": "Payroll"},
+                    {"name": "Performance", "icon": "Performance"},
                 ],
             },
             {
                 "group": "Finance & Ops",
-                "icon": "FO",
+                "icon": "Finance & Ops",
                 "items": [
-                    {"name": "Financial", "icon": "FN"},
-                    {"name": "Operations", "icon": "OP"},
+                    {"name": "Financial", "icon": "Financial"},
+                    {"name": "Operations", "icon": "Operations"},
                 ],
             },
             {
                 "group": "Industry Solutions",
-                "icon": "IN",
+                "icon": "Industry Solutions",
                 "items": [
-                    {"name": "Retail & E-Commerce", "icon": "RE"},
-                    {"name": "Healthcare", "icon": "HC"},
-                    {"name": "Education", "icon": "ED"},
-                    {"name": "Manufacturing", "icon": "MF"},
-                    {"name": "Logistics", "icon": "LG"},
+                    {"name": "Retail & E-Commerce", "icon": "Retail & E-Commerce"},
+                    {"name": "Healthcare", "icon": "Healthcare"},
+                    {"name": "Education", "icon": "Education"},
+                    {"name": "Manufacturing", "icon": "Manufacturing"},
+                    {"name": "Logistics", "icon": "Logistics"},
                 ],
             },
             {
                 "group": "Platform",
-                "icon": "PL",
+                "icon": "Platform",
                 "items": [
-                    {"name": "Mobile", "icon": "MB"},
-                    {"name": "Settings", "icon": "SG"},
+                    {"name": "Mobile", "icon": "Mobile"},
+                    {"name": "Settings", "icon": "Settings"},
                 ],
             },
         ]
@@ -121,6 +160,9 @@ class Sidebar(QWidget):
         self.toggle_btn.setFixedSize(56, 32)
         self.toggle_btn.setToolTip("Collapse/Expand Sidebar")
         self.toggle_btn.setStyleSheet(SIDEBAR_ICON_BUTTON_STYLE)
+        self.toggle_btn.setText("")
+        self.toggle_btn.setIcon(self._build_icon("fa6s.bars", QStyle.StandardPixmap.SP_TitleBarUnshadeButton))
+        self.toggle_btn.setIconSize(QSize(14, 14))
         self.toggle_btn.clicked.connect(self.toggle_sidebar)
         header_layout.addWidget(self.toggle_btn)
 
@@ -128,6 +170,9 @@ class Sidebar(QWidget):
         self.logout_btn.setFixedSize(44, 32)
         self.logout_btn.setToolTip("Logout")
         self.logout_btn.setStyleSheet(SIDEBAR_DANGER_ICON_BUTTON_STYLE)
+        self.logout_btn.setText("")
+        self.logout_btn.setIcon(self._build_icon("fa6s.power-off", QStyle.StandardPixmap.SP_DialogCloseButton))
+        self.logout_btn.setIconSize(QSize(14, 14))
         self.logout_btn.clicked.connect(self.handle_logout)
         header_layout.addWidget(self.logout_btn)
 
@@ -171,15 +216,17 @@ class Sidebar(QWidget):
                 btn = QPushButton(f"{item_icon}  {item_name}")
                 btn.setCheckable(True)
                 btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                btn.setProperty("icon_str", item_icon)
                 btn.setProperty("text_str", item_name)
                 btn.setProperty("collapsed", False)
                 btn.setToolTip(item_name)
                 btn.setObjectName("navButton")
+                btn.setIcon(self._resolve_nav_icon(item_name))
+                btn.setIconSize(self.icon_size)
                 if item_name == "Dashboard":
                     btn.setChecked(True)
                 btn.clicked.connect(lambda _, name=item_name: self.on_nav_clicked(name))
                 self.nav_buttons[item_name] = btn
+                self._set_button_text(btn, collapsed=False)
                 content_layout.addWidget(btn)
 
             self.group_contents[group_name] = content_widget
@@ -208,7 +255,7 @@ class Sidebar(QWidget):
 
         self.user_role_label = QLabel("Administrator")
         self.user_role_label.setStyleSheet(
-            "color: #94A3B8; font-size: 11px; font-weight: 500; background-color: transparent;"
+            "color: #8197B8; font-size: 11px; font-weight: 500; background-color: transparent;"
         )
         user_layout.addWidget(self.user_role_label)
         layout.addWidget(self.user_frame)
@@ -226,25 +273,18 @@ class Sidebar(QWidget):
         self.setFixedWidth(self.collapsed_width if self.is_collapsed else self.expanded_width)
 
         if self.is_collapsed:
-            self.toggle_btn.setText("||")
-            self.logout_btn.setText("X")
             self.toggle_btn.setFixedSize(36, 32)
             self.logout_btn.setFixedSize(36, 32)
             self.user_frame.hide()
             for btn in self.nav_buttons.values():
-                icon_str = btn.property("icon_str")
-                btn.setText(str(icon_str) if icon_str else "")
+                self._set_button_text(btn, collapsed=True)
                 btn.setToolTip(str(btn.property("text_str") or ""))
         else:
-            self.toggle_btn.setText("MENU")
-            self.logout_btn.setText("OUT")
             self.toggle_btn.setFixedSize(56, 32)
             self.logout_btn.setFixedSize(44, 32)
             self.user_frame.show()
             for btn in self.nav_buttons.values():
-                icon_str = str(btn.property("icon_str") or "")
-                text_str = str(btn.property("text_str") or "")
-                btn.setText(f"{icon_str}  {text_str}".strip())
+                self._set_button_text(btn, collapsed=False)
                 btn.setToolTip("")
 
         self.update_group_headers()
@@ -295,13 +335,15 @@ class Sidebar(QWidget):
         if not header or content is None:
             return
 
-        icon = meta.get("icon", "")
+        icon_key = str(meta.get("icon", ""))
+        header.setIcon(self._resolve_group_icon(icon_key))
+        header.setIconSize(QSize(14, 14))
         if self.is_collapsed:
-            header.setText(icon)
+            header.setText("")
         else:
             expanded = content.isVisible()
-            arrow = "v" if expanded else ">"
-            header.setText(f"{arrow} {icon}  {group_name}")
+            arrow = "▼" if expanded else "▶"
+            header.setText(f"{arrow}  {group_name}")
         header.setToolTip(group_name)
 
     def _apply_collapsed_visual_state(self):
@@ -324,3 +366,52 @@ class Sidebar(QWidget):
                     content.setVisible(True)
                     self.update_group_header_text(group_name)
                 break
+
+    def _set_button_text(self, button: QPushButton, collapsed: bool):
+        """Set sidebar button text based on collapse state."""
+        if collapsed:
+            button.setText("")
+        else:
+            button.setText(str(button.property("text_str") or ""))
+
+    def _resolve_group_icon(self, group_name: str) -> QIcon:
+        """Resolve icon for a sidebar group."""
+        icon_name = self.group_icon_map.get(group_name, "fa6s.layer-group")
+        return self._build_icon(icon_name, QStyle.StandardPixmap.SP_FileDialogDetailedView)
+
+    def _resolve_nav_icon(self, item_name: str) -> QIcon:
+        """Resolve icon for a navigation item."""
+        icon_name = self.nav_icon_map.get(item_name, "fa6s.circle")
+        fallback = {
+            "Dashboard": QStyle.StandardPixmap.SP_DesktopIcon,
+            "Products": QStyle.StandardPixmap.SP_DirIcon,
+            "Customers": QStyle.StandardPixmap.SP_FileDialogContentsView,
+            "Sales": QStyle.StandardPixmap.SP_DriveNetIcon,
+            "Reports": QStyle.StandardPixmap.SP_FileIcon,
+            "Inventory": QStyle.StandardPixmap.SP_DriveHDIcon,
+            "Suppliers": QStyle.StandardPixmap.SP_DriveFDIcon,
+            "Staff": QStyle.StandardPixmap.SP_DirHomeIcon,
+            "Attendance": QStyle.StandardPixmap.SP_BrowserReload,
+            "Shift Scheduling": QStyle.StandardPixmap.SP_FileDialogListView,
+            "Payroll": QStyle.StandardPixmap.SP_DialogSaveButton,
+            "Performance": QStyle.StandardPixmap.SP_ArrowUp,
+            "Financial": QStyle.StandardPixmap.SP_DialogApplyButton,
+            "Operations": QStyle.StandardPixmap.SP_ComputerIcon,
+            "Retail & E-Commerce": QStyle.StandardPixmap.SP_TrashIcon,
+            "Healthcare": QStyle.StandardPixmap.SP_DialogYesButton,
+            "Education": QStyle.StandardPixmap.SP_FileDialogInfoView,
+            "Manufacturing": QStyle.StandardPixmap.SP_DriveDVDIcon,
+            "Logistics": QStyle.StandardPixmap.SP_ArrowForward,
+            "Mobile": QStyle.StandardPixmap.SP_MediaPlay,
+            "Settings": QStyle.StandardPixmap.SP_FileDialogDetailedView,
+        }.get(item_name, QStyle.StandardPixmap.SP_FileIcon)
+        return self._build_icon(icon_name, fallback)
+
+    def _build_icon(self, icon_name: str, fallback: QStyle.StandardPixmap) -> QIcon:
+        """Build icon from qtawesome, fallback to Qt standard icon."""
+        if qta is not None:
+            try:
+                return qta.icon(icon_name, color="#EAF1FF")
+            except Exception:
+                pass
+        return self.style().standardIcon(fallback)

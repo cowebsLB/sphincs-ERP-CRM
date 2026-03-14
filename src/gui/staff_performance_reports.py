@@ -4,7 +4,7 @@ Staff Performance Reports - Sales per waiter, productivity metrics
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QComboBox, QDateEdit,
+    QTableWidget, QTableWidgetItem, QComboBox, QDateEdit, QFrame,
     QMessageBox
 )
 from PyQt6.QtCore import Qt, QDate
@@ -13,6 +13,13 @@ from loguru import logger
 from datetime import date, datetime
 from src.database.connection import get_db_session
 from src.database.models import Staff, Order, OrderItem
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
+from src.gui.table_utils import enable_table_auto_resize
 from sqlalchemy import func
 
 
@@ -31,23 +38,18 @@ class StaffPerformanceReportsView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header row
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Staff Performance Reports")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
         header_layout.addStretch()
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Filters
-        filter_layout = QHBoxLayout()
+        filter_card = QFrame()
+        filter_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        filter_layout = QHBoxLayout(filter_card)
+        filter_layout.setContentsMargins(14, 10, 14, 10)
         filter_layout.setSpacing(12)
         
         filter_layout.addWidget(QLabel("Report Type:"))
@@ -55,6 +57,7 @@ class StaffPerformanceReportsView(QWidget):
         self.report_type_combo.addItems([
             "Sales Performance", "Order Count", "Average Order Value", "Top Performers"
         ])
+        self.report_type_combo.setStyleSheet(FILTER_COMBO_STYLE)
         self.report_type_combo.currentTextChanged.connect(self.load_performance_data)
         filter_layout.addWidget(self.report_type_combo)
         
@@ -63,31 +66,24 @@ class StaffPerformanceReportsView(QWidget):
         today = QDate.currentDate()
         self.from_date.setDate(today.addDays(-today.day() + 1))  # First day of month
         self.from_date.setCalendarPopup(True)
+        self.from_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.from_date)
         
         filter_layout.addWidget(QLabel("To:"))
         self.to_date = QDateEdit()
         self.to_date.setDate(QDate.currentDate())
         self.to_date.setCalendarPopup(True)
+        self.to_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.to_date)
         
         filter_btn = QPushButton("Generate Report")
-        filter_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 600;
-            }
-        """)
+        filter_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         filter_btn.clicked.connect(self.load_performance_data)
         filter_layout.addWidget(filter_btn)
         
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-        layout.addSpacing(16)
+        layout.addWidget(filter_card)
+        layout.addSpacing(12)
         
         # Performance table
         self.performance_table = QTableWidget()
@@ -95,21 +91,8 @@ class StaffPerformanceReportsView(QWidget):
         self.performance_table.setHorizontalHeaderLabels([
             "Staff Member", "Total Sales", "Order Count", "Avg Order Value", "Performance Score"
         ])
-        self.performance_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-                font-weight: 600;
-            }
-        """)
-        self.performance_table.horizontalHeader().setStretchLastSection(True)
+        self.performance_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.performance_table)
         self.performance_table.setAlternatingRowColors(True)
         layout.addWidget(self.performance_table)
     
@@ -178,7 +161,7 @@ class StaffPerformanceReportsView(QWidget):
                 self.performance_table.setItem(row, 0, QTableWidgetItem(staff_name))
                 
                 sales_item = QTableWidgetItem(f"${data['total_sales']:,.2f}")
-                sales_item.setForeground(QColor("#10B981"))
+                sales_item.setForeground(QColor("#14B8A6"))
                 self.performance_table.setItem(row, 1, sales_item)
                 
                 self.performance_table.setItem(row, 2, QTableWidgetItem(str(data['order_count'])))
@@ -187,11 +170,11 @@ class StaffPerformanceReportsView(QWidget):
                 # Performance score with color coding
                 score_item = QTableWidgetItem(f"{data['performance_score']:.1f}")
                 if data['performance_score'] >= 80:
-                    score_item.setForeground(QColor("#10B981"))  # Green
+                    score_item.setForeground(QColor("#14B8A6"))  # Green
                 elif data['performance_score'] >= 60:
                     score_item.setForeground(QColor("#F59E0B"))  # Yellow
                 else:
-                    score_item.setForeground(QColor("#EF4444"))  # Red
+                    score_item.setForeground(QColor("#D92D20"))  # Red
                 self.performance_table.setItem(row, 4, score_item)
             
             db.close()

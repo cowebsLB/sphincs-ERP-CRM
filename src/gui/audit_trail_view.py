@@ -35,7 +35,7 @@ class AuditTrailView(QWidget):
         
         title = QLabel("Audit Trail")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -82,7 +82,7 @@ class AuditTrailView(QWidget):
         filter_btn = QPushButton("Filter")
         filter_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6B7280;
+                background-color: #5D6F8B;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -104,15 +104,15 @@ class AuditTrailView(QWidget):
         ])
         self.audit_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -174,9 +174,9 @@ class AuditTrailView(QWidget):
                 
                 action_item = QTableWidgetItem(log.action)
                 if log.action == "delete":
-                    action_item.setForeground(QColor("#EF4444"))
+                    action_item.setForeground(QColor("#D92D20"))
                 elif log.action == "create":
-                    action_item.setForeground(QColor("#10B981"))
+                    action_item.setForeground(QColor("#14B8A6"))
                 elif log.action == "update":
                     action_item.setForeground(QColor("#F59E0B"))
                 self.audit_table.setItem(row, 2, action_item)

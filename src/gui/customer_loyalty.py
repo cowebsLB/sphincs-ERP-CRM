@@ -41,7 +41,7 @@ class CustomerLoyaltyView(QWidget):
         
         title = QLabel("Customer Loyalty & Marketing")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -55,13 +55,13 @@ class CustomerLoyaltyView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -69,7 +69,7 @@ class CustomerLoyaltyView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -177,7 +177,7 @@ class CustomerLoyaltyView(QWidget):
             "- Loyalty points\n"
             "- Last visit date"
         )
-        desc_label.setStyleSheet("color: #6B7280; font-size: 14px;")
+        desc_label.setStyleSheet("color: #5D6F8B; font-size: 14px;")
         layout.addWidget(desc_label)
         layout.addSpacing(16)
         
@@ -404,9 +404,9 @@ class CustomerLoyaltyView(QWidget):
                 
                 sentiment_item = QTableWidgetItem(feedback.sentiment or "-")
                 if feedback.sentiment == "positive":
-                    sentiment_item.setForeground(QColor("#10B981"))
+                    sentiment_item.setForeground(QColor("#14B8A6"))
                 elif feedback.sentiment == "negative":
-                    sentiment_item.setForeground(QColor("#EF4444"))
+                    sentiment_item.setForeground(QColor("#D92D20"))
                 self.feedback_table.setItem(row, 4, sentiment_item)
                 
                 feedback_text = (feedback.feedback_text or "")[:50] + "..." if feedback.feedback_text and len(feedback.feedback_text) > 50 else (feedback.feedback_text or "-")
@@ -434,7 +434,7 @@ class CustomerLoyaltyView(QWidget):
         """Get standard button style"""
         return """
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -443,7 +443,7 @@ class CustomerLoyaltyView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """
     
@@ -451,10 +451,10 @@ class CustomerLoyaltyView(QWidget):
         """Get standard table style"""
         return """
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QTableWidget::item {
                 padding: 8px;
@@ -463,7 +463,7 @@ class CustomerLoyaltyView(QWidget):
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """

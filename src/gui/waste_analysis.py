@@ -37,7 +37,7 @@ class WasteAnalysisView(QWidget):
         
         title = QLabel("Waste Analysis")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -48,7 +48,7 @@ class WasteAnalysisView(QWidget):
         add_btn = QPushButton("Record Waste")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -57,7 +57,7 @@ class WasteAnalysisView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_waste)
@@ -106,7 +106,7 @@ class WasteAnalysisView(QWidget):
         filter_btn = QPushButton("Filter")
         filter_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6B7280;
+                background-color: #5D6F8B;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -128,15 +128,15 @@ class WasteAnalysisView(QWidget):
         ])
         self.waste_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -152,7 +152,7 @@ class WasteAnalysisView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -162,7 +162,7 @@ class WasteAnalysisView(QWidget):
         
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -170,7 +170,7 @@ class WasteAnalysisView(QWidget):
         
         value_label = QLabel(value)
         value_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -232,7 +232,7 @@ class WasteAnalysisView(QWidget):
                     total_cost += cost
                 
                 cost_item = QTableWidgetItem(f"${cost:.2f}")
-                cost_item.setForeground(QColor("#EF4444"))
+                cost_item.setForeground(QColor("#D92D20"))
                 self.waste_table.setItem(row, 5, cost_item)
             
             db.close()
@@ -356,7 +356,7 @@ class AddWasteDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

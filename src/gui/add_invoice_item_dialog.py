@@ -60,7 +60,7 @@ class AddInvoiceItemDialog(QDialog):
         # Total
         self.total_label = QLabel("$0.00")
         self.total_label.setStyleSheet("""
-            color: #2563EB;
+            color: #2F7DFF;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -79,7 +79,7 @@ class AddInvoiceItemDialog(QDialog):
         add_btn = QPushButton("Add Item")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -87,7 +87,7 @@ class AddInvoiceItemDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add)

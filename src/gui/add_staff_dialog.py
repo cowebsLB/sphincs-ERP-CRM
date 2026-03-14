@@ -98,7 +98,7 @@ class AddStaffDialog(QDialog):
         save_btn = QPushButton("Add Staff")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

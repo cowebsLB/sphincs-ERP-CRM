@@ -70,7 +70,7 @@ class CreateInvoiceDialog(QDialog):
         # Invoice items section
         items_label = QLabel("Invoice Items")
         items_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -85,7 +85,7 @@ class CreateInvoiceDialog(QDialog):
         enable_table_auto_resize(self.items_table)
         self.items_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
             }
         """)
@@ -95,7 +95,7 @@ class CreateInvoiceDialog(QDialog):
         add_item_btn = QPushButton("Add Item")
         add_item_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -126,7 +126,7 @@ class CreateInvoiceDialog(QDialog):
         total_label = QLabel("Total:")
         total_label.setStyleSheet("font-weight: 600; font-size: 16px;")
         self.total_value = QLabel("$0.00")
-        self.total_value.setStyleSheet("font-weight: 700; font-size: 16px; color: #2563EB;")
+        self.total_value.setStyleSheet("font-weight: 700; font-size: 16px; color: #2F7DFF;")
         totals_frame.addWidget(total_label)
         totals_frame.addWidget(self.total_value)
         
@@ -151,7 +151,7 @@ class CreateInvoiceDialog(QDialog):
         save_btn = QPushButton("Create Invoice")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -159,7 +159,7 @@ class CreateInvoiceDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         save_btn.clicked.connect(self.handle_save)
@@ -223,7 +223,7 @@ class CreateInvoiceDialog(QDialog):
             remove_btn = QPushButton("Remove")
             remove_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #EF4444;
+                    background-color: #D92D20;
                     color: white;
                     border: none;
                     border-radius: 4px;

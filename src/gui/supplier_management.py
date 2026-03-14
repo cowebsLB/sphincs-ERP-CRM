@@ -11,7 +11,17 @@ from PyQt6.QtCore import Qt
 from loguru import logger
 from src.database.connection import get_db_session
 from src.database.models import Supplier
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    INPUT_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SEARCH_INPUT_STYLE,
+    TAB_WIDGET_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
 from src.gui.supplier_rating_view import SupplierRatingView
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class SupplierManagementView(QWidget):
@@ -31,61 +41,20 @@ class SupplierManagementView(QWidget):
         
         # Header
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Supplier Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
-        
         header_layout.addStretch()
         
         # Add Supplier button
         add_btn = QPushButton("Add Supplier")
-        add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         add_btn.clicked.connect(self.handle_add_supplier)
         header_layout.addWidget(add_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Tabs
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                color: #2563EB;
-                font-weight: 600;
-            }
-        """)
+        self.tabs.setStyleSheet(TAB_WIDGET_STYLE)
         
         # Suppliers List tab
         suppliers_widget = self.create_suppliers_widget()
@@ -105,12 +74,15 @@ class SupplierManagementView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Search bar
-        search_layout = QHBoxLayout()
+        search_card = QWidget()
+        search_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        search_layout = QHBoxLayout(search_card)
+        search_layout.setContentsMargins(14, 10, 14, 10)
         search_layout.setSpacing(12)
         
         search_label = QLabel("Search:")
         search_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -118,24 +90,13 @@ class SupplierManagementView(QWidget):
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, contact info...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #2563EB;
-            }
-        """)
+        self.search_input.setStyleSheet(SEARCH_INPUT_STYLE)
         self.search_input.textChanged.connect(self.filter_suppliers)
         search_layout.addWidget(self.search_input)
         
         search_layout.addStretch()
-        layout.addLayout(search_layout)
-        layout.addSpacing(16)
+        layout.addWidget(search_card)
+        layout.addSpacing(12)
         
         # Suppliers table
         self.suppliers_table = QTableWidget()
@@ -144,24 +105,8 @@ class SupplierManagementView(QWidget):
             "ID", "Name", "Contact Person", "Phone", "Email"
         ])
         
-        self.suppliers_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
-        
-        self.suppliers_table.horizontalHeader().setStretchLastSection(True)
+        self.suppliers_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.suppliers_table)
         self.suppliers_table.setAlternatingRowColors(True)
         self.suppliers_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.suppliers_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -174,47 +119,13 @@ class SupplierManagementView(QWidget):
         actions_layout.addStretch()
         
         self.edit_btn = QPushButton("Edit Selected")
-        self.edit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.edit_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.edit_btn.clicked.connect(self.handle_edit_selected)
         self.edit_btn.setEnabled(False)
         actions_layout.addWidget(self.edit_btn)
         
         self.delete_btn = QPushButton("Delete Selected")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EF4444;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DC2626;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.delete_btn.setStyleSheet(DANGER_BUTTON_STYLE)
         self.delete_btn.clicked.connect(self.handle_delete_selected)
         self.delete_btn.setEnabled(False)
         actions_layout.addWidget(self.delete_btn)
@@ -370,6 +281,7 @@ class AddSupplierDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(24, 24, 24, 24)
+        self.setStyleSheet(INPUT_STYLE)
         
         form_layout = QFormLayout()
         form_layout.setSpacing(12)
@@ -412,16 +324,7 @@ class AddSupplierDialog(QDialog):
         buttons_layout.addWidget(cancel_btn)
         
         save_btn = QPushButton("Add Supplier")
-        save_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 600;
-            }
-        """)
+        save_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         save_btn.clicked.connect(self.handle_save)
         buttons_layout.addWidget(save_btn)
         
@@ -494,6 +397,7 @@ class EditSupplierDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(24, 24, 24, 24)
+        self.setStyleSheet(INPUT_STYLE)
         
         form_layout = QFormLayout()
         form_layout.setSpacing(12)
@@ -545,16 +449,7 @@ class EditSupplierDialog(QDialog):
         buttons_layout.addWidget(cancel_btn)
         
         save_btn = QPushButton("Save Changes")
-        save_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: 600;
-            }
-        """)
+        save_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         save_btn.clicked.connect(self.handle_save)
         buttons_layout.addWidget(save_btn)
         

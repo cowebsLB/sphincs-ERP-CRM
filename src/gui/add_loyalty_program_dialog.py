@@ -76,7 +76,7 @@ class AddLoyaltyProgramDialog(QDialog):
         )
         info_label.setWordWrap(True)
         info_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 12px;
             padding: 12px;
             background-color: #F9FAFB;
@@ -95,7 +95,7 @@ class AddLoyaltyProgramDialog(QDialog):
         save_btn = QPushButton("Add Program")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -103,7 +103,7 @@ class AddLoyaltyProgramDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         save_btn.clicked.connect(self.handle_save)

@@ -201,7 +201,7 @@ class AdvancedOperationsView(QWidget):
         # Styling presets
         self.primary_button_style = """
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -209,7 +209,7 @@ class AdvancedOperationsView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
             QPushButton:pressed {
                 background-color: #1E3A8A;
@@ -231,14 +231,14 @@ class AdvancedOperationsView(QWidget):
         self.card_style = """
             QFrame#operationsCard {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 16px;
             }
         """
         self.setObjectName("operationsRoot")
         self.setStyleSheet("""
             QWidget#operationsRoot {
-                background-color: #F3F4F6;
+                background-color: #EDF3FC;
             }
         """)
         
@@ -255,7 +255,7 @@ class AdvancedOperationsView(QWidget):
         header.setStyleSheet("""
             font-size: 24px;
             font-weight: 700;
-            color: #111827;
+            color: #162640;
         """)
         layout.addWidget(header)
         
@@ -264,18 +264,18 @@ class AdvancedOperationsView(QWidget):
             "delivery fleet, menu engineering, events, and safety—all from one place."
         )
         subtitle.setWordWrap(True)
-        subtitle.setStyleSheet("color: #6B7280; font-size: 14px;")
+        subtitle.setStyleSheet("color: #5D6F8B; font-size: 14px;")
         layout.addWidget(subtitle)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background: white;
             }
             QTabBar::tab {
-                background: #F3F4F6;
+                background: #EDF3FC;
                 padding: 8px 16px;
                 margin: 2px;
                 border-top-left-radius: 6px;
@@ -305,10 +305,10 @@ class AdvancedOperationsView(QWidget):
         v_layout = QVBoxLayout(frame)
         v_layout.setContentsMargins(0, 0, 0, 0)
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 18px; font-weight: 600; color: #111827;")
+        title_label.setStyleSheet("font-size: 18px; font-weight: 600; color: #162640;")
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #6B7280;")
+        desc_label.setStyleSheet("color: #5D6F8B;")
         v_layout.addWidget(title_label)
         v_layout.addWidget(desc_label)
         return frame

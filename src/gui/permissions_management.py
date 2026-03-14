@@ -71,7 +71,7 @@ class PermissionsManagementView(QWidget):
         
         title = QLabel("Role Permissions Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -96,7 +96,7 @@ class PermissionsManagementView(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("""
             QScrollArea {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -115,7 +115,7 @@ class PermissionsManagementView(QWidget):
                 QGroupBox {
                     font-size: 14px;
                     font-weight: 600;
-                    border: 2px solid #E5E7EB;
+                    border: 2px solid #C8D4E8;
                     border-radius: 8px;
                     margin-top: 12px;
                     padding-top: 12px;
@@ -143,7 +143,7 @@ class PermissionsManagementView(QWidget):
         save_btn = QPushButton("Save Permissions")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

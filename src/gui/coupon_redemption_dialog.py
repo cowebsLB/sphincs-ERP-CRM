@@ -36,7 +36,7 @@ class CouponRedemptionDialog(QDialog):
         # Order total
         total_label = QLabel(f"Order Total: ${self.order_total:.2f}")
         total_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
             padding: 12px;
@@ -57,10 +57,10 @@ class CouponRedemptionDialog(QDialog):
         # Coupon info display
         self.coupon_info_label = QLabel()
         self.coupon_info_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             padding: 8px;
-            background-color: #F3F4F6;
+            background-color: #EDF3FC;
             border-radius: 4px;
         """)
         self.coupon_info_label.setWordWrap(True)
@@ -70,7 +70,7 @@ class CouponRedemptionDialog(QDialog):
         # Discount preview
         self.discount_preview_label = QLabel()
         self.discount_preview_label.setStyleSheet("""
-            color: #10B981;
+            color: #14B8A6;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -91,7 +91,7 @@ class CouponRedemptionDialog(QDialog):
         self.apply_btn.setEnabled(False)
         self.apply_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -99,11 +99,11 @@ class CouponRedemptionDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
             QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
+                background-color: #C8D4E8;
+                color: #8FA2BF;
             }
         """)
         self.apply_btn.clicked.connect(self.apply_coupon)
@@ -131,10 +131,10 @@ class CouponRedemptionDialog(QDialog):
             if not coupon:
                 self.coupon_info_label.setText("❌ Coupon code not found or inactive")
                 self.coupon_info_label.setStyleSheet("""
-                    color: #EF4444;
+                    color: #D92D20;
                     font-size: 14px;
                     padding: 8px;
-                    background-color: #FEE2E2;
+                    background-color: #FFE9E8;
                     border-radius: 4px;
                 """)
                 self.coupon_info_label.setVisible(True)
@@ -147,10 +147,10 @@ class CouponRedemptionDialog(QDialog):
             if coupon.start_date > today:
                 self.coupon_info_label.setText(f"❌ Coupon not yet valid (starts {coupon.start_date})")
                 self.coupon_info_label.setStyleSheet("""
-                    color: #EF4444;
+                    color: #D92D20;
                     font-size: 14px;
                     padding: 8px;
-                    background-color: #FEE2E2;
+                    background-color: #FFE9E8;
                     border-radius: 4px;
                 """)
                 self.coupon_info_label.setVisible(True)
@@ -161,10 +161,10 @@ class CouponRedemptionDialog(QDialog):
             if coupon.end_date and coupon.end_date < today:
                 self.coupon_info_label.setText(f"❌ Coupon expired (ended {coupon.end_date})")
                 self.coupon_info_label.setStyleSheet("""
-                    color: #EF4444;
+                    color: #D92D20;
                     font-size: 14px;
                     padding: 8px;
-                    background-color: #FEE2E2;
+                    background-color: #FFE9E8;
                     border-radius: 4px;
                 """)
                 self.coupon_info_label.setVisible(True)
@@ -176,10 +176,10 @@ class CouponRedemptionDialog(QDialog):
             if coupon.usage_limit and coupon.usage_count >= coupon.usage_limit:
                 self.coupon_info_label.setText("❌ Coupon usage limit reached")
                 self.coupon_info_label.setStyleSheet("""
-                    color: #EF4444;
+                    color: #D92D20;
                     font-size: 14px;
                     padding: 8px;
-                    background-color: #FEE2E2;
+                    background-color: #FFE9E8;
                     border-radius: 4px;
                 """)
                 self.coupon_info_label.setVisible(True)
@@ -193,10 +193,10 @@ class CouponRedemptionDialog(QDialog):
                     f"❌ Minimum purchase of ${coupon.min_purchase_amount:.2f} required"
                 )
                 self.coupon_info_label.setStyleSheet("""
-                    color: #EF4444;
+                    color: #D92D20;
                     font-size: 14px;
                     padding: 8px;
-                    background-color: #FEE2E2;
+                    background-color: #FFE9E8;
                     border-radius: 4px;
                 """)
                 self.coupon_info_label.setVisible(True)
@@ -235,10 +235,10 @@ class CouponRedemptionDialog(QDialog):
             logger.error(f"Error validating coupon: {e}")
             self.coupon_info_label.setText("❌ Error validating coupon")
             self.coupon_info_label.setStyleSheet("""
-                color: #EF4444;
+                color: #D92D20;
                 font-size: 14px;
                 padding: 8px;
-                background-color: #FEE2E2;
+                background-color: #FFE9E8;
                 border-radius: 4px;
             """)
             self.coupon_info_label.setVisible(True)

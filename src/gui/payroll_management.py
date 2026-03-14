@@ -4,7 +4,7 @@ Payroll Management - Calculate and manage staff payroll
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDialog, QComboBox,
+    QTableWidget, QTableWidgetItem, QDialog, QComboBox, QFrame,
     QDateEdit, QMessageBox, QFormLayout, QDoubleSpinBox, QTextEdit
 )
 from PyQt6.QtCore import Qt, QDate
@@ -13,6 +13,15 @@ from loguru import logger
 from datetime import date, timedelta
 from src.database.connection import get_db_session
 from src.database.models import Payroll, Staff, Attendance
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    SUCCESS_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class PayrollManagementView(QWidget):
@@ -30,66 +39,36 @@ class PayrollManagementView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header actions
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Payroll Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
         header_layout.addStretch()
         
         # Calculate Payroll button
         calc_btn = QPushButton("Calculate Payroll")
-        calc_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        calc_btn.setStyleSheet(SUCCESS_BUTTON_STYLE)
         calc_btn.clicked.connect(self.handle_calculate_payroll)
         header_layout.addWidget(calc_btn)
         
         # Add Manual Entry button
         add_btn = QPushButton("Add Manual Entry")
-        add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         add_btn.clicked.connect(self.handle_add_manual)
         header_layout.addWidget(add_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Filters
-        filter_layout = QHBoxLayout()
+        filter_card = QFrame()
+        filter_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        filter_layout = QHBoxLayout(filter_card)
+        filter_layout.setContentsMargins(14, 10, 14, 10)
         filter_layout.setSpacing(12)
         
         filter_layout.addWidget(QLabel("Staff:"))
         self.staff_combo = QComboBox()
         self.staff_combo.addItem("All Staff")
+        self.staff_combo.setStyleSheet(FILTER_COMBO_STYLE)
         self.load_staff_combo()
         filter_layout.addWidget(self.staff_combo)
         
@@ -98,6 +77,7 @@ class PayrollManagementView(QWidget):
         self.period_combo.addItems([
             "This Month", "Last Month", "This Year", "Custom"
         ])
+        self.period_combo.setStyleSheet(FILTER_COMBO_STYLE)
         self.period_combo.currentTextChanged.connect(self.handle_period_change)
         filter_layout.addWidget(self.period_combo)
         
@@ -106,6 +86,7 @@ class PayrollManagementView(QWidget):
         today = QDate.currentDate()
         self.from_date.setDate(today.addDays(-today.day() + 1))  # First day of current month
         self.from_date.setCalendarPopup(True)
+        self.from_date.setStyleSheet(FILTER_COMBO_STYLE)
         self.from_date.setEnabled(False)
         filter_layout.addWidget(self.from_date)
         
@@ -113,25 +94,18 @@ class PayrollManagementView(QWidget):
         self.to_date = QDateEdit()
         self.to_date.setDate(QDate.currentDate())
         self.to_date.setCalendarPopup(True)
+        self.to_date.setStyleSheet(FILTER_COMBO_STYLE)
         self.to_date.setEnabled(False)
         filter_layout.addWidget(self.to_date)
         
         filter_btn = QPushButton("Filter")
-        filter_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-        """)
+        filter_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         filter_btn.clicked.connect(self.load_payroll_records)
         filter_layout.addWidget(filter_btn)
         
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-        layout.addSpacing(16)
+        layout.addWidget(filter_card)
+        layout.addSpacing(12)
         
         # Payroll table
         self.payroll_table = QTableWidget()
@@ -140,21 +114,8 @@ class PayrollManagementView(QWidget):
             "Staff", "Period Start", "Period End", "Hours", "Base Salary", 
             "Overtime", "Tips", "Bonuses", "Deductions", "Net Pay"
         ])
-        self.payroll_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-                font-weight: 600;
-            }
-        """)
-        self.payroll_table.horizontalHeader().setStretchLastSection(True)
+        self.payroll_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.payroll_table)
         self.payroll_table.setAlternatingRowColors(True)
         layout.addWidget(self.payroll_table)
     
@@ -231,7 +192,7 @@ class PayrollManagementView(QWidget):
                 self.payroll_table.setItem(row, 8, QTableWidgetItem(f"${payroll.deductions:.2f}"))
                 
                 net_pay_item = QTableWidgetItem(f"${payroll.net_pay:.2f}")
-                net_pay_item.setForeground(QColor("#10B981"))
+                net_pay_item.setForeground(QColor("#14B8A6"))
                 self.payroll_table.setItem(row, 9, net_pay_item)
             
             db.close()
@@ -306,7 +267,7 @@ class CalculatePayrollDialog(QDialog):
         layout.addLayout(form)
         
         info_label = QLabel("This will calculate payroll based on attendance records for the selected period.")
-        info_label.setStyleSheet("color: #6B7280; font-size: 12px;")
+        info_label.setStyleSheet("color: #5D6F8B; font-size: 12px;")
         layout.addWidget(info_label)
         
         # Buttons
@@ -320,7 +281,7 @@ class CalculatePayrollDialog(QDialog):
         calculate_btn = QPushButton("Calculate")
         calculate_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -550,7 +511,7 @@ class ManualPayrollDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

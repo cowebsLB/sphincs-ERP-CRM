@@ -86,7 +86,7 @@ class MobileAPISettingsDialog(QDialog):
         # Status
         self.status_label = QLabel("Status: Not running")
         self.status_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             padding: 12px;
             background-color: #F9FAFB;
@@ -101,7 +101,7 @@ class MobileAPISettingsDialog(QDialog):
         self.start_stop_btn = QPushButton("Start Server")
         self.start_stop_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -128,7 +128,7 @@ class MobileAPISettingsDialog(QDialog):
             self.start_stop_btn.setText("Start Server")
             self.start_stop_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #10B981;
+                    background-color: #14B8A6;
                     color: white;
                     border: none;
                     border-radius: 6px;
@@ -138,10 +138,10 @@ class MobileAPISettingsDialog(QDialog):
             """)
             self.status_label.setText("Status: Stopped")
             self.status_label.setStyleSheet("""
-                color: #EF4444;
+                color: #D92D20;
                 font-size: 14px;
                 padding: 12px;
-                background-color: #FEE2E2;
+                background-color: #FFE9E8;
                 border-radius: 8px;
             """)
         else:
@@ -159,7 +159,7 @@ class MobileAPISettingsDialog(QDialog):
             self.start_stop_btn.setText("Stop Server")
             self.start_stop_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #EF4444;
+                    background-color: #D92D20;
                     color: white;
                     border: none;
                     border-radius: 6px;
@@ -174,7 +174,7 @@ class MobileAPISettingsDialog(QDialog):
         port = self.port_spin.value()
         self.status_label.setText(f"Status: Running on http://{host}:{port}/api/mobile")
         self.status_label.setStyleSheet("""
-            color: #10B981;
+            color: #14B8A6;
             font-size: 14px;
             padding: 12px;
             background-color: #D1FAE5;
@@ -186,10 +186,10 @@ class MobileAPISettingsDialog(QDialog):
         """Handle server error signal"""
         self.status_label.setText(f"Status: Error - {error}")
         self.status_label.setStyleSheet("""
-            color: #EF4444;
+            color: #D92D20;
             font-size: 14px;
             padding: 12px;
-            background-color: #FEE2E2;
+            background-color: #FFE9E8;
             border-radius: 8px;
         """)
         QMessageBox.critical(self, "Server Error", f"Failed to start server: {error}")

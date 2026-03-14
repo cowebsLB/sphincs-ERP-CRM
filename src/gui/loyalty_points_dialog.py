@@ -36,7 +36,7 @@ class LoyaltyPointsDialog(QDialog):
         # Customer info
         self.customer_info_label = QLabel()
         self.customer_info_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 14px;
             padding: 12px;
             background-color: #F9FAFB;
@@ -47,7 +47,7 @@ class LoyaltyPointsDialog(QDialog):
         # Order total
         total_label = QLabel(f"Order Total: ${self.order_total:.2f}")
         total_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
             padding: 12px;
@@ -62,7 +62,7 @@ class LoyaltyPointsDialog(QDialog):
         # Available points
         self.available_points_label = QLabel("0 points")
         self.available_points_label.setStyleSheet("""
-            color: #2563EB;
+            color: #2F7DFF;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -79,7 +79,7 @@ class LoyaltyPointsDialog(QDialog):
         # Exchange rate info
         self.exchange_rate_label = QLabel()
         self.exchange_rate_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 12px;
         """)
         form_layout.addRow("", self.exchange_rate_label)
@@ -87,7 +87,7 @@ class LoyaltyPointsDialog(QDialog):
         # Discount preview
         self.discount_preview_label = QLabel("$0.00")
         self.discount_preview_label.setStyleSheet("""
-            color: #10B981;
+            color: #14B8A6;
             font-size: 18px;
             font-weight: 700;
         """)
@@ -96,7 +96,7 @@ class LoyaltyPointsDialog(QDialog):
         # Remaining points after redemption
         self.remaining_points_label = QLabel("0 points")
         self.remaining_points_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
         """)
         form_layout.addRow("Remaining Points:", self.remaining_points_label)
@@ -115,7 +115,7 @@ class LoyaltyPointsDialog(QDialog):
         self.redeem_btn.setEnabled(False)
         self.redeem_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -123,11 +123,11 @@ class LoyaltyPointsDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
             QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
+                background-color: #C8D4E8;
+                color: #8FA2BF;
             }
         """)
         self.redeem_btn.clicked.connect(self.redeem_points)

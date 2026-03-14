@@ -30,7 +30,7 @@ class HealthcareView(QWidget):
         header_layout = QHBoxLayout()
         title = QLabel("Healthcare Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -43,13 +43,13 @@ class HealthcareView(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
             QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
+                background-color: #EDF3FC;
+                color: #2A3A55;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
@@ -57,7 +57,7 @@ class HealthcareView(QWidget):
             }
             QTabBar::tab:selected {
                 background-color: white;
-                color: #2563EB;
+                color: #2F7DFF;
                 font-weight: 600;
             }
         """)
@@ -95,10 +95,10 @@ class HealthcareView(QWidget):
         cards_layout.setSpacing(16)
         
         cards = [
-            ("Total Patients", "0", "#2563EB"),
-            ("Active Appointments", "0", "#10B981"),
+            ("Total Patients", "0", "#2F7DFF"),
+            ("Active Appointments", "0", "#14B8A6"),
             ("Pending Prescriptions", "0", "#F59E0B"),
-            ("Today's Visits", "0", "#EF4444")
+            ("Today's Visits", "0", "#D92D20")
         ]
         
         for title, value, color in cards:
@@ -111,7 +111,7 @@ class HealthcareView(QWidget):
         # Patients table
         table_label = QLabel("Patient Records")
         table_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 18px;
             font-weight: 600;
         """)
@@ -125,7 +125,7 @@ class HealthcareView(QWidget):
         self.patients_table.horizontalHeader().setStretchLastSection(True)
         self.patients_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -149,7 +149,7 @@ class HealthcareView(QWidget):
         self.appointments_table.horizontalHeader().setStretchLastSection(True)
         self.appointments_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -173,7 +173,7 @@ class HealthcareView(QWidget):
         self.prescriptions_table.horizontalHeader().setStretchLastSection(True)
         self.prescriptions_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -197,7 +197,7 @@ class HealthcareView(QWidget):
         self.medical_inventory_table.horizontalHeader().setStretchLastSection(True)
         self.medical_inventory_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -221,7 +221,7 @@ class HealthcareView(QWidget):
         self.billing_table.horizontalHeader().setStretchLastSection(True)
         self.billing_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 background-color: white;
             }
@@ -237,7 +237,7 @@ class HealthcareView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 20px;
             }
@@ -247,7 +247,7 @@ class HealthcareView(QWidget):
         layout = QVBoxLayout(card)
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             font-weight: 500;
         """)

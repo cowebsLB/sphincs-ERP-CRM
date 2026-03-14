@@ -35,7 +35,7 @@ class CrossBranchReportingView(QWidget):
         
         title = QLabel("Cross-Branch Reporting")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -75,7 +75,7 @@ class CrossBranchReportingView(QWidget):
         refresh_btn = QPushButton("Refresh")
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -115,15 +115,15 @@ class CrossBranchReportingView(QWidget):
         ])
         self.report_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -139,7 +139,7 @@ class CrossBranchReportingView(QWidget):
         card.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
                 padding: 16px;
             }
@@ -149,7 +149,7 @@ class CrossBranchReportingView(QWidget):
         
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 12px;
             font-weight: 500;
         """)
@@ -157,7 +157,7 @@ class CrossBranchReportingView(QWidget):
         
         value_label = QLabel(value)
         value_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -262,9 +262,9 @@ class CrossBranchReportingView(QWidget):
                 
                 growth_item = QTableWidgetItem(f"{data['growth']:+.1f}%")
                 if data['growth'] > 0:
-                    growth_item.setForeground(QColor("#10B981"))
+                    growth_item.setForeground(QColor("#14B8A6"))
                 elif data['growth'] < 0:
-                    growth_item.setForeground(QColor("#EF4444"))
+                    growth_item.setForeground(QColor("#D92D20"))
                 self.report_table.setItem(row, 5, growth_item)
             
             db.close()

@@ -4,7 +4,7 @@ Sales Management Module - View and manage sales transactions
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDateEdit, QComboBox, QLineEdit,
+    QTableWidget, QTableWidgetItem, QDateEdit, QComboBox, QLineEdit, QFrame,
     QMessageBox, QDialog
 )
 from PyQt6.QtCore import Qt, QDate
@@ -12,6 +12,15 @@ from PyQt6.QtGui import QColor
 from loguru import logger
 from src.database.connection import get_db_session
 from src.database.models import Order, OrderItem, Staff
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SEARCH_INPUT_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
+from src.gui.table_utils import enable_table_auto_resize
 from datetime import datetime, timedelta
 
 
@@ -30,30 +39,23 @@ class SalesManagementView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header spacing alignment
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Sales Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
-        
         header_layout.addStretch()
-        
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Filters
-        filter_layout = QHBoxLayout()
+        filter_card = QFrame()
+        filter_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        filter_layout = QHBoxLayout(filter_card)
+        filter_layout.setContentsMargins(14, 10, 14, 10)
         filter_layout.setSpacing(12)
         
         # Date filter
         date_label = QLabel("Date:")
         date_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -63,20 +65,13 @@ class SalesManagementView(QWidget):
         self.date_filter.setDate(QDate.currentDate())
         self.date_filter.setCalendarPopup(True)
         self.date_filter.dateChanged.connect(self.load_transactions)
-        self.date_filter.setStyleSheet("""
-            QDateEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: white;
-            }
-        """)
+        self.date_filter.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.date_filter)
         
         # Status filter
         status_label = QLabel("Status:")
         status_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -85,20 +80,13 @@ class SalesManagementView(QWidget):
         self.status_filter = QComboBox()
         self.status_filter.addItems(["All", "Completed", "Refunded", "Cancelled"])
         self.status_filter.currentTextChanged.connect(self.load_transactions)
-        self.status_filter.setStyleSheet("""
-            QComboBox {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: white;
-            }
-        """)
+        self.status_filter.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.status_filter)
         
         # Search
         search_label = QLabel("Search:")
         search_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -107,23 +95,12 @@ class SalesManagementView(QWidget):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Order number, table, staff...")
         self.search_input.textChanged.connect(self.load_transactions)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #2563EB;
-            }
-        """)
+        self.search_input.setStyleSheet(SEARCH_INPUT_STYLE)
         filter_layout.addWidget(self.search_input)
         
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-        layout.addSpacing(16)
+        layout.addWidget(filter_card)
+        layout.addSpacing(12)
         
         # Transactions table
         self.transactions_table = QTableWidget()
@@ -132,24 +109,8 @@ class SalesManagementView(QWidget):
             "Receipt #", "Date/Time", "Staff", "Table", "Total", "Payment", "Status"
         ])
         
-        self.transactions_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
-        
-        self.transactions_table.horizontalHeader().setStretchLastSection(True)
+        self.transactions_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.transactions_table)
         self.transactions_table.setAlternatingRowColors(True)
         self.transactions_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.transactions_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -163,94 +124,26 @@ class SalesManagementView(QWidget):
         
         # Coupon button
         self.coupon_btn = QPushButton("Apply Coupon")
-        self.coupon_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #8B5CF6;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #7C3AED;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.coupon_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.coupon_btn.clicked.connect(self.handle_apply_coupon)
         self.coupon_btn.setEnabled(False)
         actions_layout.addWidget(self.coupon_btn)
         
         # Loyalty points button
         self.loyalty_btn = QPushButton("Redeem Points")
-        self.loyalty_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EC4899;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DB2777;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.loyalty_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.loyalty_btn.clicked.connect(self.handle_redeem_loyalty)
         self.loyalty_btn.setEnabled(False)
         actions_layout.addWidget(self.loyalty_btn)
         
         self.view_btn = QPushButton("View Details")
-        self.view_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.view_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.view_btn.clicked.connect(self.handle_view_details)
         self.view_btn.setEnabled(False)
         actions_layout.addWidget(self.view_btn)
         
         self.refund_btn = QPushButton("Refund")
-        self.refund_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #F59E0B;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #D97706;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.refund_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.refund_btn.clicked.connect(self.handle_refund)
         self.refund_btn.setEnabled(False)
         actions_layout.addWidget(self.refund_btn)
@@ -305,9 +198,11 @@ class SalesManagementView(QWidget):
                 # Status with color
                 status_item = QTableWidgetItem(order.order_status.capitalize())
                 if order.order_status == "completed":
-                    status_item.setForeground(QColor("#10B981"))  # Green
+                    status_item.setForeground(QColor("#14B8A6"))  # Green
                 elif order.order_status == "cancelled":
-                    status_item.setForeground(QColor("#EF4444"))  # Red
+                    status_item.setForeground(QColor("#D92D20"))  # Red
+                elif order.order_status == "refunded":
+                    status_item.setForeground(QColor("#F472B6"))  # Rose
                 elif order.order_status == "pending":
                     status_item.setForeground(QColor("#F59E0B"))  # Orange
                 self.transactions_table.setItem(row, 6, status_item)
@@ -369,7 +264,7 @@ class SalesManagementView(QWidget):
                 receipt_number = receipt_item.text()
                 logger.info(f"View details for receipt: {receipt_number}")
                 try:
-                    order_id = int(receipt_number)
+                    order_id = int(receipt_number.replace("ORD-", ""))
                     from src.gui.transaction_details_dialog import TransactionDetailsDialog
                     dialog = TransactionDetailsDialog(order_id, self)
                     dialog.exec()
@@ -386,7 +281,7 @@ class SalesManagementView(QWidget):
                 receipt_number = receipt_item.text()
                 logger.info(f"Refund transaction: {receipt_number}")
                 try:
-                    order_id = int(receipt_number)
+                    order_id = int(receipt_number.replace("ORD-", ""))
                     from src.gui.refund_dialog import RefundDialog
                     dialog = RefundDialog(order_id, self.user_id, self)
                     if dialog.exec() == QDialog.DialogCode.Accepted:

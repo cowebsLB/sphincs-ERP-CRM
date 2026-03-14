@@ -35,7 +35,7 @@ class InventoryExpiryView(QWidget):
         
         title = QLabel("Inventory Expiry Tracking")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -46,7 +46,7 @@ class InventoryExpiryView(QWidget):
         add_btn = QPushButton("Add Expiry Record")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -55,7 +55,7 @@ class InventoryExpiryView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_expiry)
@@ -92,15 +92,15 @@ class InventoryExpiryView(QWidget):
         ])
         self.expiry_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -158,7 +158,7 @@ class InventoryExpiryView(QWidget):
                 
                 days_item = QTableWidgetItem(days_str)
                 if days_until < 0:
-                    days_item.setForeground(QColor("#EF4444"))
+                    days_item.setForeground(QColor("#D92D20"))
                 elif days_until <= 7:
                     days_item.setForeground(QColor("#F59E0B"))
                 self.expiry_table.setItem(row, 4, days_item)
@@ -166,7 +166,7 @@ class InventoryExpiryView(QWidget):
                 # Status
                 status_item = QTableWidgetItem("Expired" if record.is_expired else "Active")
                 if record.is_expired:
-                    status_item.setForeground(QColor("#EF4444"))
+                    status_item.setForeground(QColor("#D92D20"))
                 self.expiry_table.setItem(row, 5, status_item)
                 
                 self.expiry_table.setItem(row, 6, QTableWidgetItem(str(record.alert_days_before)))
@@ -245,7 +245,7 @@ class AddExpiryDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

@@ -4,7 +4,7 @@ Attendance Management - Staff attendance tracking (clock in/out)
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QComboBox, QDateEdit,
+    QTableWidget, QTableWidgetItem, QComboBox, QDateEdit, QFrame,
     QMessageBox, QDialog, QTimeEdit, QTextEdit, QFormLayout
 )
 from PyQt6.QtCore import Qt, QDate, QTime
@@ -13,6 +13,16 @@ from loguru import logger
 from datetime import datetime, date, time
 from src.database.connection import get_db_session
 from src.database.models import Attendance, Staff
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    FILTER_COMBO_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    SUCCESS_BUTTON_STYLE,
+    TOOLBAR_CARD_STYLE,
+)
+from src.gui.table_utils import enable_table_auto_resize
 
 
 class AttendanceManagementView(QWidget):
@@ -30,66 +40,36 @@ class AttendanceManagementView(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(32, 32, 32, 32)
         
-        # Header
+        # Header actions
         header_layout = QHBoxLayout()
-        
-        title = QLabel("Attendance Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
-        header_layout.addWidget(title)
         header_layout.addStretch()
         
         # Clock In/Out button
         self.clock_btn = QPushButton("Clock In")
-        self.clock_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        self.clock_btn.setStyleSheet(SUCCESS_BUTTON_STYLE)
         self.clock_btn.clicked.connect(self.handle_clock_in_out)
         header_layout.addWidget(self.clock_btn)
         
         # Manual Entry button
         manual_btn = QPushButton("Manual Entry")
-        manual_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        manual_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         manual_btn.clicked.connect(self.handle_manual_entry)
         header_layout.addWidget(manual_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        layout.addSpacing(12)
         
         # Filters
-        filter_layout = QHBoxLayout()
+        filter_card = QFrame()
+        filter_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        filter_layout = QHBoxLayout(filter_card)
+        filter_layout.setContentsMargins(14, 10, 14, 10)
         filter_layout.setSpacing(12)
         
         filter_layout.addWidget(QLabel("Staff:"))
         self.staff_combo = QComboBox()
         self.staff_combo.addItem("All Staff")
+        self.staff_combo.setStyleSheet(FILTER_COMBO_STYLE)
         self.load_staff_combo()
         filter_layout.addWidget(self.staff_combo)
         
@@ -97,30 +77,24 @@ class AttendanceManagementView(QWidget):
         self.from_date = QDateEdit()
         self.from_date.setDate(QDate.currentDate().addDays(-7))
         self.from_date.setCalendarPopup(True)
+        self.from_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.from_date)
         
         filter_layout.addWidget(QLabel("To:"))
         self.to_date = QDateEdit()
         self.to_date.setDate(QDate.currentDate())
         self.to_date.setCalendarPopup(True)
+        self.to_date.setStyleSheet(FILTER_COMBO_STYLE)
         filter_layout.addWidget(self.to_date)
         
         filter_btn = QPushButton("Filter")
-        filter_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-        """)
+        filter_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         filter_btn.clicked.connect(self.load_attendance)
         filter_layout.addWidget(filter_btn)
         
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-        layout.addSpacing(16)
+        layout.addWidget(filter_card)
+        layout.addSpacing(12)
         
         # Attendance table
         self.attendance_table = QTableWidget()
@@ -128,21 +102,8 @@ class AttendanceManagementView(QWidget):
         self.attendance_table.setHorizontalHeaderLabels([
             "Date", "Staff", "Clock In", "Clock Out", "Hours", "Status", "Notes"
         ])
-        self.attendance_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-                font-weight: 600;
-            }
-        """)
-        self.attendance_table.horizontalHeader().setStretchLastSection(True)
+        self.attendance_table.setStyleSheet(DATA_TABLE_STYLE)
+        enable_table_auto_resize(self.attendance_table)
         self.attendance_table.setAlternatingRowColors(True)
         layout.addWidget(self.attendance_table)
         
@@ -200,9 +161,9 @@ class AttendanceManagementView(QWidget):
                 
                 status_item = QTableWidgetItem(record.status)
                 if record.status == "present":
-                    status_item.setForeground(QColor("#10B981"))
+                    status_item.setForeground(QColor("#14B8A6"))
                 elif record.status == "absent":
-                    status_item.setForeground(QColor("#EF4444"))
+                    status_item.setForeground(QColor("#D92D20"))
                 elif record.status == "late":
                     status_item.setForeground(QColor("#F59E0B"))
                 self.attendance_table.setItem(row, 5, status_item)
@@ -228,36 +189,10 @@ class AttendanceManagementView(QWidget):
             
             if attendance and attendance.clock_in and not attendance.clock_out:
                 self.clock_btn.setText("Clock Out")
-                self.clock_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #EF4444;
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        padding: 10px 20px;
-                        font-size: 14px;
-                        font-weight: 600;
-                    }
-                    QPushButton:hover {
-                        background-color: #DC2626;
-                    }
-                """)
+                self.clock_btn.setStyleSheet(DANGER_BUTTON_STYLE)
             else:
                 self.clock_btn.setText("Clock In")
-                self.clock_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #10B981;
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        padding: 10px 20px;
-                        font-size: 14px;
-                        font-weight: 600;
-                    }
-                    QPushButton:hover {
-                        background-color: #059669;
-                    }
-                """)
+                self.clock_btn.setStyleSheet(SUCCESS_BUTTON_STYLE)
             
             db.close()
         except Exception as e:
@@ -392,7 +327,7 @@ class ManualAttendanceDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

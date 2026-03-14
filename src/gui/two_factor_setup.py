@@ -37,7 +37,7 @@ class TwoFactorSetupDialog(QDialog):
         title.setStyleSheet("""
             font-size: 20px;
             font-weight: 700;
-            color: #111827;
+            color: #162640;
         """)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
@@ -50,9 +50,9 @@ class TwoFactorSetupDialog(QDialog):
         )
         instructions.setWordWrap(True)
         instructions.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             padding: 12px;
-            background-color: #F3F4F6;
+            background-color: #EDF3FC;
             border-radius: 6px;
         """)
         layout.addWidget(instructions)
@@ -62,7 +62,7 @@ class TwoFactorSetupDialog(QDialog):
         self.qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.qr_label.setMinimumSize(300, 300)
         self.qr_label.setStyleSheet("""
-            border: 2px solid #E5E7EB;
+            border: 2px solid #C8D4E8;
             border-radius: 8px;
             background-color: white;
         """)
@@ -78,7 +78,7 @@ class TwoFactorSetupDialog(QDialog):
         self.secret_display.setMaximumHeight(60)
         self.secret_display.setStyleSheet("""
             background-color: #F9FAFB;
-            border: 1px solid #E5E7EB;
+            border: 1px solid #C8D4E8;
             border-radius: 6px;
             font-family: monospace;
             font-size: 14px;
@@ -114,7 +114,7 @@ class TwoFactorSetupDialog(QDialog):
         verify_btn = QPushButton("Verify & Enable")
         verify_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

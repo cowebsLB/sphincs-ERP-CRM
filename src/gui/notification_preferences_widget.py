@@ -55,7 +55,7 @@ class NotificationPreferencesWidget(QWidget):
         
         header = QLabel("Notification & Alert Preferences")
         header.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 20px;
             font-weight: 700;
         """)
@@ -63,7 +63,7 @@ class NotificationPreferencesWidget(QWidget):
         
         description = QLabel("Choose which channels can alert you on desktop and mobile, set minimum severity, and snooze notifications when you need focus time.")
         description.setWordWrap(True)
-        description.setStyleSheet("color: #6B7280; font-size: 14px;")
+        description.setStyleSheet("color: #5D6F8B; font-size: 14px;")
         layout.addWidget(description)
         
         group = QGroupBox("Channels")
@@ -79,7 +79,7 @@ class NotificationPreferencesWidget(QWidget):
         group_layout.addWidget(QLabel("Actions"), 0, 6)
         
         for row, (channel, description_text) in enumerate(DEFAULT_CHANNELS, start=1):
-            channel_label = QLabel(f"<b>{channel}</b><br/><span style='color:#6B7280;'>{description_text}</span>")
+            channel_label = QLabel(f"<b>{channel}</b><br/><span style='color:#5D6F8B;'>{description_text}</span>")
             channel_label.setTextFormat(Qt.TextFormat.RichText)
             group_layout.addWidget(channel_label, row, 0)
             
@@ -134,7 +134,7 @@ class NotificationPreferencesWidget(QWidget):
         save_btn = QPushButton("Save Preferences")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -142,7 +142,7 @@ class NotificationPreferencesWidget(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         save_btn.clicked.connect(self.handle_save)

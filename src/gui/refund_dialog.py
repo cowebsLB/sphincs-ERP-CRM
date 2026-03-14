@@ -36,7 +36,7 @@ class RefundDialog(QDialog):
         # Order info
         info_label = QLabel("Order Information")
         info_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
         """)
@@ -44,7 +44,7 @@ class RefundDialog(QDialog):
         
         self.order_info_label = QLabel()
         self.order_info_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             padding: 12px;
             background-color: #F9FAFB;
@@ -91,7 +91,7 @@ class RefundDialog(QDialog):
         process_btn = QPushButton("Process Refund")
         process_btn.setStyleSheet("""
             QPushButton {
-                background-color: #EF4444;
+                background-color: #D92D20;
                 color: white;
                 border: none;
                 border-radius: 6px;

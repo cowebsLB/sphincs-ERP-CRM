@@ -43,7 +43,7 @@ class AddCouponDialog(QDialog):
         # Code validation label
         self.code_validation_label = QLabel()
         self.code_validation_label.setStyleSheet("""
-            color: #EF4444;
+            color: #D92D20;
             font-size: 12px;
         """)
         self.code_validation_label.setVisible(False)
@@ -129,7 +129,7 @@ class AddCouponDialog(QDialog):
         save_btn = QPushButton("Add Coupon")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -137,7 +137,7 @@ class AddCouponDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         save_btn.clicked.connect(self.handle_save)
@@ -165,7 +165,7 @@ class AddCouponDialog(QDialog):
             else:
                 self.code_validation_label.setText("✓ Code available")
                 self.code_validation_label.setStyleSheet("""
-                    color: #10B981;
+                    color: #14B8A6;
                     font-size: 12px;
                 """)
                 self.code_validation_label.setVisible(True)

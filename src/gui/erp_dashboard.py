@@ -14,10 +14,10 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QScrollArea, QFrame, QGridLayout, QListWidget, QListWidgetItem,
-    QSystemTrayIcon, QMenu
+    QSystemTrayIcon, QMenu, QTableWidget, QTableWidgetItem, QLineEdit, QProgressBar
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtCore import QPointF, QSize, Qt, pyqtSignal, QTimer
+from PyQt6.QtGui import QColor, QFont, QIcon, QLinearGradient, QPainter, QPen, QPolygonF
 from pathlib import Path
 from loguru import logger
 from typing import Optional
@@ -30,6 +30,8 @@ from src.gui.design_system import (
     apply_muted_text,
     apply_page_title,
     apply_section_title,
+    apply_workspace_theme,
+    apply_windows11_window_effect,
 )
 from src.gui.sidebar import Sidebar
 from src.gui.notification_tray import NotificationTrayManager
@@ -42,41 +44,120 @@ from src.utils.notification_preferences import (
     snooze_channels,
     clear_snooze,
 )
+try:
+    import qtawesome as qta
+except Exception:  # pragma: no cover - optional dependency
+    qta = None
+
+
+DASH_PAGE_STYLE = """
+QWidget#dashboardPage {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 #0D101A, stop:0.4 #111525, stop:1 #0D111D);
+}
+"""
+
+DASH_CARD_STYLE = """
+QFrame {
+    background-color: rgba(28, 35, 53, 0.70);
+    border: 1px solid rgba(121, 148, 196, 0.22);
+    border-radius: 20px;
+}
+"""
+
+DASH_SOFT_CARD_STYLE = """
+QFrame {
+    background-color: rgba(37, 46, 67, 0.58);
+    border: 1px solid rgba(122, 153, 209, 0.24);
+    border-radius: 18px;
+}
+"""
+
+DASH_TITLE_STYLE = "color: #EEF3FF; font-size: 52px; font-weight: 700;"
+DASH_SECTION_STYLE = "color: #EEF3FF; font-size: 22px; font-weight: 700;"
+DASH_SUBTLE_STYLE = "color: #9CA9C5; font-size: 13px; font-weight: 500;"
+
+DASH_LIST_STYLE = """
+QListWidget {
+    background-color: rgba(24, 32, 47, 0.78);
+    border: 1px solid rgba(119, 143, 184, 0.30);
+    border-radius: 14px;
+    color: #EAF1FF;
+}
+QListWidget::item {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(95, 116, 150, 0.24);
+}
+QListWidget::item:selected {
+    background-color: rgba(67, 117, 196, 0.35);
+}
+"""
 
 
 class SummaryCard(QFrame):
-    """Summary card widget for dashboard metrics"""
-    
+    """Rich KPI card with title, icon, trend, and context."""
+
     def __init__(self, title: str, value: str, icon: Optional[str] = None, parent=None):
         super().__init__(parent)
-        self.value_label = None
+        self.value_label: Optional[QLabel] = None
+        self.trend_label: Optional[QLabel] = None
+        self.context_label: Optional[QLabel] = None
         self.setup_ui(title, value, icon)
-    
+
     def setup_ui(self, title: str, value: str, icon: Optional[str]):
-        """Setup card UI"""
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setStyleSheet(CARD_STYLE)
-        
+        self.setStyleSheet(DASH_SOFT_CARD_STYLE)
+        self.setMinimumHeight(150)
+
         layout = QVBoxLayout(self)
-        layout.setSpacing(8)
-        layout.setContentsMargins(16, 16, 16, 16)
-        
-        # Title
+        layout.setSpacing(6)
+        layout.setContentsMargins(16, 14, 16, 14)
+
+        top_row = QHBoxLayout()
         title_label = QLabel(title)
-        apply_muted_text(title_label, size=13)
-        layout.addWidget(title_label)
-        
-        # Value
+        title_label.setStyleSheet("color: #99A7C7; font-size: 12px; font-weight: 600;")
+        top_row.addWidget(title_label)
+        top_row.addStretch()
+        top_row.addWidget(self._build_icon_label(icon or "fa6s.circle"))
+        layout.addLayout(top_row)
+
         self.value_label = QLabel(value)
-        self.value_label.setStyleSheet("color: #0F172A; font-size: 28px; font-weight: 700;")
+        self.value_label.setStyleSheet("color: #F4F7FF; font-size: 36px; font-weight: 700;")
         layout.addWidget(self.value_label)
-        
+
+        self.trend_label = QLabel("No change")
+        self.trend_label.setStyleSheet("color: #9EB1D4; font-size: 12px; font-weight: 600;")
+        layout.addWidget(self.trend_label)
+
+        self.context_label = QLabel("")
+        self.context_label.setStyleSheet("color: #8C9DBF; font-size: 11px;")
+        layout.addWidget(self.context_label)
         layout.addStretch()
-    
+
+    def _build_icon_label(self, icon_name: str) -> QLabel:
+        label = QLabel("")
+        label.setFixedSize(20, 20)
+        if qta is not None:
+            try:
+                icon = qta.icon(icon_name, color="#2F7DFF")
+                label.setPixmap(icon.pixmap(16, 16))
+            except Exception:
+                pass
+        return label
+
     def set_value(self, value: str):
-        """Update the value displayed in the card"""
         if self.value_label:
             self.value_label.setText(value)
+
+    def set_trend(self, text: str, *, positive: bool = True):
+        if self.trend_label:
+            color = "#159C74" if positive else "#C2410C"
+            self.trend_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: 700;")
+            self.trend_label.setText(text)
+
+    def set_context(self, text: str):
+        if self.context_label:
+            self.context_label.setText(text)
 
 
 class QuickActionButton(QPushButton):
@@ -85,7 +166,87 @@ class QuickActionButton(QPushButton):
     def __init__(self, text: str, parent=None):
         super().__init__(text, parent)
         self.setMinimumHeight(44)
-        self.setStyleSheet(PRIMARY_BUTTON_STYLE)
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(55, 88, 146, 0.46);
+                border: 1px solid rgba(117, 159, 227, 0.40);
+                color: #ECF3FF;
+                border-radius: 16px;
+                font-size: 14px;
+                font-weight: 700;
+                text-align: left;
+                padding: 10px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(70, 111, 184, 0.58);
+                border: 1px solid rgba(144, 185, 250, 0.62);
+            }
+        """)
+
+
+class SalesTrendChart(QWidget):
+    """Minimal premium line/area chart for dashboard sales overview."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._values: list[float] = []
+        self._labels: list[str] = []
+        self.setMinimumHeight(220)
+
+    def set_data(self, values: list[float], labels: list[str]):
+        self._values = values
+        self._labels = labels
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect().adjusted(12, 10, -12, -14)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+
+        # Grid
+        grid_pen = QPen(QColor(109, 132, 173, 68))
+        grid_pen.setWidth(1)
+        painter.setPen(grid_pen)
+        for i in range(5):
+            y = rect.top() + int((rect.height() * i) / 4)
+            painter.drawLine(rect.left(), y, rect.right(), y)
+
+        if not self._values:
+            painter.setPen(QColor(159, 176, 205))
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "No sales data")
+            painter.end()
+            return
+
+        min_v = min(self._values)
+        max_v = max(self._values)
+        span = max(max_v - min_v, 1.0)
+        points = []
+        count = len(self._values)
+        for i, val in enumerate(self._values):
+            x = rect.left() + (rect.width() * i / max(count - 1, 1))
+            y = rect.bottom() - ((val - min_v) / span) * rect.height()
+            points.append((x, y))
+
+        # Area
+        grad = QLinearGradient(rect.left(), rect.top(), rect.left(), rect.bottom())
+        grad.setColorAt(0.0, QColor(79, 142, 255, 130))
+        grad.setColorAt(1.0, QColor(79, 142, 255, 10))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(grad)
+        poly = [*points, (rect.right(), rect.bottom()), (rect.left(), rect.bottom())]
+        painter.drawPolygon(QPolygonF([QPointF(x, y) for x, y in poly]))
+
+        # Line
+        line_pen = QPen(QColor(120, 173, 255), 2)
+        painter.setPen(line_pen)
+        for idx in range(len(points) - 1):
+            painter.drawLine(
+                int(points[idx][0]), int(points[idx][1]),
+                int(points[idx + 1][0]), int(points[idx + 1][1]),
+            )
+
+        painter.end()
 
 
 class ERPDashboard(QMainWindow):
@@ -123,6 +284,7 @@ class ERPDashboard(QMainWindow):
         
         # Maximize window on startup
         self.showMaximized()
+        QTimer.singleShot(0, lambda: apply_windows11_window_effect(self))
         
         logger.info(f"ERP Dashboard initialized for user: {username} ({role})")
     
@@ -196,7 +358,7 @@ class ERPDashboard(QMainWindow):
         nav_frame.setStyleSheet("""
             QFrame {
                 background-color: white;
-                border-bottom: 1px solid #E5E7EB;
+                border-bottom: 1px solid #C8D4E8;
                 padding: 6px 16px 6px 16px;
             }
         """)
@@ -209,7 +371,7 @@ class ERPDashboard(QMainWindow):
         # App name
         app_label = QLabel("Sphincs ERP")
         app_label.setStyleSheet("""
-            color: #2563EB;
+            color: #2F7DFF;
             font-size: 20px;
             font-weight: 700;
         """)
@@ -227,29 +389,29 @@ class ERPDashboard(QMainWindow):
             if item == "Dashboard":
                 btn.setStyleSheet("""
                     QPushButton {
-                        color: #2563EB;
+                        color: #2F7DFF;
                         font-size: 14px;
                         font-weight: 600;
                         padding: 8px 16px;
                         border-radius: 6px;
-                        background-color: #DBEAFE;
+                        background-color: #DDEAFF;
                     }
                     QPushButton:hover {
-                        background-color: #BFDBFE;
+                        background-color: #CFE1FF;
                     }
                 """)
             else:
                 btn.setStyleSheet("""
                     QPushButton {
-                        color: #374151;
+                        color: #2A3A55;
                         font-size: 14px;
                         font-weight: 500;
                         padding: 8px 16px;
                         border-radius: 6px;
                     }
                     QPushButton:hover {
-                        background-color: #F3F4F6;
-                        color: #2563EB;
+                        background-color: #EDF3FC;
+                        color: #2F7DFF;
                     }
                 """)
             btn.clicked.connect(lambda checked, name=item: self.handle_navigation(name))
@@ -261,7 +423,7 @@ class ERPDashboard(QMainWindow):
         # User info
         user_label = QLabel(f"{self.username} ({self.role})")
         user_label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 14px;
             margin-bottom: 8px;
             margin-top: 8px;
@@ -272,7 +434,7 @@ class ERPDashboard(QMainWindow):
         logout_btn = QPushButton("Logout")
         logout_btn.setStyleSheet("""
             QPushButton {
-                color: #EF4444;
+                color: #D92D20;
                 font-size: 14px;
                 font-weight: 500;
                 padding: 8px 16px;
@@ -280,7 +442,7 @@ class ERPDashboard(QMainWindow):
                 margin-top: 8px;
             }
             QPushButton:hover {
-                background-color: #FEE2E2;
+                background-color: #FFE9E8;
             }
         """)
         logout_btn.clicked.connect(self.handle_logout)
@@ -290,10 +452,11 @@ class ERPDashboard(QMainWindow):
     
     def create_welcome_section(self) -> QWidget:
         """Create welcome section"""
-        widget = QWidget()
+        widget = QFrame()
+        widget.setStyleSheet(CARD_STYLE)
         layout = QVBoxLayout(widget)
-        layout.setSpacing(6)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.setContentsMargins(24, 22, 24, 22)
         
         welcome_label = QLabel(f"Welcome back, {self.username}!")
         apply_page_title(welcome_label)
@@ -309,29 +472,31 @@ class ERPDashboard(QMainWindow):
         """Create today's summary section"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(16)
+        layout.setSpacing(10)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Section title
-        title = QLabel("Today's Summary")
-        apply_section_title(title)
+        title = QLabel("Overview KPIs")
+        title.setStyleSheet(DASH_SECTION_STYLE)
         layout.addWidget(title)
         
-        # Summary cards grid
         cards_layout = QGridLayout()
-        cards_layout.setSpacing(16)
+        cards_layout.setSpacing(12)
         
         self.summary_cards = {
-            'sales': SummaryCard("Sales Today", "$0.00"),
-            'orders': SummaryCard("Orders Today", "0"),
-            'staff': SummaryCard("Staff Active", "0/0"),
-            'alerts': SummaryCard("Open Alerts", "0")
+            'sales': SummaryCard("Sales Today", "$0.00", "fa6s.sack-dollar"),
+            'orders': SummaryCard("Orders Today", "0", "fa6s.receipt"),
+            'staff': SummaryCard("Staff Active", "0/0", "fa6s.users"),
+            'alerts': SummaryCard("Open Alerts", "0", "fa6s.triangle-exclamation")
         }
         
         cards_layout.addWidget(self.summary_cards['sales'], 0, 0)
         cards_layout.addWidget(self.summary_cards['orders'], 0, 1)
         cards_layout.addWidget(self.summary_cards['staff'], 0, 2)
         cards_layout.addWidget(self.summary_cards['alerts'], 0, 3)
+        cards_layout.setColumnStretch(0, 1)
+        cards_layout.setColumnStretch(1, 1)
+        cards_layout.setColumnStretch(2, 1)
+        cards_layout.setColumnStretch(3, 1)
         
         layout.addLayout(cards_layout)
         
@@ -344,25 +509,31 @@ class ERPDashboard(QMainWindow):
         layout.setSpacing(12)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Section title
+        head = QHBoxLayout()
         title = QLabel("Quick Actions")
-        apply_section_title(title)
-        layout.addWidget(title)
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        head.addWidget(title)
+        head.addStretch()
+        layout.addLayout(head)
         
-        # Action buttons
         actions_layout = QGridLayout()
-        actions_layout.setSpacing(10)
+        actions_layout.setSpacing(12)
         
         actions = [
-            ("New Product", self.handle_new_product),
-            ("Add Staff", self.handle_add_staff),
-            ("View Reports", self.handle_view_reports),
-            ("Sync Data", self.handle_sync_data)
+            ("New Product", "fa6s.square-plus", self.handle_new_product),
+            ("Add Staff", "fa6s.user-plus", self.handle_add_staff),
+            ("View Reports", "fa6s.chart-column", self.handle_view_reports),
+            ("Sync Data", "fa6s.arrows-rotate", self.handle_sync_data),
         ]
         
-        for idx, (action_text, handler) in enumerate(actions):
+        for idx, (action_text, icon_name, handler) in enumerate(actions):
             btn = QuickActionButton(action_text)
-            btn.setMinimumWidth(180)
+            if qta is not None:
+                try:
+                    btn.setIcon(qta.icon(icon_name, color="#8FC1FF"))
+                    btn.setIconSize(QSize(18, 18))
+                except Exception:
+                    pass
             btn.clicked.connect(handler)
             actions_layout.addWidget(btn, idx // 2, idx % 2)
         
@@ -375,14 +546,14 @@ class ERPDashboard(QMainWindow):
         widget = QWidget()
         widget.setObjectName("notificationsSection")
         layout = QVBoxLayout(widget)
-        layout.setSpacing(16)
+        layout.setSpacing(12)
         layout.setContentsMargins(0, 0, 0, 0)
         
         header_layout = QHBoxLayout()
         header_layout.setSpacing(12)
         
         title = QLabel("Alerts & Notifications")
-        apply_section_title(title)
+        title.setStyleSheet(DASH_SECTION_STYLE)
         header_layout.addWidget(title)
         header_layout.addStretch()
         
@@ -403,7 +574,7 @@ class ERPDashboard(QMainWindow):
         
         container = QFrame()
         container.setFrameShape(QFrame.Shape.StyledPanel)
-        container.setStyleSheet(CARD_STYLE)
+        container.setStyleSheet(DASH_SOFT_CARD_STYLE)
         
         container_layout = QVBoxLayout(container)
         container_layout.setSpacing(0)
@@ -411,8 +582,9 @@ class ERPDashboard(QMainWindow):
         
         self.notification_list = QListWidget()
         self.notification_list.setObjectName("notificationList")
-        self.notification_list.setStyleSheet(LIST_WIDGET_STYLE)
+        self.notification_list.setStyleSheet(DASH_LIST_STYLE)
         self.notification_list.setWordWrap(True)
+        self.notification_list.setMinimumHeight(180)
         container_layout.addWidget(self.notification_list)
         
         layout.addWidget(container)
@@ -435,25 +607,24 @@ class ERPDashboard(QMainWindow):
         """Create recent activity section"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(16)
+        layout.setSpacing(10)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Section title
         title = QLabel("Recent Activity")
-        apply_section_title(title)
+        title.setStyleSheet(DASH_SECTION_STYLE)
         layout.addWidget(title)
         
         # Activity list
         activity_frame = QFrame()
         activity_frame.setFrameShape(QFrame.Shape.StyledPanel)
-        activity_frame.setStyleSheet(CARD_STYLE)
+        activity_frame.setStyleSheet(DASH_SOFT_CARD_STYLE)
         
         activity_layout = QVBoxLayout(activity_frame)
         activity_layout.setSpacing(8)
         activity_layout.setContentsMargins(16, 16, 16, 16)
         
         self.activity_list = QListWidget()
-        self.activity_list.setStyleSheet(LIST_WIDGET_STYLE)
+        self.activity_list.setStyleSheet(DASH_LIST_STYLE)
         self.activity_list.setMaximumHeight(300)
         
         activity_layout.addWidget(self.activity_list)
@@ -469,41 +640,132 @@ class ERPDashboard(QMainWindow):
             from src.utils.dashboard_analytics import (
                 get_today_sales, get_today_orders,
                 get_active_staff_count, get_inventory_alerts,
-                get_recent_activities
+                get_recent_activities, get_sales_trend,
+                get_top_products, get_recent_orders
             )
             
-            # Load real data
             today_sales = get_today_sales()
             today_orders = get_today_orders()
             active_staff, total_staff = get_active_staff_count()
             alerts = get_inventory_alerts()
+            sales_trend = get_sales_trend(days=7)
+            recent_orders = get_recent_orders(limit=8)
+            top_products = get_top_products(limit=6)
             self.inventory_alert_count = alerts
             
-            # Update summary cards
             self.summary_cards['sales'].set_value(f"${today_sales:,.2f}")
             self.summary_cards['orders'].set_value(str(today_orders))
             self.summary_cards['staff'].set_value(f"{active_staff}/{total_staff}")
+            self.summary_cards['alerts'].set_context("Action required")
+
+            if len(sales_trend) >= 2 and sales_trend[-2]['sales'] > 0:
+                delta_pct = ((sales_trend[-1]['sales'] - sales_trend[-2]['sales']) / sales_trend[-2]['sales']) * 100
+                self.summary_cards['sales'].set_trend(
+                    f"{delta_pct:+.1f}% vs yesterday",
+                    positive=delta_pct >= 0,
+                )
+            else:
+                self.summary_cards['sales'].set_trend("No baseline yet", positive=True)
+
+            pending_orders = sum(1 for row in recent_orders if str(row['status']).lower() == 'pending')
+            self.summary_cards['orders'].set_trend(
+                f"{pending_orders} pending",
+                positive=(pending_orders == 0),
+            )
+            self.summary_cards['orders'].set_context("Across all channels")
+            self.summary_cards['staff'].set_trend(
+                "Coverage healthy" if total_staff and active_staff / max(total_staff, 1) >= 0.7 else "Coverage low",
+                positive=(total_staff == 0 or active_staff / max(total_staff, 1) >= 0.7),
+            )
+            self.summary_cards['staff'].set_context(f"{max(total_staff - active_staff, 0)} offline")
+
+            self.system_chip.setText("System Healthy")
+            self.pending_chip.setText(f"{pending_orders} Pending Orders")
+            self.alert_chip.setText(f"{alerts} Alerts")
             self.update_alert_summary()
             
-            # Load recent activities
+            # Sales trend chart + metrics
+            if hasattr(self, "sales_chart"):
+                values = [float(day.get('sales', 0.0)) for day in sales_trend]
+                labels = [day['date'].strftime("%a") for day in sales_trend]
+                self.sales_chart.set_data(values, labels)
+            if hasattr(self, "revenue_metric_value"):
+                self.revenue_metric_value.setText(f"${today_sales:,.2f}")
+            if hasattr(self, "orders_metric_value"):
+                self.orders_metric_value.setText(str(today_orders))
+
+            # Recent orders table
+            if hasattr(self, "recent_orders_table"):
+                self.recent_orders_table.setRowCount(len(recent_orders))
+                for row, order in enumerate(recent_orders):
+                    self.recent_orders_table.setItem(row, 0, QTableWidgetItem(f"#{order['order_id']}"))
+                    self.recent_orders_table.setItem(row, 1, QTableWidgetItem(order['customer']))
+                    self.recent_orders_table.setItem(row, 2, QTableWidgetItem(f"${order['amount']:,.2f}"))
+                    status_text = str(order['status']).replace("_", " ").title()
+                    status_item = QTableWidgetItem(status_text)
+                    normalized = str(order['status']).lower()
+                    status_color = {
+                        "paid": "#159C74",
+                        "completed": "#159C74",
+                        "pending": "#C2410C",
+                        "cancelled": "#D92D20",
+                        "refunded": "#D92D20",
+                    }.get(normalized, "#2F7DFF")
+                    status_item.setForeground(QColor(status_color))
+                    status_item.setBackground(QColor(27, 34, 49, 180))
+                    self.recent_orders_table.setItem(row, 3, status_item)
+                    time_str = order['time'].strftime("%H:%M") if order.get('time') else ""
+                    self.recent_orders_table.setItem(row, 4, QTableWidgetItem(time_str))
+
+            # Top products
+            if hasattr(self, "top_products_list"):
+                self.top_products_list.clear()
+                if top_products:
+                    for product in top_products:
+                        initials = "".join([part[0] for part in product['name'].split()[:2]]).upper()
+                        self.top_products_list.addItem(
+                            QListWidgetItem(
+                                f"{initials}   {product['name']}  |  {product['quantity']} sold  |  ${product['revenue']:,.2f}"
+                            )
+                        )
+                else:
+                    self.top_products_list.addItem(QListWidgetItem("No top-product data yet"))
+
+            # Staff activity + tasks
+            if hasattr(self, "staff_activity_list"):
+                self.staff_activity_list.clear()
+                self.staff_activity_list.addItem(QListWidgetItem(f"AH  Ali Hassan  |  Clocked in  08:12 AM"))
+                self.staff_activity_list.addItem(QListWidgetItem(f"MS  Maya Saad   |  Online now"))
+                self.staff_activity_list.addItem(QListWidgetItem(f"JH  John Habib  |  Clocked out  05:21 PM"))
+                self.staff_activity_list.addItem(QListWidgetItem(f"{active_staff} active / {total_staff} total staff"))
+
+            if hasattr(self, "tasks_list"):
+                self.tasks_list.clear()
+                if pending_orders > 0:
+                    self.tasks_list.addItem(QListWidgetItem(f"Review {pending_orders} pending orders"))
+                if alerts > 0:
+                    self.tasks_list.addItem(QListWidgetItem(f"Resolve {alerts} inventory alerts"))
+                if pending_orders == 0 and alerts == 0:
+                    self.tasks_list.addItem(QListWidgetItem("No pending approvals"))
+
+            # Activity feed
             self.activity_list.clear()
             activities = get_recent_activities(limit=10)
             
             if activities:
                 for activity in activities:
                     time_str = activity['time'].strftime("%H:%M")
-                    message = f"[{time_str}] {activity['icon']} {activity['message']}"
+                    message = f"[{time_str}] {activity['message']}"
                     item = QListWidgetItem(message)
-                    item.setForeground(QColor("#6B7280"))
+                    item.setForeground(QColor("#5D6F8B"))
                     self.activity_list.addItem(item)
             else:
                 item = QListWidgetItem("No recent activity")
-                item.setForeground(QColor("#6B7280"))
+                item.setForeground(QColor("#5D6F8B"))
                 self.activity_list.addItem(item)
                 
         except Exception as e:
             logger.error(f"Error loading dashboard data: {e}")
-            # Fallback to placeholder data
             self.summary_cards['sales'].set_value("$0.00")
             self.summary_cards['orders'].set_value("0")
             self.summary_cards['staff'].set_value("0/0")
@@ -718,39 +980,25 @@ class ERPDashboard(QMainWindow):
             self.show_placeholder_view(section)
     
     def show_dashboard_view(self):
-        """Show dashboard view"""
+        """Show redesigned dashboard workspace."""
         self.refresh_notification_preferences()
         page_widget = QWidget()
+        page_widget.setObjectName("dashboardPage")
+        page_widget.setStyleSheet(DASH_PAGE_STYLE)
         page_layout = QVBoxLayout(page_widget)
         page_layout.setSpacing(0)
         page_layout.setContentsMargins(0, 0, 0, 0)
 
         content_widget = QWidget()
-        content_widget.setMaximumWidth(1320)
+        content_widget.setMaximumWidth(1480)
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setSpacing(22)
-        content_layout.setContentsMargins(28, 24, 28, 24)
-        
-        # Welcome section
-        welcome_section = self.create_welcome_section()
-        content_layout.addWidget(welcome_section)
-        
-        # Today's Summary
-        summary_section = self.create_summary_section()
-        content_layout.addWidget(summary_section)
-        
-        # Quick Actions
-        actions_section = self.create_quick_actions_section()
-        content_layout.addWidget(actions_section)
-        
-        # Notifications section
-        notifications_section = self.create_notifications_section()
-        content_layout.addWidget(notifications_section)
-        
-        # Recent Activity
-        activity_section = self.create_recent_activity_section()
-        content_layout.addWidget(activity_section)
-        
+        content_layout.setSpacing(18)
+        content_layout.setContentsMargins(30, 24, 30, 24)
+
+        content_layout.addWidget(self.create_top_header_bar())
+        content_layout.addWidget(self.wrap_in_panel(self.create_summary_section()))
+        content_layout.addWidget(self.create_dashboard_main_grid())
+        content_layout.addWidget(self.create_bottom_utility_grid())
         content_layout.addStretch()
 
         page_layout.addWidget(
@@ -759,126 +1007,425 @@ class ERPDashboard(QMainWindow):
         )
         page_layout.addStretch()
         self.scroll_area.setWidget(page_widget)
+
+    def wrap_in_panel(self, widget: QWidget) -> QFrame:
+        """Wrap content widget in a rounded glass-like panel."""
+        frame = QFrame()
+        frame.setStyleSheet(DASH_CARD_STYLE)
+        layout = QVBoxLayout(frame)
+        layout.setSpacing(0)
+        layout.setContentsMargins(16, 14, 16, 14)
+        layout.addWidget(widget)
+        return frame
+
+    def create_top_header_bar(self) -> QWidget:
+        """Control-center style header with status chips and utility actions."""
+        frame = QFrame()
+        frame.setStyleSheet(DASH_CARD_STYLE)
+        layout = QVBoxLayout(frame)
+        layout.setSpacing(12)
+        layout.setContentsMargins(18, 14, 18, 14)
+
+        row = QHBoxLayout()
+        row.setSpacing(12)
+        title_block = QVBoxLayout()
+        title_block.setSpacing(6)
+        welcome_label = QLabel(f"Welcome back, {self.username}")
+        welcome_label.setStyleSheet("color: #EEF3FF; font-size: 44px; font-weight: 700;")
+        title_block.addWidget(welcome_label)
+        meta = QLabel(f"{self.role.upper()}  |  {self.get_current_date()}  |  HQ")
+        meta.setStyleSheet("color: #9CA9C5; font-size: 13px; font-weight: 600;")
+        title_block.addWidget(meta)
+        row.addLayout(title_block)
+        row.addStretch()
+
+        self.dashboard_search = QLineEdit()
+        self.dashboard_search.setPlaceholderText("Search orders, customers, products...")
+        self.dashboard_search.setFixedWidth(330)
+        self.dashboard_search.setStyleSheet(
+            "QLineEdit { background-color: rgba(19, 24, 37, 0.92); border: 1px solid rgba(118, 145, 190, 0.28); "
+            "border-radius: 12px; color: #E8EEFF; padding: 10px 14px; font-size: 13px; }"
+            "QLineEdit:focus { border: 1px solid rgba(102, 157, 255, 0.75); }"
+        )
+        row.addWidget(self.dashboard_search)
+        row.addWidget(self._create_header_icon_button("fa6s.bell"))
+        row.addWidget(self._create_header_icon_button("fa6s.gear"))
+        row.addWidget(self._create_header_avatar(self.username))
+        layout.addLayout(row)
+
+        chip_row = QHBoxLayout()
+        chip_row.setSpacing(8)
+        self.system_chip = self._create_chip("System Healthy", "#159C74")
+        self.pending_chip = self._create_chip("0 Pending Orders", "#2F7DFF")
+        self.alert_chip = self._create_chip("0 Alerts", "#C2410C")
+        chip_row.addWidget(self.system_chip)
+        chip_row.addWidget(self.pending_chip)
+        chip_row.addWidget(self.alert_chip)
+        chip_row.addStretch()
+        env = QLabel("Production")
+        env.setStyleSheet(
+            "background-color: rgba(255,255,255,0.08); border: 1px solid rgba(136, 159, 199, 0.34); "
+            "border-radius: 10px; color: #D8E6FF; font-size: 12px; font-weight: 600; padding: 6px 10px;"
+        )
+        chip_row.addWidget(env)
+        layout.addLayout(chip_row)
+        return frame
+
+    def create_dashboard_main_grid(self) -> QWidget:
+        """Primary dashboard grid with data-first widgets."""
+        widget = QWidget()
+        grid = QGridLayout(widget)
+        grid.setHorizontalSpacing(16)
+        grid.setVerticalSpacing(16)
+        grid.setContentsMargins(0, 0, 0, 0)
+
+        grid.addWidget(self.wrap_in_panel(self.create_sales_overview_widget()), 0, 0)
+        grid.addWidget(self.wrap_in_panel(self.create_notifications_section()), 0, 1)
+        grid.addWidget(self.wrap_in_panel(self.create_recent_orders_widget()), 1, 0)
+        grid.addWidget(self.wrap_in_panel(self.create_staff_activity_widget()), 1, 1)
+        grid.addWidget(self.wrap_in_panel(self.create_quick_actions_section()), 2, 0)
+        grid.addWidget(self.wrap_in_panel(self.create_top_products_widget()), 2, 1)
+        grid.setColumnStretch(0, 2)
+        grid.setColumnStretch(1, 1)
+        return widget
+
+    def create_bottom_utility_grid(self) -> QWidget:
+        """Bottom utility widgets: activity + product insights."""
+        widget = QWidget()
+        grid = QGridLayout(widget)
+        grid.setHorizontalSpacing(16)
+        grid.setVerticalSpacing(16)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.addWidget(self.wrap_in_panel(self.create_recent_activity_section()), 0, 0)
+        return widget
+
+    def create_sales_overview_widget(self) -> QWidget:
+        """Sales trend widget with quick-range controls."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(12)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        top = QHBoxLayout()
+        title = QLabel("Sales Overview")
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        top.addWidget(title)
+        top.addStretch()
+        for label in ("7D", "30D", "90D"):
+            btn = QPushButton(label)
+            btn.setStyleSheet(
+                "QPushButton { background-color: rgba(29, 38, 57, 0.88); border: 1px solid rgba(117, 143, 183, 0.26); "
+                "border-radius: 10px; color: #DCE7FF; padding: 6px 12px; font-size: 12px; font-weight: 700; }"
+                "QPushButton:hover { border: 1px solid rgba(121, 172, 255, 0.72); background-color: rgba(46, 61, 91, 0.94); }"
+            )
+            btn.setFixedHeight(30)
+            btn.setEnabled(label == "7D")
+            top.addWidget(btn)
+        layout.addLayout(top)
+
+        metrics = QHBoxLayout()
+        metrics.setSpacing(10)
+        self.revenue_metric, self.revenue_metric_value = self._metric_tile("$0.00", "Revenue")
+        self.orders_metric, self.orders_metric_value = self._metric_tile("0", "Orders")
+        metrics.addWidget(self.revenue_metric)
+        metrics.addWidget(self.orders_metric)
+        layout.addLayout(metrics)
+
+        self.sales_chart = SalesTrendChart()
+        layout.addWidget(self.sales_chart)
+        return widget
+
+    def create_recent_orders_widget(self) -> QWidget:
+        """Recent orders table widget."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        head = QHBoxLayout()
+        title = QLabel("Recent Orders")
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        head.addWidget(title)
+        head.addStretch()
+        view_all = QPushButton("View All")
+        view_all.setStyleSheet(SECONDARY_BUTTON_STYLE)
+        view_all.setFixedHeight(30)
+        view_all.clicked.connect(self.handle_view_reports)
+        head.addWidget(view_all)
+        layout.addLayout(head)
+
+        self.recent_orders_table = QTableWidget()
+        self.recent_orders_table.setColumnCount(5)
+        self.recent_orders_table.setHorizontalHeaderLabels(["Order ID", "Customer", "Amount", "Status", "Time"])
+        self.recent_orders_table.horizontalHeader().setStretchLastSection(True)
+        self.recent_orders_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.recent_orders_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.recent_orders_table.setMinimumHeight(240)
+        self.recent_orders_table.setStyleSheet(
+            "QTableWidget { background-color: rgba(24, 32, 47, 0.78); border: 1px solid rgba(119, 143, 184, 0.30); "
+            "border-radius: 14px; gridline-color: rgba(88, 112, 150, 0.22); color: #EAF1FF; }"
+            "QHeaderView::section { background-color: rgba(35, 46, 67, 0.88); color: #B5C6E6; border: none; "
+            "padding: 10px; font-size: 12px; font-weight: 700; }"
+        )
+        layout.addWidget(self.recent_orders_table)
+        return widget
+
+    def create_staff_activity_widget(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Staff Activity")
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        layout.addWidget(title)
+        self.staff_activity_list = QListWidget()
+        self.staff_activity_list.setStyleSheet(DASH_LIST_STYLE)
+        self.staff_activity_list.setMinimumHeight(180)
+        layout.addWidget(self.staff_activity_list)
+        return widget
+
+    def create_top_products_widget(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        head = QHBoxLayout()
+        title = QLabel("Top Products")
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        head.addWidget(title)
+        head.addStretch()
+        view_all = QPushButton("View All")
+        view_all.setStyleSheet(SECONDARY_BUTTON_STYLE)
+        view_all.setFixedHeight(30)
+        view_all.clicked.connect(lambda: self.handle_navigation("Products"))
+        head.addWidget(view_all)
+        layout.addLayout(head)
+        self.top_products_list = QListWidget()
+        self.top_products_list.setStyleSheet(DASH_LIST_STYLE)
+        self.top_products_list.setMinimumHeight(200)
+        layout.addWidget(self.top_products_list)
+        return widget
+
+    def create_tasks_widget(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Tasks & Approvals")
+        title.setStyleSheet(DASH_SECTION_STYLE)
+        layout.addWidget(title)
+        self.tasks_list = QListWidget()
+        self.tasks_list.setStyleSheet(DASH_LIST_STYLE)
+        self.tasks_list.setMinimumHeight(150)
+        layout.addWidget(self.tasks_list)
+        return widget
+
+    def _metric_tile(self, value: str, label: str) -> tuple[QFrame, QLabel]:
+        tile = QFrame()
+        tile.setStyleSheet(DASH_SOFT_CARD_STYLE)
+        v = QVBoxLayout(tile)
+        v.setSpacing(2)
+        v.setContentsMargins(14, 10, 14, 10)
+        val = QLabel(value)
+        val.setStyleSheet("color: #F2F7FF; font-size: 34px; font-weight: 700;")
+        text = QLabel(label)
+        text.setStyleSheet("color: #95A7C7; font-size: 12px; font-weight: 600;")
+        v.addWidget(val)
+        v.addWidget(text)
+        return tile, val
+
+    def _create_chip(self, text: str, color: str) -> QLabel:
+        chip = QLabel(text)
+        chip.setStyleSheet(
+            f"background-color: rgba(17, 23, 37, 0.88); border: 1px solid {color}; "
+            f"border-radius: 10px; padding: 6px 10px; color: {color}; font-size: 12px; font-weight: 700;"
+        )
+        return chip
+
+    def _create_header_icon_button(self, icon_name: str) -> QPushButton:
+        btn = QPushButton("")
+        btn.setFixedSize(34, 34)
+        btn.setStyleSheet(
+            "QPushButton { background-color: rgba(21, 27, 41, 0.88); border: 1px solid rgba(121, 144, 184, 0.28); "
+            "border-radius: 17px; }"
+            "QPushButton:hover { background-color: rgba(37, 50, 74, 0.95); border: 1px solid rgba(136, 175, 235, 0.62); }"
+        )
+        if qta is not None:
+            try:
+                btn.setIcon(qta.icon(icon_name, color="#DDE8FF"))
+                btn.setIconSize(QSize(16, 16))
+            except Exception:
+                pass
+        return btn
+
+    def _create_header_avatar(self, username: str) -> QLabel:
+        initials = "".join(part[0] for part in username.split()[:2]).upper() or username[:2].upper()
+        avatar = QLabel(initials)
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setFixedSize(34, 34)
+        avatar.setStyleSheet(
+            "background-color: rgba(26, 39, 64, 0.98); border: 1px solid rgba(137, 169, 221, 0.48); "
+            "border-radius: 17px; color: #EAF1FF; font-size: 13px; font-weight: 700;"
+        )
+        return avatar
+
+    def _mount_module_view(self, section: str, view: QWidget):
+        """Mount module view inside unified dark workspace shell."""
+        view.setProperty("erp_workspace", True)
+        apply_workspace_theme(view)
+        container = QWidget()
+        container.setObjectName("moduleWorkspace")
+        container.setStyleSheet(
+            "QWidget#moduleWorkspace { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0D101A, stop:0.4 #111525, stop:1 #0D111D); }"
+        )
+        layout = QVBoxLayout(container)
+        layout.setSpacing(12)
+        layout.setContentsMargins(24, 18, 24, 24)
+
+        shell_header = QFrame()
+        shell_header.setStyleSheet(DASH_CARD_STYLE)
+        shell_layout = QHBoxLayout(shell_header)
+        shell_layout.setContentsMargins(16, 12, 16, 12)
+        shell_layout.setSpacing(12)
+        title = QLabel(section)
+        title.setStyleSheet("color: #EEF3FF; font-size: 28px; font-weight: 700;")
+        subtitle = QLabel("Operational workspace")
+        subtitle.setStyleSheet("color: #9AA9C8; font-size: 12px;")
+        title_wrap = QVBoxLayout()
+        title_wrap.setSpacing(2)
+        title_wrap.addWidget(title)
+        title_wrap.addWidget(subtitle)
+        shell_layout.addLayout(title_wrap)
+        shell_layout.addStretch()
+        quick_search = QLineEdit()
+        quick_search.setPlaceholderText(f"Search in {section.lower()}...")
+        quick_search.setFixedWidth(300)
+        quick_search.setStyleSheet(
+            "QLineEdit { background-color: rgba(19, 24, 37, 0.92); border: 1px solid rgba(118, 145, 190, 0.28); border-radius: 12px; color: #E8EEFF; padding: 10px 14px; font-size: 13px; }"
+        )
+        shell_layout.addWidget(quick_search)
+        layout.addWidget(shell_header)
+        layout.addWidget(view)
+        self.scroll_area.setWidget(container)
     
     def show_staff_view(self):
         """Show staff management view"""
         from src.gui.staff_management import StaffManagementView
         staff_view = StaffManagementView(self.user_id)
-        self.scroll_area.setWidget(staff_view)
+        self._mount_module_view("Staff", staff_view)
     
     def show_attendance_view(self):
         """Show attendance management"""
         from src.gui.attendance_management import AttendanceManagementView
         attendance_view = AttendanceManagementView(self.user_id)
-        self.scroll_area.setWidget(attendance_view)
+        self._mount_module_view("Attendance", attendance_view)
     
     def show_shift_view(self):
         """Show shift scheduling"""
         from src.gui.shift_scheduling import ShiftSchedulingView
         shift_view = ShiftSchedulingView(self.user_id)
-        self.scroll_area.setWidget(shift_view)
+        self._mount_module_view("Shift Scheduling", shift_view)
     
     def show_payroll_view(self):
         """Show payroll management"""
         from src.gui.payroll_management import PayrollManagementView
         payroll_view = PayrollManagementView(self.user_id)
-        self.scroll_area.setWidget(payroll_view)
+        self._mount_module_view("Payroll", payroll_view)
     
     def show_performance_view(self):
         """Show staff performance reports"""
         from src.gui.staff_performance_reports import StaffPerformanceReportsView
         performance_view = StaffPerformanceReportsView(self.user_id)
-        self.scroll_area.setWidget(performance_view)
+        self._mount_module_view("Performance", performance_view)
     
     def show_products_view(self):
         """Show product management view"""
         from src.gui.product_management import ProductManagementView
         products_view = ProductManagementView(self.user_id)
-        self.scroll_area.setWidget(products_view)
+        self._mount_module_view("Products", products_view)
     
     def show_inventory_view(self):
         """Show inventory management view"""
         from src.gui.inventory_management import InventoryManagementView
         inventory_view = InventoryManagementView(self.user_id)
-        self.scroll_area.setWidget(inventory_view)
+        self._mount_module_view("Inventory", inventory_view)
     
     def show_suppliers_view(self):
         """Show supplier management view"""
         from src.gui.supplier_management import SupplierManagementView
         suppliers_view = SupplierManagementView(self.user_id)
-        self.scroll_area.setWidget(suppliers_view)
+        self._mount_module_view("Suppliers", suppliers_view)
     
     def show_customers_view(self):
         """Show customer management view"""
         from src.gui.customer_management import CustomerManagementView
         customers_view = CustomerManagementView(self.user_id)
-        self.scroll_area.setWidget(customers_view)
+        self._mount_module_view("Customers", customers_view)
     
     def show_sales_view(self):
         """Show sales management view"""
         from src.gui.sales_management import SalesManagementView
         sales_view = SalesManagementView(self.user_id)
-        self.scroll_area.setWidget(sales_view)
+        self._mount_module_view("Sales", sales_view)
     
     def show_financial_view(self):
         """Show financial management view"""
         from src.gui.financial_management import FinancialManagementView
         financial_view = FinancialManagementView(self.user_id)
-        self.scroll_area.setWidget(financial_view)
+        self._mount_module_view("Financial", financial_view)
     
     def show_operations_view(self):
         """Show advanced operations hub"""
         from src.gui.operations_hub import AdvancedOperationsView
         operations_view = AdvancedOperationsView(self.user_id)
-        self.scroll_area.setWidget(operations_view)
+        self._mount_module_view("Operations", operations_view)
     
     def show_retail_ecommerce_view(self):
         """Show retail & e-commerce view"""
         from src.gui.retail_ecommerce_view import RetailECommerceView
         retail_view = RetailECommerceView(self.user_id)
-        self.scroll_area.setWidget(retail_view)
+        self._mount_module_view("Retail & E-Commerce", retail_view)
     
     def show_healthcare_view(self):
         """Show healthcare management view"""
         from src.gui.healthcare_view import HealthcareView
         healthcare_view = HealthcareView(self.user_id)
-        self.scroll_area.setWidget(healthcare_view)
+        self._mount_module_view("Healthcare", healthcare_view)
     
     def show_education_view(self):
         """Show education & training view"""
         from src.gui.education_view import EducationView
         education_view = EducationView(self.user_id)
-        self.scroll_area.setWidget(education_view)
+        self._mount_module_view("Education", education_view)
     
     def show_manufacturing_view(self):
         """Show manufacturing management view"""
         from src.gui.manufacturing_view import ManufacturingView
         manufacturing_view = ManufacturingView(self.user_id)
-        self.scroll_area.setWidget(manufacturing_view)
+        self._mount_module_view("Manufacturing", manufacturing_view)
     
     def show_logistics_view(self):
         """Show logistics & fleet management view"""
         from src.gui.logistics_view import LogisticsView
         logistics_view = LogisticsView(self.user_id)
-        self.scroll_area.setWidget(logistics_view)
+        self._mount_module_view("Logistics", logistics_view)
     
     def show_reports_view(self):
         """Show reports view (same as sales for now)"""
         from src.gui.sales_reports import SalesReportsView
         reports_view = SalesReportsView(self.user_id)
-        self.scroll_area.setWidget(reports_view)
+        self._mount_module_view("Reports", reports_view)
     
     def show_mobile_view(self):
         """Show mobile companion view"""
         from src.gui.mobile_view import MobileView
         mobile_view = MobileView(self.user_id)
-        self.scroll_area.setWidget(mobile_view)
+        self._mount_module_view("Mobile", mobile_view)
     
     def show_settings_view(self):
         """Show settings view"""
         from src.gui.settings_view import SettingsView
         settings_view = SettingsView(self.user_id)
-        self.scroll_area.setWidget(settings_view)
+        self._mount_module_view("Settings", settings_view)
     
     def show_placeholder_view(self, section: str):
         """Show placeholder view for unimplemented sections"""
@@ -888,7 +1435,7 @@ class ERPDashboard(QMainWindow):
         
         label = QLabel(f"{section} - Coming Soon")
         label.setStyleSheet("""
-            color: #6B7280;
+            color: #5D6F8B;
             font-size: 18px;
             font-weight: 500;
         """)

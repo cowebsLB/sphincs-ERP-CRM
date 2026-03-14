@@ -4,7 +4,7 @@ Inventory Management Module - Ingredients List View
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QTabWidget
+    QTableWidget, QTableWidgetItem, QDialog, QLineEdit, QTabWidget, QFrame
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
@@ -15,6 +15,16 @@ from src.gui.inventory_expiry_tracking import InventoryExpiryView
 from src.gui.waste_analysis import WasteAnalysisView
 from src.gui.barcode_management import BarcodeManagementView
 from src.gui.predictive_analytics_view import PredictiveAnalyticsView
+from src.gui.design_system import (
+    DATA_TABLE_STYLE,
+    DANGER_BUTTON_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SEARCH_INPUT_STYLE,
+    SUCCESS_BUTTON_STYLE,
+    TAB_WIDGET_STYLE,
+    TOOLBAR_CARD_STYLE,
+    apply_module_title,
+)
 from src.utils.procurement_automation import check_and_generate_pos, get_low_stock_items
 
 
@@ -30,65 +40,28 @@ class InventoryManagementView(QWidget):
     def setup_ui(self):
         """Setup inventory list UI with tabs"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(0)
+        layout.setSpacing(16)
         layout.setContentsMargins(32, 32, 32, 32)
         
         # Header
         header_layout = QHBoxLayout()
         
         title = QLabel("Inventory Management")
-        title.setStyleSheet("""
-            color: #111827;
-            font-size: 24px;
-            font-weight: 700;
-        """)
+        apply_module_title(title)
         header_layout.addWidget(title)
         header_layout.addStretch()
         
         # Auto-generate POs button
         auto_po_btn = QPushButton("Auto-Generate POs")
-        auto_po_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        auto_po_btn.setStyleSheet(SUCCESS_BUTTON_STYLE)
         auto_po_btn.clicked.connect(self.handle_auto_generate_pos)
         header_layout.addWidget(auto_po_btn)
         
         layout.addLayout(header_layout)
-        layout.addSpacing(24)
         
         # Tabs
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QTabBar::tab {
-                background-color: #F3F4F6;
-                color: #374151;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                color: #2563EB;
-                font-weight: 600;
-            }
-        """)
+        self.tabs.setStyleSheet(TAB_WIDGET_STYLE)
         
         # Ingredients tab
         ingredients_widget = self.create_ingredients_widget()
@@ -116,34 +89,22 @@ class InventoryManagementView(QWidget):
         """Create ingredients list widget"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(0)
+        layout.setSpacing(12)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # Header with Add button
+        toolbar_card = QFrame()
+        toolbar_card.setStyleSheet(TOOLBAR_CARD_STYLE)
+        toolbar_card_layout = QVBoxLayout(toolbar_card)
+        toolbar_card_layout.setContentsMargins(18, 14, 18, 14)
+        toolbar_card_layout.setSpacing(10)
+
         header_layout = QHBoxLayout()
         header_layout.addStretch()
-        
-        # Add Ingredient button
         add_btn = QPushButton("Add Ingredient")
-        add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        add_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         add_btn.clicked.connect(self.handle_add_ingredient)
         header_layout.addWidget(add_btn)
-        
-        layout.addLayout(header_layout)
-        layout.addSpacing(24)
+        toolbar_card_layout.addLayout(header_layout)
         
         # Search bar
         search_layout = QHBoxLayout()
@@ -151,7 +112,7 @@ class InventoryManagementView(QWidget):
         
         search_label = QLabel("Search:")
         search_label.setStyleSheet("""
-            color: #374151;
+            color: #2A3A55;
             font-size: 14px;
             font-weight: 500;
         """)
@@ -159,23 +120,12 @@ class InventoryManagementView(QWidget):
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, unit...")
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #D1D5DB;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #2563EB;
-            }
-        """)
+        self.search_input.setStyleSheet(SEARCH_INPUT_STYLE)
         self.search_input.textChanged.connect(self.filter_ingredients_list)
         search_layout.addWidget(self.search_input)
         
-        layout.addLayout(search_layout)
-        layout.addSpacing(16)
+        toolbar_card_layout.addLayout(search_layout)
+        layout.addWidget(toolbar_card)
         
         # Ingredients table
         self.ingredients_table = QTableWidget()
@@ -185,22 +135,7 @@ class InventoryManagementView(QWidget):
         ])
         
         # Style table
-        self.ingredients_table.setStyleSheet("""
-            QTableWidget {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                gridline-color: #F3F4F6;
-            }
-            QHeaderView::section {
-                background-color: #F9FAFB;
-                color: #374151;
-                font-weight: 600;
-                padding: 12px;
-                border: none;
-                border-bottom: 2px solid #E5E7EB;
-            }
-        """)
+        self.ingredients_table.setStyleSheet(DATA_TABLE_STYLE)
         
         # Configure table
         self.ingredients_table.horizontalHeader().setStretchLastSection(True)
@@ -216,47 +151,13 @@ class InventoryManagementView(QWidget):
         actions_layout.addStretch()
         
         self.edit_btn = QPushButton("Edit Selected")
-        self.edit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.edit_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.edit_btn.clicked.connect(self.handle_edit_selected)
         self.edit_btn.setEnabled(False)
         actions_layout.addWidget(self.edit_btn)
         
         self.delete_btn = QPushButton("Delete Selected")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #EF4444;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #DC2626;
-            }
-            QPushButton:disabled {
-                background-color: #E5E7EB;
-                color: #9CA3AF;
-            }
-        """)
+        self.delete_btn.setStyleSheet(DANGER_BUTTON_STYLE)
         self.delete_btn.clicked.connect(self.handle_delete_selected)
         self.delete_btn.setEnabled(False)
         actions_layout.addWidget(self.delete_btn)

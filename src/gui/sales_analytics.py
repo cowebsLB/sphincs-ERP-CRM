@@ -36,7 +36,7 @@ class SalesAnalyticsView(QWidget):
         
         title = QLabel("Sales Analytics")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -76,7 +76,7 @@ class SalesAnalyticsView(QWidget):
         refresh_btn = QPushButton("Refresh")
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -97,7 +97,7 @@ class SalesAnalyticsView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -114,7 +114,7 @@ class SalesAnalyticsView(QWidget):
             label.setMinimumSize(80, 40)
             label.setStyleSheet("""
                 QLabel {
-                    border: 1px solid #E5E7EB;
+                    border: 1px solid #C8D4E8;
                     border-radius: 4px;
                     background-color: #F9FAFB;
                     padding: 4px;
@@ -132,7 +132,7 @@ class SalesAnalyticsView(QWidget):
             QGroupBox {
                 font-size: 16px;
                 font-weight: 600;
-                border: 2px solid #E5E7EB;
+                border: 2px solid #C8D4E8;
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -149,7 +149,7 @@ class SalesAnalyticsView(QWidget):
             label.setMinimumSize(100, 60)
             label.setStyleSheet("""
                 QLabel {
-                    border: 1px solid #E5E7EB;
+                    border: 1px solid #C8D4E8;
                     border-radius: 4px;
                     background-color: #F9FAFB;
                     padding: 8px;
@@ -173,15 +173,15 @@ class SalesAnalyticsView(QWidget):
         ])
         self.top_products_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -260,7 +260,7 @@ class SalesAnalyticsView(QWidget):
                 label.setText(f"{hour:02d}:00\n${sales:.0f}")
                 label.setStyleSheet(f"""
                     QLabel {{
-                        border: 1px solid #E5E7EB;
+                        border: 1px solid #C8D4E8;
                         border-radius: 4px;
                         background-color: {color};
                         padding: 4px;
@@ -287,7 +287,7 @@ class SalesAnalyticsView(QWidget):
                 label.setText(f"{day}\n${sales:.0f}")
                 label.setStyleSheet(f"""
                     QLabel {{
-                        border: 1px solid #E5E7EB;
+                        border: 1px solid #C8D4E8;
                         border-radius: 4px;
                         background-color: {color};
                         padding: 8px;

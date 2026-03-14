@@ -283,3 +283,62 @@ Retire POS from active runtime and normalize repository structure to ERP-only op
 ### Next step
 
 Optionally perform a second cleanup pass to rename remaining legacy strings like `Sphincs ERP+POS` in config-path comments for branding consistency (while preserving path compatibility if desired).
+
+## 2026-03-14 (ERP Big-Bang UI/UX Redesign + Stability Hardening)
+
+### Scope
+
+Full-stack ERP UI/UX redesign pass with modern dashboard architecture, module-level workspace overhaul, sidebar/icon consistency, and notification-preferences resilience fixes.
+
+### Summary
+
+- Rebuilt `ERPDashboard` into a modern widget-based home screen (compact header, KPI cards, multi-column content grid, actionable side widgets, improved hierarchy).
+- Introduced dashboard analytics extension (`get_recent_orders`) for richer data widgets.
+- Added app-wide workspace theming hooks in `design_system.py` and startup wiring in `erp_main.py` for consistent styling across dynamically mounted module views.
+- Reworked sidebar iconography to icon-library-backed navigation (with fallback paths), replacing letter/placeholder nav visuals.
+- Modernized table behavior globally via `table_utils.py` baseline updates.
+- Redesigned login screen to align with premium dark SaaS direction.
+- Refactored high-traffic modules to shared styles:
+  - Staff, Attendance, Shift Scheduling, Payroll, Staff Performance
+  - Customers, Suppliers
+  - Sales Management, Sales Reports
+  - Financial Management
+- Fixed repeated notification preferences foreign-key failures by validating staff context and falling back to safe in-memory defaults when invalid.
+- Corrected order-id parsing in sales detail/refund actions for `ORD-<id>` formatted rows.
+- Added dependency for icon rendering support (`qtawesome`).
+
+### Files touched (high impact)
+
+- `src/erp_main.py`
+- `src/gui/design_system.py`
+- `src/gui/erp_dashboard.py`
+- `src/gui/sidebar.py`
+- `src/gui/table_utils.py`
+- `src/gui/login_window.py`
+- `src/gui/staff_management.py`
+- `src/gui/attendance_management.py`
+- `src/gui/shift_scheduling.py`
+- `src/gui/payroll_management.py`
+- `src/gui/staff_performance_reports.py`
+- `src/gui/customer_management.py`
+- `src/gui/supplier_management.py`
+- `src/gui/sales_management.py`
+- `src/gui/sales_reports.py`
+- `src/gui/financial_management.py`
+- `src/utils/notification_preferences.py`
+- `src/utils/dashboard_analytics.py`
+- `requirements.txt`
+- `docs/erp/implementation-summary-2026-03-14.md`
+- `docs/INDEX.md`
+- `README.md`
+- `docs/erp/worklog.md`
+
+### Validation
+
+- Repeated compile checks across redesigned files (`python -m compileall ...`) with no syntax errors.
+- Runtime smoke tests via ERP launch (`python src/erp_main.py`) and route navigation checks.
+- Notification preferences regression checks for invalid/valid staff contexts.
+
+### Next step
+
+Complete the remaining long-tail dialog/module cleanup pass and run a full visual QA sweep for small-window responsiveness and interaction consistency.

@@ -36,7 +36,7 @@ class TaxManagementView(QWidget):
         
         title = QLabel("Tax Management")
         title.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 24px;
             font-weight: 700;
         """)
@@ -47,7 +47,7 @@ class TaxManagementView(QWidget):
         add_btn = QPushButton("Add Tax")
         add_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -56,7 +56,7 @@ class TaxManagementView(QWidget):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         add_btn.clicked.connect(self.handle_add_tax)
@@ -73,15 +73,15 @@ class TaxManagementView(QWidget):
         ])
         self.taxes_table.setStyleSheet("""
             QTableWidget {
-                border: 1px solid #E5E7EB;
+                border: 1px solid #C8D4E8;
                 border-radius: 8px;
-                gridline-color: #F3F4F6;
+                gridline-color: #EDF3FC;
             }
             QHeaderView::section {
                 background-color: #F9FAFB;
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid #E5E7EB;
+                border-bottom: 2px solid #C8D4E8;
                 font-weight: 600;
             }
         """)
@@ -97,7 +97,7 @@ class TaxManagementView(QWidget):
         edit_btn = QPushButton("Edit Selected")
         edit_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -110,7 +110,7 @@ class TaxManagementView(QWidget):
         delete_btn = QPushButton("Delete Selected")
         delete_btn.setStyleSheet("""
             QPushButton {
-                background-color: #EF4444;
+                background-color: #D92D20;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -140,7 +140,7 @@ class TaxManagementView(QWidget):
                 
                 status_item = QTableWidgetItem("Active" if tax.is_active else "Inactive")
                 if not tax.is_active:
-                    status_item.setForeground(QColor("#9CA3AF"))
+                    status_item.setForeground(QColor("#8FA2BF"))
                 self.taxes_table.setItem(row, 6, status_item)
             
             db.close()
@@ -320,7 +320,7 @@ class TaxDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;

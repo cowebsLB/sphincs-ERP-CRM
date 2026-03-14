@@ -67,7 +67,7 @@ class MarketingCampaignDialog(QDialog):
         send_btn = QPushButton(f"Send {self.campaign_type.upper()}")
         send_btn.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #14B8A6;
                 color: white;
                 border: none;
                 border-radius: 6px;

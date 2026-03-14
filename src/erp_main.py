@@ -32,6 +32,7 @@ from src.database.connection import get_db_manager
 from src import __version__
 from src.gui.table_utils import install_table_auto_resize
 from src.gui.design_system import ERP_APP_BASE_STYLE
+from src.gui.design_system import install_workspace_theme
 
 
 def main():
@@ -50,6 +51,7 @@ def main():
     app.setOrganizationName("Sphincs")
     app.setStyleSheet(ERP_APP_BASE_STYLE)
     install_table_auto_resize(app)
+    install_workspace_theme(app)
     
     # Set application icon
     icon_path = project_root / "sphincs_icon.ico"
@@ -145,7 +147,8 @@ def main():
             logger.info(f"User logged in: {user.username} (Role: {user.role})")
             login_window.close()
             # Pass user data to main window
-            show_erp_main_window(user.username, user.role, user.user_id)
+            resolved_user_id = getattr(user, "staff_id", None) or getattr(user, "user_id", None)
+            show_erp_main_window(user.username, user.role, int(resolved_user_id or 0))
         
         login_window.login_successful.connect(on_login_success)
         

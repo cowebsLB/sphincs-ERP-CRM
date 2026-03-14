@@ -32,7 +32,7 @@ class DiscountDialog(QDialog):
         # Order total display
         total_label = QLabel(f"Order Total: ${self.order_total:.2f}")
         total_label.setStyleSheet("""
-            color: #111827;
+            color: #162640;
             font-size: 16px;
             font-weight: 600;
             padding: 12px;
@@ -72,7 +72,7 @@ class DiscountDialog(QDialog):
         # Discount amount preview
         self.preview_label = QLabel("Discount Amount: $0.00")
         self.preview_label.setStyleSheet("""
-            color: #2563EB;
+            color: #2F7DFF;
             font-size: 14px;
             font-weight: 600;
         """)
@@ -92,7 +92,7 @@ class DiscountDialog(QDialog):
         apply_btn = QPushButton("Apply Discount")
         apply_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2563EB;
+                background-color: #2F7DFF;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -100,7 +100,7 @@ class DiscountDialog(QDialog):
                 font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #1D66EA;
             }
         """)
         apply_btn.clicked.connect(self.apply_discount)
