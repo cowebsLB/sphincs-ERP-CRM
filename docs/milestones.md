@@ -12,11 +12,12 @@ Deliver Phase 1 as a usable internal alpha with:
 
 ## Progress Snapshot (2026-03-16)
 
-- Milestone 1.1: In progress
+- Milestone 1.1: Completed (local Postgres validation)
   - Prisma client wiring completed
-  - Initial migration baseline committed
-  - Seed script committed
-  - Remaining in this milestone: run migration/seed against target Supabase project and verify live connectivity end-to-end
+  - Initial migration baseline committed and applied locally
+  - Seed script committed and validated locally
+  - Runtime endpoint checks completed (`/health`, `/api/v1/system/info`)
+  - Next: repeat deploy/seed flow on Supabase target environment
 
 ## Milestone 1: Backend Persistence Foundation
 

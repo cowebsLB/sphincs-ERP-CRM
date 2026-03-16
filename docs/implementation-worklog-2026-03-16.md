@@ -211,3 +211,43 @@ Completed in follow-up work:
   - Added `pnpm.onlyBuiltDependencies` allowlist and ran `pnpm rebuild` followed by `prisma generate`.
 - Why:
   - Makes Prisma client generation reliable in local and CI-like environments without manual one-off workarounds.
+
+### Local Postgres validation (2026-03-16)
+
+Validation executed against local PostgreSQL 18:
+
+1. Created DB: `sphincs_erp_crm`
+2. Applied migration baseline and seed:
+   - `prisma:generate`
+   - `prisma:deploy`
+   - `prisma:seed`
+3. Verified table set exists, including `_prisma_migrations`
+4. Verified seed counts:
+   - organizations: 1
+   - branches: 1
+   - users: 1
+   - roles: 4
+   - user_roles: 1
+5. Verified API runtime endpoints return `200`:
+   - `/health`
+   - `/api/v1/system/info`
+
+### Additional runtime issues and fixes
+
+- Issue:
+  - `pnpm --filter @sphincs/core-api start` failed because script pointed to `dist/main.js`.
+- Root cause:
+  - Nest build emits entrypoint under `dist/src/main.js`.
+- Fix:
+  - Updated start script to `node dist/src/main.js`.
+- Why:
+  - Aligns runtime command with actual Nest build output.
+
+- Issue:
+  - `EADDRINUSE` encountered on port `3000` during repeated local starts.
+- Root cause:
+  - Existing process already bound to port 3000 from a previous run.
+- Fix:
+  - Reused running instance for endpoint validation and then cleared listener.
+- Why:
+  - Confirms runtime health without invalidating the validation run.
