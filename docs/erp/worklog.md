@@ -13,6 +13,44 @@ Use this file as the running implementation log for ERP-focused work.
 - Validation:
 - Next step:
 
+## 2026-03-16 (Performance Hardening - Startup and Dashboard)
+
+### Scope
+
+Fix measured performance regressions in startup and dashboard load paths.
+
+### Summary
+
+- Added automatic idempotent SQLite index creation for the main dashboard query paths.
+- Removed fixed startup timer delays so initialization and login transition are readiness-driven.
+- Moved dashboard analytics loading off the UI thread using a `QThread` + worker model.
+- Added safe worker cleanup during dashboard shutdown.
+
+### Files touched
+
+- `src/database/connection.py`
+- `src/erp_main.py`
+- `src/gui/erp_dashboard.py`
+- `docs/erp/implementation-summary-2026-03-16.md`
+- `docs/erp/worklog.md`
+- `docs/INDEX.md`
+- `README.md`
+
+### Validation
+
+- `python -m compileall src/database/connection.py src/erp_main.py src/gui/erp_dashboard.py`
+- Confirmed created indexes in active DB:
+  - `idx_orders_status_datetime`
+  - `idx_orders_customer_id`
+  - `idx_order_items_order_id`
+  - `idx_order_items_product_id`
+  - `idx_inventory_status_qty_reorder`
+  - `idx_inventory_expiry_date_state`
+
+### Next step
+
+Add a repeatable perf smoke script and track startup/dashboard timing deltas in docs.
+
 ## 2026-03-09
 
 ### Scope

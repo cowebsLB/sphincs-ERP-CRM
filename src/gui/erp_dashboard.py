@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QScrollArea, QFrame, QGridLayout, QListWidget, QListWidgetItem,
     QSystemTrayIcon, QMenu, QTableWidget, QTableWidgetItem, QLineEdit, QProgressBar
 )
-from PyQt6.QtCore import QPointF, QSize, Qt, pyqtSignal, QTimer
+from PyQt6.QtCore import QObject, QPointF, QSize, Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QColor, QFont, QIcon, QLinearGradient, QPainter, QPen, QPolygonF
 from pathlib import Path
 from loguru import logger
@@ -249,6 +249,47 @@ class SalesTrendChart(QWidget):
         painter.end()
 
 
+class DashboardDataWorker(QObject):
+    """Background worker to load dashboard analytics data."""
+
+    finished = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def run(self):
+        try:
+            from src.utils.dashboard_analytics import (
+                get_today_sales, get_today_orders,
+                get_active_staff_count, get_inventory_alerts,
+                get_recent_activities, get_sales_trend,
+                get_top_products, get_recent_orders
+            )
+
+            today_sales = get_today_sales()
+            today_orders = get_today_orders()
+            active_staff, total_staff = get_active_staff_count()
+            alerts = get_inventory_alerts()
+            sales_trend = get_sales_trend(days=7)
+            recent_orders = get_recent_orders(limit=8)
+            top_products = get_top_products(limit=6)
+            activities = get_recent_activities(limit=10)
+
+            self.finished.emit(
+                {
+                    "today_sales": today_sales,
+                    "today_orders": today_orders,
+                    "active_staff": active_staff,
+                    "total_staff": total_staff,
+                    "alerts": alerts,
+                    "sales_trend": sales_trend,
+                    "recent_orders": recent_orders,
+                    "top_products": top_products,
+                    "activities": activities,
+                }
+            )
+        except Exception as exc:
+            self.failed.emit(str(exc))
+
+
 class ERPDashboard(QMainWindow):
     """Main ERP Dashboard window"""
     
@@ -269,6 +310,8 @@ class ERPDashboard(QMainWindow):
         self.notification_worker: Optional[NotificationWorker] = None
         self.notification_center = NotificationCenter.instance()
         self.notification_preferences = {}
+        self._dashboard_data_thread: Optional[QThread] = None
+        self._dashboard_data_worker: Optional[DashboardDataWorker] = None
         
         self.setWindowTitle(f"Sphincs ERP - Dashboard")
         self.setMinimumSize(1200, 800)
@@ -636,144 +679,163 @@ class ERPDashboard(QMainWindow):
         return widget
     
     def load_dashboard_data(self):
-        """Load dashboard data from database"""
+        """Load dashboard data in a background thread."""
         logger.info("Loading dashboard data...")
-        
-        try:
-            from src.utils.dashboard_analytics import (
-                get_today_sales, get_today_orders,
-                get_active_staff_count, get_inventory_alerts,
-                get_recent_activities, get_sales_trend,
-                get_top_products, get_recent_orders
+        if self._dashboard_data_thread and self._dashboard_data_thread.isRunning():
+            return
+
+        self.summary_cards["sales"].set_context("Loading...")
+        self.summary_cards["orders"].set_context("Loading...")
+        self.summary_cards["staff"].set_context("Loading...")
+
+        self._dashboard_data_thread = QThread(self)
+        self._dashboard_data_worker = DashboardDataWorker()
+        self._dashboard_data_worker.moveToThread(self._dashboard_data_thread)
+        self._dashboard_data_thread.started.connect(self._dashboard_data_worker.run)
+        self._dashboard_data_worker.finished.connect(self._on_dashboard_data_loaded)
+        self._dashboard_data_worker.failed.connect(self._on_dashboard_data_error)
+        self._dashboard_data_worker.finished.connect(self._dashboard_data_thread.quit)
+        self._dashboard_data_worker.failed.connect(self._dashboard_data_thread.quit)
+        self._dashboard_data_thread.finished.connect(self._cleanup_dashboard_data_worker)
+        self._dashboard_data_thread.start()
+
+    def _cleanup_dashboard_data_worker(self):
+        """Release worker resources after background load finishes."""
+        if self._dashboard_data_worker is not None:
+            self._dashboard_data_worker.deleteLater()
+            self._dashboard_data_worker = None
+        if self._dashboard_data_thread is not None:
+            self._dashboard_data_thread.deleteLater()
+            self._dashboard_data_thread = None
+
+    def _on_dashboard_data_loaded(self, payload: dict):
+        """Apply loaded dashboard data to UI widgets."""
+        today_sales = payload.get("today_sales", 0.0)
+        today_orders = payload.get("today_orders", 0)
+        active_staff = payload.get("active_staff", 0)
+        total_staff = payload.get("total_staff", 0)
+        alerts = payload.get("alerts", 0)
+        sales_trend = payload.get("sales_trend", [])
+        recent_orders = payload.get("recent_orders", [])
+        top_products = payload.get("top_products", [])
+        activities = payload.get("activities", [])
+
+        self.inventory_alert_count = alerts
+        self.summary_cards["sales"].set_value(f"${today_sales:,.2f}")
+        self.summary_cards["orders"].set_value(str(today_orders))
+        self.summary_cards["staff"].set_value(f"{active_staff}/{total_staff}")
+        self.summary_cards["alerts"].set_context("Action required")
+
+        if len(sales_trend) >= 2 and sales_trend[-2]["sales"] > 0:
+            delta_pct = ((sales_trend[-1]["sales"] - sales_trend[-2]["sales"]) / sales_trend[-2]["sales"]) * 100
+            self.summary_cards["sales"].set_trend(
+                f"{delta_pct:+.1f}% vs yesterday",
+                positive=delta_pct >= 0,
             )
-            
-            today_sales = get_today_sales()
-            today_orders = get_today_orders()
-            active_staff, total_staff = get_active_staff_count()
-            alerts = get_inventory_alerts()
-            sales_trend = get_sales_trend(days=7)
-            recent_orders = get_recent_orders(limit=8)
-            top_products = get_top_products(limit=6)
-            self.inventory_alert_count = alerts
-            
-            self.summary_cards['sales'].set_value(f"${today_sales:,.2f}")
-            self.summary_cards['orders'].set_value(str(today_orders))
-            self.summary_cards['staff'].set_value(f"{active_staff}/{total_staff}")
-            self.summary_cards['alerts'].set_context("Action required")
+        else:
+            self.summary_cards["sales"].set_trend("No baseline yet", positive=True)
 
-            if len(sales_trend) >= 2 and sales_trend[-2]['sales'] > 0:
-                delta_pct = ((sales_trend[-1]['sales'] - sales_trend[-2]['sales']) / sales_trend[-2]['sales']) * 100
-                self.summary_cards['sales'].set_trend(
-                    f"{delta_pct:+.1f}% vs yesterday",
-                    positive=delta_pct >= 0,
-                )
-            else:
-                self.summary_cards['sales'].set_trend("No baseline yet", positive=True)
+        pending_orders = sum(1 for row in recent_orders if str(row["status"]).lower() == "pending")
+        self.summary_cards["orders"].set_trend(
+            f"{pending_orders} pending",
+            positive=(pending_orders == 0),
+        )
+        self.summary_cards["orders"].set_context("Across all channels")
+        self.summary_cards["staff"].set_trend(
+            "Coverage healthy" if total_staff and active_staff / max(total_staff, 1) >= 0.7 else "Coverage low",
+            positive=(total_staff == 0 or active_staff / max(total_staff, 1) >= 0.7),
+        )
+        self.summary_cards["staff"].set_context(f"{max(total_staff - active_staff, 0)} offline")
 
-            pending_orders = sum(1 for row in recent_orders if str(row['status']).lower() == 'pending')
-            self.summary_cards['orders'].set_trend(
-                f"{pending_orders} pending",
-                positive=(pending_orders == 0),
-            )
-            self.summary_cards['orders'].set_context("Across all channels")
-            self.summary_cards['staff'].set_trend(
-                "Coverage healthy" if total_staff and active_staff / max(total_staff, 1) >= 0.7 else "Coverage low",
-                positive=(total_staff == 0 or active_staff / max(total_staff, 1) >= 0.7),
-            )
-            self.summary_cards['staff'].set_context(f"{max(total_staff - active_staff, 0)} offline")
+        self.system_chip.setText("System Healthy")
+        self.pending_chip.setText(f"{pending_orders} Pending Orders")
+        self.alert_chip.setText(f"{alerts} Alerts")
+        self.update_alert_summary()
 
-            self.system_chip.setText("System Healthy")
-            self.pending_chip.setText(f"{pending_orders} Pending Orders")
-            self.alert_chip.setText(f"{alerts} Alerts")
-            self.update_alert_summary()
-            
-            # Sales trend chart + metrics
-            if hasattr(self, "sales_chart"):
-                values = [float(day.get('sales', 0.0)) for day in sales_trend]
-                labels = [day['date'].strftime("%a") for day in sales_trend]
-                self.sales_chart.set_data(values, labels)
-            if hasattr(self, "revenue_metric_value"):
-                self.revenue_metric_value.setText(f"${today_sales:,.2f}")
-            if hasattr(self, "orders_metric_value"):
-                self.orders_metric_value.setText(str(today_orders))
+        if hasattr(self, "sales_chart"):
+            values = [float(day.get("sales", 0.0)) for day in sales_trend]
+            labels = [day["date"].strftime("%a") for day in sales_trend]
+            self.sales_chart.set_data(values, labels)
+        if hasattr(self, "revenue_metric_value"):
+            self.revenue_metric_value.setText(f"${today_sales:,.2f}")
+        if hasattr(self, "orders_metric_value"):
+            self.orders_metric_value.setText(str(today_orders))
 
-            # Recent orders table
-            if hasattr(self, "recent_orders_table"):
-                self.recent_orders_table.setRowCount(len(recent_orders))
-                for row, order in enumerate(recent_orders):
-                    self.recent_orders_table.setItem(row, 0, QTableWidgetItem(f"#{order['order_id']}"))
-                    self.recent_orders_table.setItem(row, 1, QTableWidgetItem(order['customer']))
-                    self.recent_orders_table.setItem(row, 2, QTableWidgetItem(f"${order['amount']:,.2f}"))
-                    status_text = str(order['status']).replace("_", " ").title()
-                    status_item = QTableWidgetItem(status_text)
-                    normalized = str(order['status']).lower()
-                    status_color = {
-                        "paid": "#159C74",
-                        "completed": "#159C74",
-                        "pending": "#C2410C",
-                        "cancelled": "#D92D20",
-                        "refunded": "#D92D20",
-                    }.get(normalized, "#2F7DFF")
-                    status_item.setForeground(QColor(status_color))
-                    status_item.setBackground(QColor(27, 34, 49, 180))
-                    self.recent_orders_table.setItem(row, 3, status_item)
-                    time_str = order['time'].strftime("%H:%M") if order.get('time') else ""
-                    self.recent_orders_table.setItem(row, 4, QTableWidgetItem(time_str))
+        if hasattr(self, "recent_orders_table"):
+            self.recent_orders_table.setRowCount(len(recent_orders))
+            for row, order in enumerate(recent_orders):
+                self.recent_orders_table.setItem(row, 0, QTableWidgetItem(f"#{order['order_id']}"))
+                self.recent_orders_table.setItem(row, 1, QTableWidgetItem(order["customer"]))
+                self.recent_orders_table.setItem(row, 2, QTableWidgetItem(f"${order['amount']:,.2f}"))
+                status_text = str(order["status"]).replace("_", " ").title()
+                status_item = QTableWidgetItem(status_text)
+                normalized = str(order["status"]).lower()
+                status_color = {
+                    "paid": "#159C74",
+                    "completed": "#159C74",
+                    "pending": "#C2410C",
+                    "cancelled": "#D92D20",
+                    "refunded": "#D92D20",
+                }.get(normalized, "#2F7DFF")
+                status_item.setForeground(QColor(status_color))
+                status_item.setBackground(QColor(27, 34, 49, 180))
+                self.recent_orders_table.setItem(row, 3, status_item)
+                time_str = order["time"].strftime("%H:%M") if order.get("time") else ""
+                self.recent_orders_table.setItem(row, 4, QTableWidgetItem(time_str))
 
-            # Top products
-            if hasattr(self, "top_products_list"):
-                self.top_products_list.clear()
-                if top_products:
-                    for product in top_products:
-                        initials = "".join([part[0] for part in product['name'].split()[:2]]).upper()
-                        self.top_products_list.addItem(
-                            QListWidgetItem(
-                                f"{initials}   {product['name']}  |  {product['quantity']} sold  |  ${product['revenue']:,.2f}"
-                            )
+        if hasattr(self, "top_products_list"):
+            self.top_products_list.clear()
+            if top_products:
+                for product in top_products:
+                    initials = "".join([part[0] for part in product["name"].split()[:2]]).upper()
+                    self.top_products_list.addItem(
+                        QListWidgetItem(
+                            f"{initials}   {product['name']}  |  {product['quantity']} sold  |  ${product['revenue']:,.2f}"
                         )
-                else:
-                    self.top_products_list.addItem(QListWidgetItem("No top-product data yet"))
-
-            # Staff activity + tasks
-            if hasattr(self, "staff_activity_list"):
-                self.staff_activity_list.clear()
-                self.staff_activity_list.addItem(QListWidgetItem(f"AH  Ali Hassan  |  Clocked in  08:12 AM"))
-                self.staff_activity_list.addItem(QListWidgetItem(f"MS  Maya Saad   |  Online now"))
-                self.staff_activity_list.addItem(QListWidgetItem(f"JH  John Habib  |  Clocked out  05:21 PM"))
-                self.staff_activity_list.addItem(QListWidgetItem(f"{active_staff} active / {total_staff} total staff"))
-
-            if hasattr(self, "tasks_list"):
-                self.tasks_list.clear()
-                if pending_orders > 0:
-                    self.tasks_list.addItem(QListWidgetItem(f"Review {pending_orders} pending orders"))
-                if alerts > 0:
-                    self.tasks_list.addItem(QListWidgetItem(f"Resolve {alerts} inventory alerts"))
-                if pending_orders == 0 and alerts == 0:
-                    self.tasks_list.addItem(QListWidgetItem("No pending approvals"))
-
-            # Activity feed
-            self.activity_list.clear()
-            activities = get_recent_activities(limit=10)
-            
-            if activities:
-                for activity in activities:
-                    time_str = activity['time'].strftime("%H:%M")
-                    message = f"[{time_str}] {activity['message']}"
-                    item = QListWidgetItem(message)
-                    item.setForeground(QColor("#5D6F8B"))
-                    self.activity_list.addItem(item)
+                    )
             else:
-                item = QListWidgetItem("No recent activity")
+                self.top_products_list.addItem(QListWidgetItem("No top-product data yet"))
+
+        if hasattr(self, "staff_activity_list"):
+            self.staff_activity_list.clear()
+            self.staff_activity_list.addItem(QListWidgetItem("AH  Ali Hassan  |  Clocked in  08:12 AM"))
+            self.staff_activity_list.addItem(QListWidgetItem("MS  Maya Saad   |  Online now"))
+            self.staff_activity_list.addItem(QListWidgetItem("JH  John Habib  |  Clocked out  05:21 PM"))
+            self.staff_activity_list.addItem(QListWidgetItem(f"{active_staff} active / {total_staff} total staff"))
+
+        if hasattr(self, "tasks_list"):
+            self.tasks_list.clear()
+            if pending_orders > 0:
+                self.tasks_list.addItem(QListWidgetItem(f"Review {pending_orders} pending orders"))
+            if alerts > 0:
+                self.tasks_list.addItem(QListWidgetItem(f"Resolve {alerts} inventory alerts"))
+            if pending_orders == 0 and alerts == 0:
+                self.tasks_list.addItem(QListWidgetItem("No pending approvals"))
+
+        self.activity_list.clear()
+        if activities:
+            for activity in activities:
+                time_str = activity["time"].strftime("%H:%M")
+                message = f"[{time_str}] {activity['message']}"
+                item = QListWidgetItem(message)
                 item.setForeground(QColor("#5D6F8B"))
                 self.activity_list.addItem(item)
-                
-        except Exception as e:
-            logger.error(f"Error loading dashboard data: {e}")
-            self.summary_cards['sales'].set_value("$0.00")
-            self.summary_cards['orders'].set_value("0")
-            self.summary_cards['staff'].set_value("0/0")
-            self.inventory_alert_count = 0
-            self.update_alert_summary()
+        else:
+            item = QListWidgetItem("No recent activity")
+            item.setForeground(QColor("#5D6F8B"))
+            self.activity_list.addItem(item)
+
+    def _on_dashboard_data_error(self, error_message: str):
+        """Set fallback values when dashboard loading fails."""
+        logger.error(f"Error loading dashboard data: {error_message}")
+        self.summary_cards["sales"].set_value("$0.00")
+        self.summary_cards["orders"].set_value("0")
+        self.summary_cards["staff"].set_value("0/0")
+        self.summary_cards["sales"].set_context("Unavailable")
+        self.summary_cards["orders"].set_context("Unavailable")
+        self.summary_cards["staff"].set_context("Unavailable")
+        self.inventory_alert_count = 0
+        self.update_alert_summary()
     
     def update_alert_summary(self):
         """Update alerts summary card and tray badge."""
@@ -914,6 +976,10 @@ class ERPDashboard(QMainWindow):
     
     def closeEvent(self, event):
         """Stop background worker and hide tray."""
+        if self._dashboard_data_thread and self._dashboard_data_thread.isRunning():
+            self._dashboard_data_thread.quit()
+            self._dashboard_data_thread.wait(2000)
+            self._cleanup_dashboard_data_worker()
         if self.notification_worker:
             self.notification_worker.stop()
             self.notification_worker.wait(2000)

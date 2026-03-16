@@ -1,7 +1,7 @@
 """
 Database connection management
 """
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from pathlib import Path
@@ -72,7 +72,26 @@ class DatabaseManager:
         from src.database.models import Base
         
         Base.metadata.create_all(bind=self.engine)
+        self._ensure_performance_indexes()
         logger.info("Database tables created")
+
+    def _ensure_performance_indexes(self):
+        """Create SQLite indexes for high-traffic dashboard queries."""
+        if not self.engine:
+            return
+
+        index_statements = (
+            "CREATE INDEX IF NOT EXISTS idx_orders_status_datetime ON orders(order_status, order_datetime)",
+            "CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id)",
+            "CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)",
+            "CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id)",
+            "CREATE INDEX IF NOT EXISTS idx_inventory_status_qty_reorder ON inventory(status, quantity, reorder_level)",
+            "CREATE INDEX IF NOT EXISTS idx_inventory_expiry_date_state ON inventory_expiry(expiry_date, is_expired)",
+        )
+
+        with self.engine.begin() as conn:
+            for statement in index_statements:
+                conn.execute(text(statement))
     
     def close(self):
         """Close database connections"""

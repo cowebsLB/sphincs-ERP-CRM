@@ -23,7 +23,6 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QIcon, QPixmap
 from loguru import logger
 
-from src.config.settings import get_settings
 from src.utils.logger import setup_logger
 from src.gui.splash_screen import SplashScreen
 from src.gui.login_window import LoginWindow
@@ -65,9 +64,6 @@ def main():
         # Convert QIcon to QPixmap for splash screen
         splash_icon_pixmap = icon.pixmap(128, 128)  # Use 128x128 size for splash
     
-    # Get settings
-    settings = get_settings()
-    
     # Create and show splash screen
     splash = SplashScreen(
         app_name="Sphincs ERP",
@@ -104,20 +100,16 @@ def main():
             splash.update_status("Database error - check logs")
             app.processEvents()
         
-        # Wait for update check to complete (if enabled)
-        if settings.get_bool('Updates', 'check_on_startup', True):
-            # Give update check time to complete
-            QTimer.singleShot(2000, finish_initialization)
-        else:
-            finish_initialization()
+        # Proceed as soon as initialization work is complete.
+        finish_initialization()
     
     def finish_initialization():
         """Finish initialization and show main window"""
         splash.update_status("Ready!")
         app.processEvents()
         
-        # Keep splash screen visible for a moment
-        QTimer.singleShot(1500, lambda: show_main_window())
+        # Transition immediately once ready.
+        show_main_window()
         
         logger.info("Sphincs ERP initialized successfully")
     
@@ -178,8 +170,8 @@ def main():
         
         logger.info("ERP Dashboard displayed")
     
-    # Start initialization after short delay
-    QTimer.singleShot(500, initialize_app)
+    # Start initialization as soon as the splash is rendered.
+    QTimer.singleShot(0, initialize_app)
     
     # Run application
     sys.exit(app.exec())

@@ -11,6 +11,7 @@ This folder tracks implementation decisions and active work.
 - [ERP Worklog](erp/worklog.md)
 - [ERP Implementation Summary (2026-03-09)](erp/implementation-summary-2026-03-09.md)
 - [ERP Implementation Summary (2026-03-14)](erp/implementation-summary-2026-03-14.md)
+- [ERP Implementation Summary (2026-03-16)](erp/implementation-summary-2026-03-16.md)
 - [ERP Folder Structure](erp/folder-structure.md)
 - [ERP Module Map](erp/module-map.md)
 
