@@ -46,6 +46,19 @@ Each module screen currently supports:
 - restore
 - include deleted toggle
 
+## Reusable UI Layer
+
+Shared reusable components now live in `packages/ui-core`:
+
+- `DataTable`:
+  - search
+  - sortable columns
+  - client-side pagination
+- `ResourceManager`:
+  - create form
+  - real edit form (replaces JSON prompt workflow)
+  - row actions (edit/delete/restore)
+
 ## Local Run
 
 From repo root:

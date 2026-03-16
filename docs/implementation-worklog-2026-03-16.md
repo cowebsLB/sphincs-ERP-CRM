@@ -399,3 +399,24 @@ Completed initial frontend implementation for both apps:
 
 - current UI is intentionally functional-first and still needs a design pass.
 - inline JSON patch prompt is a temporary editing mechanism and should be replaced with dedicated edit forms.
+
+## Update: Frontend Polish Step (2026-03-16)
+
+Completed:
+
+1. Added shared UI primitives in `packages/ui-core`:
+   - `DataTable` with search, sorting, and pagination.
+   - `ResourceManager` with create/edit forms and row actions.
+
+2. Integrated shared components into both ERP and CRM apps:
+   - replaced ad-hoc list rendering with reusable table manager.
+   - removed JSON prompt-based edit path.
+   - added real edit form workflow for resource updates.
+
+3. Packaging fix:
+   - added explicit `exports` map in `@sphincs/ui-core` package to fix Vite resolution for workspace package imports.
+
+Validation:
+
+- workspace build: pass
+- workspace tests: pass

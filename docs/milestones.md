@@ -43,6 +43,7 @@ Deliver Phase 1 as a usable internal alpha with:
     - run the same migrate/seed and smoke checks against Supabase target
 
 - Frontend implementation track: In progress
+- Frontend implementation track: In progress (phase 2)
   - Completed:
     - auth login + token persistence in ERP and CRM apps
     - protected routing per app
@@ -50,9 +51,11 @@ Deliver Phase 1 as a usable internal alpha with:
     - API wiring for ERP resources (items/suppliers/purchase-orders)
     - API wiring for CRM resources (contacts/leads/opportunities)
     - soft-delete and restore actions in both apps
+    - reusable shared UI components in `packages/ui-core` (`DataTable`, `ResourceManager`)
+    - real edit forms replacing JSON patch prompt flow
+    - search/sort/pagination table behavior across resource screens
   - Remaining:
-    - improve UI/UX beyond scaffold screens
-    - add richer forms (replace JSON prompt patch UX)
+    - improve UI/UX styling and layout polish
     - add frontend tests for auth/session/resource flows
 
 ## Milestone 1: Backend Persistence Foundation

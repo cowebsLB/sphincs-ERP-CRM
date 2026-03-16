@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, type SessionState, type SessionTokens } from "@sphincs/api-client";
+import { ResourceManager } from "@sphincs/ui-core";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const STORAGE_KEY = "sphincs.erp.session";
@@ -111,26 +112,26 @@ function ResourcePage({
   fields: Array<{ key: string; label: string }>;
 }) {
   const [rows, setRows] = React.useState<RecordData[]>([]);
+  const [loading, setLoading] = React.useState(false);
   const [includeDeleted, setIncludeDeleted] = React.useState(false);
-  const [form, setForm] = React.useState<Record<string, string>>({});
 
   const load = React.useCallback(async () => {
+    setLoading(true);
     const query = includeDeleted ? "?includeDeleted=true" : "";
     const data = await withAuth<RecordData[]>(session, setSession, `${endpoint}${query}`);
     setRows(data);
+    setLoading(false);
   }, [endpoint, includeDeleted, session, setSession]);
 
   React.useEffect(() => {
     void load();
   }, [load]);
 
-  async function createItem(e: React.FormEvent) {
-    e.preventDefault();
+  async function createItem(form: Record<string, string>) {
     await withAuth(session, setSession, endpoint, {
       method: "POST",
       body: JSON.stringify(form)
     });
-    setForm({});
     await load();
   }
 
@@ -143,60 +144,26 @@ function ResourcePage({
   }
 
   return (
-    <section>
-      <h2>{title}</h2>
-      <label>
-        <input
-          type="checkbox"
-          checked={includeDeleted}
-          onChange={(e) => setIncludeDeleted(e.target.checked)}
-        />
-        Include deleted
-      </label>
-
-      <form onSubmit={createItem}>
-        {fields.map((field) => (
-          <input
-            key={field.key}
-            placeholder={field.label}
-            value={form[field.key] ?? ""}
-            onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-          />
-        ))}
-        <button type="submit">Create</button>
-      </form>
-
-      <ul>
-        {rows.map((row) => (
-          <li key={row.id}>
-            <code>{JSON.stringify(row)}</code>
-            <button
-              type="button"
-              onClick={async () => {
-                const patchRaw = prompt("Patch JSON", "{}");
-                if (!patchRaw) return;
-                await patchItem(row.id, JSON.parse(patchRaw));
-              }}
-            >
-              Edit
-            </button>
-            {!row.deleted_at && (
-              <button
-                type="button"
-                onClick={() => patchItem(row.id, { deleted_at: new Date().toISOString() })}
-              >
-                Soft Delete
-              </button>
-            )}
-            {row.deleted_at && (
-              <button type="button" onClick={() => withAuth(session, setSession, `${endpoint}/${row.id}/restore`, { method: "POST", body: JSON.stringify({}) }).then(load)}>
-                Restore
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <ResourceManager<RecordData>
+      title={title}
+      rows={rows}
+      loading={loading}
+      includeDeleted={includeDeleted}
+      onToggleIncludeDeleted={setIncludeDeleted}
+      columns={fields.map((f) => ({ key: f.key as keyof RecordData, label: f.label, sortable: true }))}
+      createFields={fields}
+      editFields={fields}
+      onCreate={createItem}
+      onUpdate={(id, payload) => patchItem(id, payload)}
+      onSoftDelete={(id) => patchItem(id, { deleted_at: new Date().toISOString() })}
+      onRestore={async (id) => {
+        await withAuth(session, setSession, `${endpoint}/${id}/restore`, {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+        await load();
+      }}
+    />
   );
 }
 
