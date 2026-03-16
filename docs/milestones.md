@@ -44,7 +44,7 @@ Deliver Phase 1 as a usable internal alpha with:
 
 - Frontend implementation track: In progress
 - Frontend implementation track: In progress (phase 2)
-- Frontend implementation track: In progress (phase 3 visual polish)
+- Frontend implementation track: In progress (phase 4 test baseline)
   - Completed:
     - auth login + token persistence in ERP and CRM apps
     - protected routing per app
@@ -58,8 +58,10 @@ Deliver Phase 1 as a usable internal alpha with:
     - shared style system and app shell layout (sidebar + topbar)
     - toast feedback for create/update/delete/restore actions
     - inline required-field validation in resource forms
+    - Vitest + React Testing Library setup in ERP and CRM apps
+    - app-level tests for login render, login success path, and role-block behavior
   - Remaining:
-    - add frontend tests for auth/session/resource flows
+    - expand frontend tests for session refresh flow and CRUD resource interactions
     - optional: richer charts/widgets and advanced filter presets
 
 ## Milestone 1: Backend Persistence Foundation

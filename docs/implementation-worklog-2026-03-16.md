@@ -446,3 +446,39 @@ Completed:
 Validation:
 
 - workspace install/build/test all passing after visual pass.
+
+## Update: Frontend Test Baseline (2026-03-16)
+
+Completed:
+
+1. Added test toolchain in both frontend apps:
+   - `vitest`
+   - `@testing-library/react`
+   - `@testing-library/jest-dom`
+   - `jsdom`
+
+2. Added test configuration in both app `vite.config.ts` files:
+   - `environment: "jsdom"`
+   - setup file wiring
+
+3. Added app entry split for testability:
+   - `src/app.tsx` exports `RootApp`
+   - `src/main.tsx` only mounts `RootApp`
+
+4. Added initial tests for ERP and CRM:
+   - login view render
+   - successful login flow to authorized shell
+   - unauthorized-role block rendering
+
+Validation:
+
+- `pnpm install`: pass
+- `pnpm -r --if-present build`: pass
+- `pnpm -r --if-present test`: pass
+- ERP tests: pass
+- CRM tests: pass
+
+Notes:
+
+- React Router future-flag warnings were emitted during tests but did not fail execution.
+- Next frontend testing step is to add resource CRUD + refresh token/session behavior coverage.

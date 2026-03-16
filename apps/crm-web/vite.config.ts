@@ -8,5 +8,10 @@ export default defineConfig({
     postcss: {
       plugins: []
     }
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    globals: true
   }
 });
