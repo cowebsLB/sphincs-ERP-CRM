@@ -43,4 +43,18 @@ export class SuppliersService {
       }
     });
   }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.supplier.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Supplier not found");
+    }
+    return this.prisma.supplier.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
+  }
 }

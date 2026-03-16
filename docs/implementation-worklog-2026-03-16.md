@@ -294,3 +294,60 @@ Completed conversion from in-memory storage to Prisma-backed persistence for:
   - Imported `PrismaModule` in `AppModule`.
 - Result:
   - API boots successfully and responds on `http://localhost:3000/health`.
+
+## Update: Backend Hardening Batch (2026-03-16)
+
+Completed backend items:
+
+1. CRM persistence conversion:
+   - `contacts`, `leads`, `opportunities` moved from in-memory arrays to Prisma persistence.
+
+2. Real auth:
+   - login now verifies users against DB records.
+   - password hashing/verification now uses `bcryptjs`.
+   - legacy sha256 hashes are auto-upgraded to bcrypt on successful login.
+
+3. Refresh token persistence and rotation:
+   - added `refresh_tokens` model/table.
+   - refresh flow validates active token hash in DB.
+   - successful refresh revokes old token and issues a rotated refresh token.
+
+4. Real RBAC:
+   - removed header-trusted role checks.
+   - `RolesGuard` now validates JWT bearer token and resolves roles from `user_roles` + `roles`.
+
+5. Audit persistence:
+   - audit writes now persist to `audit_logs` via Prisma.
+   - list endpoint now queries DB-backed audit logs with filters.
+
+6. Soft-delete restore policy:
+   - added `POST :id/restore` for core/ERP/CRM resource controllers:
+     - organizations, branches, users
+     - items, suppliers, purchase-orders
+     - contacts, leads, opportunities
+
+7. API error envelope:
+   - added a global exception filter returning normalized `{ success, error, meta }` response shape.
+
+8. Seed and startup fixes:
+   - seed now writes bcrypt password hashes.
+   - `core-api` start path kept aligned to Nest output (`dist/src/main.js`).
+
+### Migration additions
+
+- Added migration:
+  - `prisma/migrations/20260316_refresh_tokens/migration.sql`
+- Applied locally and validated.
+
+### Validation summary
+
+- `prisma generate`: success
+- `prisma migrate deploy`: success
+- `prisma db seed`: success
+- `pnpm -r --if-present build`: success
+- `pnpm -r --if-present test`: success
+
+### Known remaining backend tasks
+
+- broaden integration/e2e coverage for auth + RBAC + audit + restore.
+- run the same migration/seed/smoke procedure on Supabase environment.

@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { PrismaModule } from "./prisma.module";
 import { AuthModule } from "./core/auth/auth.module";
 import { UsersModule } from "./core/users/users.module";
@@ -19,6 +19,7 @@ import { LoggingModule } from "./logging/logging.module";
 import { RequestLoggingMiddleware } from "./logging/request-logging.middleware";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 
 @Module({
   imports: [
@@ -47,6 +48,10 @@ import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter
     }
   ]
 })

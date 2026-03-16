@@ -41,4 +41,18 @@ export class ItemsService {
       }
     });
   }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.item.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Item not found");
+    }
+    return this.prisma.item.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
+  }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { BranchesService } from "./branches.service";
 
 @Controller("branches")
@@ -6,8 +6,8 @@ export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Get()
-  findAll() {
-    return this.branchesService.findAll();
+  findAll(@Query("includeDeleted") includeDeleted?: string) {
+    return this.branchesService.findAll(includeDeleted === "true");
   }
 
   @Post()
@@ -18,5 +18,10 @@ export class BranchesController {
   @Patch(":id")
   update(@Param("id") id: string, @Body() body: Record<string, unknown>) {
     return this.branchesService.update(id, body);
+  }
+
+  @Post(":id/restore")
+  restore(@Param("id") id: string, @Body() body: Record<string, unknown>) {
+    return this.branchesService.restore(id, body.updated_by ? String(body.updated_by) : undefined);
   }
 }

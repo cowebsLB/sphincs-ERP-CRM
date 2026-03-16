@@ -50,6 +50,16 @@ curl http://localhost:3000/health
 curl http://localhost:3000/api/v1/system/info
 ```
 
+Auth smoke checks (after seed):
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin@sphincs.local\",\"password\":\"ChangeMe123!\"}"
+```
+
+Use returned bearer token for protected endpoints.
+
 ## Notes
 
 - `pnpm.onlyBuiltDependencies` is configured in root `package.json` to allow Prisma/Nest build scripts needed for client generation.

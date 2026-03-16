@@ -21,4 +21,9 @@ export class ItemsController {
   update(@Param("id") id: string, @Body() body: Record<string, unknown>): unknown {
     return this.itemsService.update(id, body);
   }
+
+  @Post(":id/restore")
+  restore(@Param("id") id: string, @Body() body: Record<string, unknown>): unknown {
+    return this.itemsService.restore(id, body.updated_by ? String(body.updated_by) : undefined);
+  }
 }

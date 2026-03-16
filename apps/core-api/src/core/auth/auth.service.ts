@@ -1,46 +1,160 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import jwt from "jsonwebtoken";
+import { PrismaService } from "../../prisma.service";
+import { hashPassword, verifyPassword } from "../../common/security/password";
+import { createHash } from "crypto";
 
 @Injectable()
 export class AuthService {
   private readonly secret = process.env.JWT_SECRET ?? "change-me";
+  constructor(private readonly prisma: PrismaService) {}
 
-  login(email: string, password: string) {
-    if (!email || !password) {
+  private hashRefreshToken(refreshToken: string): string {
+    return createHash("sha256").update(refreshToken).digest("hex");
+  }
+
+  private createAccessToken(payload: {
+    sub: string;
+    email: string;
+    roles: string[];
+    organizationId: string;
+    branchId: string | null;
+  }): string {
+    return jwt.sign(payload, this.secret, { expiresIn: "1h" });
+  }
+
+  private createRefreshToken(sub: string): string {
+    return jwt.sign({ sub, type: "refresh" }, this.secret, { expiresIn: "7d" });
+  }
+
+  private async fetchUserRoles(userId: string): Promise<string[]> {
+    const records = await this.prisma.userRole.findMany({
+      where: { user_id: userId, deleted_at: null },
+      include: { role: true }
+    });
+    return records.map((r) => r.role.name);
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email }
+    });
+    if (!user || user.deleted_at !== null || user.status !== "ACTIVE") {
       throw new UnauthorizedException("Invalid credentials");
     }
-    const payload = {
-      sub: "seed-user-id",
-      email,
-      roles: ["Admin"],
-      organizationId: "seed-org-id"
-    };
-    const accessToken = jwt.sign(payload, this.secret, { expiresIn: "1h" });
-    const refreshToken = jwt.sign({ sub: payload.sub }, this.secret, {
-      expiresIn: "7d"
+
+    let validPassword = await verifyPassword(password, user.password_hash);
+    if (!validPassword) {
+      const legacy = createHash("sha256").update(password).digest("hex");
+      validPassword = legacy === user.password_hash;
+      if (validPassword) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { password_hash: await hashPassword(password) }
+        });
+      }
+    }
+
+    if (!validPassword) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    const roles = await this.fetchUserRoles(user.id);
+    const accessToken = this.createAccessToken({
+      sub: user.id,
+      email: user.email,
+      roles,
+      organizationId: user.organization_id,
+      branchId: user.branch_id
     });
+    const refreshToken = this.createRefreshToken(user.id);
+    const decoded = jwt.decode(refreshToken) as { exp?: number } | null;
+    const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 86400 * 1000);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        user_id: user.id,
+        token_hash: this.hashRefreshToken(refreshToken),
+        expires_at: expiresAt
+      }
+    });
+
     return { accessToken, refreshToken, tokenType: "Bearer" };
   }
 
-  refresh(refreshToken: string) {
+  async refresh(refreshToken: string) {
     try {
-      const decoded = jwt.verify(refreshToken, this.secret) as { sub: string };
-      const accessToken = jwt.sign({ sub: decoded.sub, roles: ["Admin"] }, this.secret, {
-        expiresIn: "1h"
+      const decoded = jwt.verify(refreshToken, this.secret) as { sub: string; exp?: number; type?: string };
+      if (decoded.type !== "refresh") {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+
+      const tokenHash = this.hashRefreshToken(refreshToken);
+      const existing = await this.prisma.refreshToken.findFirst({
+        where: {
+          token_hash: tokenHash,
+          user_id: decoded.sub,
+          revoked_at: null,
+          expires_at: { gt: new Date() }
+        }
       });
-      return { accessToken, tokenType: "Bearer" };
+      if (!existing) {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+
+      const user = await this.prisma.user.findUnique({ where: { id: decoded.sub } });
+      if (!user || user.deleted_at !== null || user.status !== "ACTIVE") {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+
+      const roles = await this.fetchUserRoles(user.id);
+      const accessToken = this.createAccessToken({
+        sub: user.id,
+        email: user.email,
+        roles,
+        organizationId: user.organization_id,
+        branchId: user.branch_id
+      });
+      const newRefreshToken = this.createRefreshToken(user.id);
+      const refreshDecoded = jwt.decode(newRefreshToken) as { exp?: number } | null;
+      const expiresAt =
+        refreshDecoded?.exp ? new Date(refreshDecoded.exp * 1000) : new Date(Date.now() + 7 * 86400 * 1000);
+
+      await this.prisma.$transaction([
+        this.prisma.refreshToken.update({
+          where: { id: existing.id },
+          data: { revoked_at: new Date() }
+        }),
+        this.prisma.refreshToken.create({
+          data: {
+            user_id: user.id,
+            token_hash: this.hashRefreshToken(newRefreshToken),
+            expires_at: expiresAt
+          }
+        })
+      ]);
+
+      return { accessToken, refreshToken: newRefreshToken, tokenType: "Bearer" };
     } catch {
       throw new UnauthorizedException("Invalid refresh token");
     }
   }
 
-  me() {
+  async me(userId: string) {
+    if (!userId) {
+      throw new UnauthorizedException("Missing user context");
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.deleted_at !== null) {
+      throw new UnauthorizedException("User not found");
+    }
+    const roles = await this.fetchUserRoles(user.id);
     return {
-      id: "seed-user-id",
-      email: "admin@example.com",
-      roles: ["Admin"],
-      organizationId: "seed-org-id"
+      id: user.id,
+      email: user.email,
+      roles,
+      organizationId: user.organization_id,
+      branchId: user.branch_id
     };
   }
 }
-

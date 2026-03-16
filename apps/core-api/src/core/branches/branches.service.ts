@@ -38,4 +38,18 @@ export class BranchesService {
       }
     });
   }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.branch.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Branch not found");
+    }
+    return this.prisma.branch.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
+  }
 }

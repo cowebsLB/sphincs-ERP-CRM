@@ -19,7 +19,7 @@ export class AuditInterceptor implements NestInterceptor {
       tap(() => {
         const mutatingMethods = ["POST", "PATCH", "PUT", "DELETE"];
         if (mutatingMethods.includes(method)) {
-          this.auditService.record({
+          void this.auditService.record({
             action: `${method}_${path}`,
             entityType: "http",
             entityId: null,
@@ -32,4 +32,3 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 }
-

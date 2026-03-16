@@ -37,4 +37,18 @@ export class OrganizationsService {
       }
     });
   }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.organization.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Organization not found");
+    }
+    return this.prisma.organization.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
+  }
 }

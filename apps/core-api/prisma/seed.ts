@@ -1,11 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { createHash } from "crypto";
+import { hashPassword } from "../src/common/security/password";
 
 const prisma = new PrismaClient();
-
-function hashPassword(plain: string): string {
-  return createHash("sha256").update(plain).digest("hex");
-}
 
 async function main() {
   const organization = await prisma.organization.upsert({
@@ -40,12 +36,15 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@sphincs.local" },
-    update: {},
+    update: {
+      password_hash: await hashPassword("ChangeMe123!"),
+      status: "ACTIVE"
+    },
     create: {
       organization_id: organization.id,
       branch_id: branch.id,
       email: "admin@sphincs.local",
-      password_hash: hashPassword("ChangeMe123!"),
+      password_hash: await hashPassword("ChangeMe123!"),
       status: "ACTIVE"
     }
   });

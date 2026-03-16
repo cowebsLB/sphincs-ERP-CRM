@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
+import { PrismaService } from "../prisma.service";
+import { Prisma } from "@prisma/client";
 
 export interface AuditRecordInput {
   organizationId: string | null;
@@ -12,25 +13,33 @@ export interface AuditRecordInput {
 
 @Injectable()
 export class AuditService {
-  private readonly logs: Array<AuditRecordInput & { id: string; timestamp: string }> = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  record(input: AuditRecordInput) {
-    this.logs.push({
-      id: randomUUID(),
-      timestamp: new Date().toISOString(),
-      ...input
+  async record(input: AuditRecordInput) {
+    await this.prisma.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        user_id: input.userId,
+        action: input.action,
+        entity_type: input.entityType,
+        entity_id: input.entityId,
+        metadata: ((input.metadata ?? {}) as Prisma.InputJsonValue),
+        created_by: input.userId,
+        updated_by: input.userId
+      }
     });
   }
 
   findAll(query: Record<string, string>) {
-    return this.logs.filter((entry) => {
-      if (query.action && entry.action !== query.action) {
-        return false;
-      }
-      if (query.entityType && entry.entityType !== query.entityType) {
-        return false;
-      }
-      return true;
+    return this.prisma.auditLog.findMany({
+      where: {
+        action: query.action ?? undefined,
+        entity_type: query.entityType ?? undefined,
+        user_id: query.userId ?? undefined,
+        organization_id: query.organizationId ?? undefined
+      },
+      orderBy: { created_at: "desc" },
+      take: query.limit ? Number(query.limit) : 100
     });
   }
 }

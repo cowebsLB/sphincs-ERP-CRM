@@ -21,4 +21,9 @@ export class ContactsController {
   update(@Param("id") id: string, @Body() body: Record<string, unknown>): unknown {
     return this.contactsService.update(id, body);
   }
+
+  @Post(":id/restore")
+  restore(@Param("id") id: string, @Body() body: Record<string, unknown>): unknown {
+    return this.contactsService.restore(id, body.updated_by ? String(body.updated_by) : undefined);
+  }
 }

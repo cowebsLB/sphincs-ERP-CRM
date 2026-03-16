@@ -49,4 +49,18 @@ export class PurchasingService {
       }
     });
   }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Purchase order not found");
+    }
+    return this.prisma.purchaseOrder.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
+  }
 }

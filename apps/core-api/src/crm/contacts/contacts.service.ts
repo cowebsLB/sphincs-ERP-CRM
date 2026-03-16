@@ -1,52 +1,58 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { randomUUID } from "crypto";
-
-interface ContactRecord {
-  id: string;
-  organization_id: string;
-  branch_id: string | null;
-  full_name: string;
-  email: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  created_by: string | null;
-  updated_by: string | null;
-}
+import { PrismaService } from "../../prisma.service";
 
 @Injectable()
 export class ContactsService {
-  private readonly contacts: ContactRecord[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(includeDeleted: boolean) {
-    return this.contacts.filter((entry) => includeDeleted || entry.deleted_at === null);
+    return this.prisma.contact.findMany({
+      where: includeDeleted ? {} : { deleted_at: null },
+      orderBy: { created_at: "desc" }
+    });
   }
 
   create(body: Record<string, unknown>) {
-    const now = new Date().toISOString();
-    const contact: ContactRecord = {
-      id: randomUUID(),
-      organization_id: String(body.organization_id ?? "seed-org-id"),
-      branch_id: body.branch_id ? String(body.branch_id) : null,
-      full_name: String(body.full_name ?? "Unnamed contact"),
-      email: body.email ? String(body.email) : null,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-      created_by: body.created_by ? String(body.created_by) : null,
-      updated_by: body.updated_by ? String(body.updated_by) : null
-    };
-    this.contacts.push(contact);
-    return contact;
+    return this.prisma.contact.create({
+      data: {
+        organization_id: String(body.organization_id ?? "00000000-0000-0000-0000-000000000001"),
+        branch_id: body.branch_id ? String(body.branch_id) : null,
+        full_name: String(body.full_name ?? "Unnamed contact"),
+        email: body.email ? String(body.email) : null,
+        created_by: body.created_by ? String(body.created_by) : null,
+        updated_by: body.updated_by ? String(body.updated_by) : null
+      }
+    });
   }
 
-  update(id: string, body: Record<string, unknown>) {
-    const contact = this.contacts.find((entry) => entry.id === id);
-    if (!contact) {
+  async update(id: string, body: Record<string, unknown>) {
+    const existing = await this.prisma.contact.findUnique({ where: { id } });
+    if (!existing) {
       throw new NotFoundException("Contact not found");
     }
-    Object.assign(contact, body, { updated_at: new Date().toISOString() });
-    return contact;
+
+    return this.prisma.contact.update({
+      where: { id },
+      data: {
+        full_name: body.full_name ? String(body.full_name) : undefined,
+        email: body.email === undefined ? undefined : (body.email ? String(body.email) : null),
+        deleted_at: body.deleted_at === undefined ? undefined : (body.deleted_at as Date | null),
+        updated_by: body.updated_by ? String(body.updated_by) : undefined
+      }
+    });
+  }
+
+  async restore(id: string, updatedBy?: string) {
+    const existing = await this.prisma.contact.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException("Contact not found");
+    }
+    return this.prisma.contact.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        updated_by: updatedBy ?? undefined
+      }
+    });
   }
 }
-

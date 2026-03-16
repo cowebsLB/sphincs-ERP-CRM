@@ -26,9 +26,20 @@ Deliver Phase 1 as a usable internal alpha with:
     - items
     - suppliers
     - purchase_orders
+    - contacts
+    - leads
+    - opportunities
+  - Auth and RBAC hardening completed:
+    - DB-backed login with bcrypt verification
+    - legacy sha256 hash auto-upgrade on successful login
+    - refresh-token DB persistence + rotation (`refresh_tokens`)
+    - JWT bearer role checks resolved from DB (`user_roles` + `roles`)
+  - Audit persistence completed:
+    - audit writes now stored in `audit_logs`
+  - Soft-delete restore endpoints completed for core/ERP/CRM resources
   - Remaining:
-    - convert CRM services to Prisma (`contacts`, `leads`, `opportunities`)
-    - wire auth to DB-backed credential verification
+    - expand integration/e2e backend test coverage for DB auth/RBAC/audit/restore paths
+    - run the same migrate/seed and smoke checks against Supabase target
 
 ## Milestone 1: Backend Persistence Foundation
 
