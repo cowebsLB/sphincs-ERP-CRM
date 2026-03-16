@@ -6,24 +6,30 @@ All logo files are stored in:
 
 - `assets/branding/`
 
-## Current Logo Files
+## Current Brand Files
 
-- `assets/branding/logo-1024.png`
-- `assets/branding/logo-256.png`
-- `assets/branding/logo-128.png`
-- `assets/branding/logo-64.png`
-- `assets/branding/logo-32.png`
-- `assets/branding/logo-16.png`
+- `assets/branding/favicon.ico`
+- `assets/branding/favicon-16x16.png`
+- `assets/branding/favicon-32x32.png`
+- `assets/branding/apple-touch-icon.png`
+- `assets/branding/android-chrome-192x192.png`
+- `assets/branding/android-chrome-512x512.png`
+- `assets/branding/site.webmanifest`
 
-## Naming Convention
+## Delivery Convention
 
-- `logo-{size}.png` for raster sizes
-- Future optional vector files should follow:
-  - `logo-primary.svg`
-  - `logo-mark.svg`
+- Source-of-truth files stay in `assets/branding/`.
+- Frontend apps consume these through Vite `publicDir` pointing to `../../assets`.
+- URLs used in both web apps:
+  - `/branding/favicon.ico`
+  - `/branding/favicon-32x32.png`
+  - `/branding/favicon-16x16.png`
+  - `/branding/apple-touch-icon.png`
+  - `/branding/site.webmanifest`
 
 ## Intended Usage
 
-- `logo-16.png` and `logo-32.png`: favicon/app icon small contexts
-- `logo-64.png` and `logo-128.png`: header and in-app branding
-- `logo-256.png` and `logo-1024.png`: splash, docs, social, exports
+- `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`: browser tab and bookmarks
+- `apple-touch-icon.png`: iOS pinned/home-screen icon
+- `android-chrome-*`: Android/PWA icon references
+- `site.webmanifest`: web app metadata and icon map
