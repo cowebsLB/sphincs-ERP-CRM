@@ -19,6 +19,7 @@ Deliver Phase 1 as a usable internal alpha with:
   - Runtime endpoint checks completed (`/health`, `/api/v1/system/info`)
   - Next: repeat deploy/seed flow on Supabase target environment
 - Milestone 2 and ERP persistence track: In progress
+- Milestone 2 and backend hardening track: Completed
   - Prisma-backed services completed for:
     - organizations
     - branches
@@ -40,6 +41,19 @@ Deliver Phase 1 as a usable internal alpha with:
   - Remaining:
     - expand integration/e2e backend test coverage for DB auth/RBAC/audit/restore paths
     - run the same migrate/seed and smoke checks against Supabase target
+
+- Frontend implementation track: In progress
+  - Completed:
+    - auth login + token persistence in ERP and CRM apps
+    - protected routing per app
+    - role-gated app shell access (ERP vs CRM)
+    - API wiring for ERP resources (items/suppliers/purchase-orders)
+    - API wiring for CRM resources (contacts/leads/opportunities)
+    - soft-delete and restore actions in both apps
+  - Remaining:
+    - improve UI/UX beyond scaffold screens
+    - add richer forms (replace JSON prompt patch UX)
+    - add frontend tests for auth/session/resource flows
 
 ## Milestone 1: Backend Persistence Foundation
 

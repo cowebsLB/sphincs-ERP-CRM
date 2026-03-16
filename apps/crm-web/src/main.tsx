@@ -1,17 +1,317 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { ApiClient, type SessionState, type SessionTokens } from "@sphincs/api-client";
 
-function App() {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
+const STORAGE_KEY = "sphincs.crm.session";
+const client = new ApiClient(API_BASE_URL);
+
+type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
+
+function useSessionState() {
+  const [session, setSession] = React.useState<SessionState | null>(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SessionState) : null;
+  });
+
+  const update = React.useCallback((next: SessionState | null) => {
+    setSession(next);
+    if (next) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  return { session, setSession: update };
+}
+
+function hasRole(session: SessionState | null, ...roles: string[]): boolean {
+  return !!session && roles.some((role) => session.user.roles.includes(role));
+}
+
+async function withAuth<T>(
+  session: SessionState,
+  setSession: (next: SessionState | null) => void,
+  path: string,
+  init?: RequestInit
+) {
+  const result = await client.authorized<T>(path, session, init);
+  if (
+    result.tokens.accessToken !== session.accessToken ||
+    result.tokens.refreshToken !== session.refreshToken
+  ) {
+    setSession({ ...session, ...result.tokens });
+  }
+  return result.data;
+}
+
+function LoginPage({ setSession }: { setSession: (next: SessionState | null) => void }) {
+  const [email, setEmail] = React.useState("admin@sphincs.local");
+  const [password, setPassword] = React.useState("ChangeMe123!");
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const navigate = useNavigate();
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const tokens = await client.login(email, password);
+      const user = await client.authorized<SessionState["user"]>(
+        "/auth/me",
+        tokens as SessionTokens
+      );
+      setSession({
+        accessToken: user.tokens.accessToken,
+        refreshToken: user.tokens.refreshToken,
+        user: user.data
+      });
+      navigate("/contacts");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main>
-      <h1>CRM App</h1>
-      <p>Contacts, leads, and opportunities.</p>
+      <h1>CRM Login</h1>
+      <form onSubmit={onSubmit}>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <input
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          type="password"
+        />
+        <button disabled={busy} type="submit">
+          {busy ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+      {error && <p>{error}</p>}
     </main>
+  );
+}
+
+function ResourcePage({
+  session,
+  setSession,
+  endpoint,
+  title,
+  fields
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  endpoint: string;
+  title: string;
+  fields: Array<{ key: string; label: string }>;
+}) {
+  const [rows, setRows] = React.useState<RecordData[]>([]);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [form, setForm] = React.useState<Record<string, string>>({});
+
+  const load = React.useCallback(async () => {
+    const query = includeDeleted ? "?includeDeleted=true" : "";
+    const data = await withAuth<RecordData[]>(session, setSession, `${endpoint}${query}`);
+    setRows(data);
+  }, [endpoint, includeDeleted, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function createItem(e: React.FormEvent) {
+    e.preventDefault();
+    await withAuth(session, setSession, endpoint, {
+      method: "POST",
+      body: JSON.stringify(form)
+    });
+    setForm({});
+    await load();
+  }
+
+  async function patchItem(id: string, payload: Record<string, unknown>) {
+    await withAuth(session, setSession, `${endpoint}/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    });
+    await load();
+  }
+
+  return (
+    <section>
+      <h2>{title}</h2>
+      <label>
+        <input
+          type="checkbox"
+          checked={includeDeleted}
+          onChange={(e) => setIncludeDeleted(e.target.checked)}
+        />
+        Include deleted
+      </label>
+
+      <form onSubmit={createItem}>
+        {fields.map((field) => (
+          <input
+            key={field.key}
+            placeholder={field.label}
+            value={form[field.key] ?? ""}
+            onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+          />
+        ))}
+        <button type="submit">Create</button>
+      </form>
+
+      <ul>
+        {rows.map((row) => (
+          <li key={row.id}>
+            <code>{JSON.stringify(row)}</code>
+            <button
+              type="button"
+              onClick={async () => {
+                const patchRaw = prompt("Patch JSON", "{}");
+                if (!patchRaw) return;
+                await patchItem(row.id, JSON.parse(patchRaw));
+              }}
+            >
+              Edit
+            </button>
+            {!row.deleted_at && (
+              <button
+                type="button"
+                onClick={() => patchItem(row.id, { deleted_at: new Date().toISOString() })}
+              >
+                Soft Delete
+              </button>
+            )}
+            {row.deleted_at && (
+              <button
+                type="button"
+                onClick={() =>
+                  withAuth(session, setSession, `${endpoint}/${row.id}/restore`, {
+                    method: "POST",
+                    body: JSON.stringify({})
+                  }).then(load)
+                }
+              >
+                Restore
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function CRMApp({
+  session,
+  setSession
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+}) {
+  const navigate = useNavigate();
+  if (!hasRole(session, "Admin", "CRM Manager")) {
+    return <p>Your account does not have CRM access.</p>;
+  }
+  return (
+    <main>
+      <h1>CRM</h1>
+      <p>{session.user.email}</p>
+      <nav>
+        <Link to="/contacts">Contacts</Link> | <Link to="/leads">Leads</Link> |{" "}
+        <Link to="/opportunities">Opportunities</Link>
+      </nav>
+      <button
+        type="button"
+        onClick={() => {
+          setSession(null);
+          navigate("/login");
+        }}
+      >
+        Logout
+      </button>
+      <Routes>
+        <Route
+          path="/contacts"
+          element={
+            <ResourcePage
+              session={session}
+              setSession={setSession}
+              endpoint="/crm/contacts"
+              title="Contacts"
+              fields={[
+                { key: "full_name", label: "Full Name" },
+                { key: "email", label: "Email" }
+              ]}
+            />
+          }
+        />
+        <Route
+          path="/leads"
+          element={
+            <ResourcePage
+              session={session}
+              setSession={setSession}
+              endpoint="/crm/leads"
+              title="Leads"
+              fields={[
+                { key: "contact_id", label: "Contact ID" },
+                { key: "status", label: "Status (NEW/QUALIFIED/...)" }
+              ]}
+            />
+          }
+        />
+        <Route
+          path="/opportunities"
+          element={
+            <ResourcePage
+              session={session}
+              setSession={setSession}
+              endpoint="/crm/opportunities"
+              title="Opportunities"
+              fields={[
+                { key: "lead_id", label: "Lead ID" },
+                { key: "status", label: "Status (OPEN/WON/LOST)" }
+              ]}
+            />
+          }
+        />
+        <Route path="*" element={<Navigate to="/contacts" replace />} />
+      </Routes>
+    </main>
+  );
+}
+
+function RootApp() {
+  const { session, setSession } = useSessionState();
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            session ? <Navigate to="/contacts" replace /> : <LoginPage setSession={setSession} />
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            session ? <CRMApp session={session} setSession={setSession} /> : <Navigate to="/login" replace />
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <RootApp />
   </React.StrictMode>
 );

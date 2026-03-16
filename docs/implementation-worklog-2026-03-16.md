@@ -351,3 +351,51 @@ Completed backend items:
 
 - broaden integration/e2e coverage for auth + RBAC + audit + restore.
 - run the same migration/seed/smoke procedure on Supabase environment.
+
+## Update: Frontend Auth + CRUD Wiring (2026-03-16)
+
+Completed initial frontend implementation for both apps:
+
+1. ERP and CRM now have:
+   - login page
+   - localStorage-backed session persistence
+   - protected routing
+   - logout behavior
+
+2. Token lifecycle:
+   - both apps use `@sphincs/api-client`
+   - bearer token is attached to protected requests
+   - refresh token flow auto-runs on `401`
+   - refreshed tokens are persisted in session state
+
+3. Role-aware app access:
+   - ERP app allows `Admin` and `ERP Manager`
+   - CRM app allows `Admin` and `CRM Manager`
+
+4. Module API wiring:
+   - ERP:
+     - items
+     - suppliers
+     - purchase-orders
+   - CRM:
+     - contacts
+     - leads
+     - opportunities
+
+5. Module actions currently available in UI:
+   - list
+   - create
+   - patch/edit
+   - soft-delete
+   - restore
+   - include deleted toggle
+
+### Validation
+
+- workspace install/build/test succeeded after frontend changes.
+- frontend bundles built successfully for both ERP and CRM apps.
+
+### Notes
+
+- current UI is intentionally functional-first and still needs a design pass.
+- inline JSON patch prompt is a temporary editing mechanism and should be replaced with dedicated edit forms.

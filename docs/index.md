@@ -12,6 +12,7 @@ This is the canonical entry point for all project documentation.
 
 - [Database Schema Standards](./database-schema.md)
 - [API Conventions](./api-conventions.md)
+- [Frontend Guide](./frontend-guide.md)
 
 ## Delivery
 
