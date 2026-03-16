@@ -182,3 +182,32 @@ Next implementation step is to wire services to Prisma/Supabase persistence:
 2. Add migrations and seed data (org, branch, roles, admin)
 3. Replace in-memory services with DB-backed repository/service calls
 4. Expand unit/integration/e2e coverage on real persistence paths
+
+## Update: Milestone 1.1 Progress (Prisma Foundation)
+
+Completed in follow-up work:
+
+1. Re-enabled real Prisma client usage in `PrismaService` (`extends PrismaClient` with `$connect` and shutdown hooks).
+2. Added `pnpm.onlyBuiltDependencies` in root `package.json` to permit Prisma/Nest build scripts during install/rebuild.
+3. Added Prisma operational scripts in `apps/core-api/package.json`:
+   - `prisma:generate`
+   - `prisma:deploy`
+   - `prisma:seed`
+4. Added seed script at `apps/core-api/prisma/seed.ts`:
+   - seeds one organization
+   - one branch
+   - base roles
+   - admin user + admin role assignment
+5. Created initial migration baseline:
+   - `apps/core-api/prisma/migrations/20260316_init/migration.sql`
+   - `apps/core-api/prisma/migrations/migration_lock.toml`
+   - includes `CREATE EXTENSION IF NOT EXISTS pgcrypto;`
+
+### Additional issue encountered and fix
+
+- Symptom:
+  - Prisma client types can fail to materialize when install-time build scripts are blocked.
+- Fix:
+  - Added `pnpm.onlyBuiltDependencies` allowlist and ran `pnpm rebuild` followed by `prisma generate`.
+- Why:
+  - Makes Prisma client generation reliable in local and CI-like environments without manual one-off workarounds.

@@ -10,6 +10,14 @@ Deliver Phase 1 as a usable internal alpha with:
 - Auth + RBAC + branch/org scoping
 - Soft delete and audit traceability
 
+## Progress Snapshot (2026-03-16)
+
+- Milestone 1.1: In progress
+  - Prisma client wiring completed
+  - Initial migration baseline committed
+  - Seed script committed
+  - Remaining in this milestone: run migration/seed against target Supabase project and verify live connectivity end-to-end
+
 ## Milestone 1: Backend Persistence Foundation
 
 ### T1.1 Prisma Client + Database Bootstrapping
