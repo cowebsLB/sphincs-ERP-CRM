@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import { PrismaService } from "./prisma.service";
+import { PrismaModule } from "./prisma.module";
 import { AuthModule } from "./core/auth/auth.module";
 import { UsersModule } from "./core/users/users.module";
 import { RolesModule } from "./core/roles/roles.module";
@@ -22,6 +22,7 @@ import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
 
 @Module({
   imports: [
+    PrismaModule,
     AuthModule,
     UsersModule,
     RolesModule,
@@ -39,7 +40,6 @@ import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
     LoggingModule
   ],
   providers: [
-    PrismaService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard

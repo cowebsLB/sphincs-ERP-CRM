@@ -281,3 +281,16 @@ Completed conversion from in-memory storage to Prisma-backed persistence for:
 
 - CRM services (`contacts`, `leads`, `opportunities`) are still in-memory and should be converted next.
 - Auth remains scaffolded and should be linked to real user/password verification against DB records.
+
+### Runtime fix after Prisma service adoption
+
+- Issue:
+  - `core-api` failed to boot in watch mode with:
+    - `Nest can't resolve dependencies of the UsersService (PrismaService)`
+- Root cause:
+  - `PrismaService` was not available in feature module DI context when services started injecting it.
+- Fix:
+  - Added global `PrismaModule` that provides/exports `PrismaService`.
+  - Imported `PrismaModule` in `AppModule`.
+- Result:
+  - API boots successfully and responds on `http://localhost:3000/health`.
