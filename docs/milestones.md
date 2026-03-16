@@ -18,6 +18,17 @@ Deliver Phase 1 as a usable internal alpha with:
   - Seed script committed and validated locally
   - Runtime endpoint checks completed (`/health`, `/api/v1/system/info`)
   - Next: repeat deploy/seed flow on Supabase target environment
+- Milestone 2 and ERP persistence track: In progress
+  - Prisma-backed services completed for:
+    - organizations
+    - branches
+    - users
+    - items
+    - suppliers
+    - purchase_orders
+  - Remaining:
+    - convert CRM services to Prisma (`contacts`, `leads`, `opportunities`)
+    - wire auth to DB-backed credential verification
 
 ## Milestone 1: Backend Persistence Foundation
 

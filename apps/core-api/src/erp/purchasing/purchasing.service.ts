@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { randomUUID } from "crypto";
+import { PrismaService } from "../../prisma.service";
 
 export type PurchaseOrderStatus =
   | "DRAFT"
@@ -8,52 +8,45 @@ export type PurchaseOrderStatus =
   | "RECEIVED"
   | "CANCELLED";
 
-interface PurchaseOrderRecord {
-  id: string;
-  organization_id: string;
-  branch_id: string | null;
-  supplier_id: string | null;
-  status: PurchaseOrderStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  created_by: string | null;
-  updated_by: string | null;
-}
-
 @Injectable()
 export class PurchasingService {
-  private readonly purchaseOrders: PurchaseOrderRecord[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll(includeDeleted: boolean) {
-    return this.purchaseOrders.filter((entry) => includeDeleted || entry.deleted_at === null);
+    return this.prisma.purchaseOrder.findMany({
+      where: includeDeleted ? {} : { deleted_at: null },
+      orderBy: { created_at: "desc" }
+    });
   }
 
   create(body: Record<string, unknown>) {
-    const now = new Date().toISOString();
-    const order: PurchaseOrderRecord = {
-      id: randomUUID(),
-      organization_id: String(body.organization_id ?? "seed-org-id"),
-      branch_id: body.branch_id ? String(body.branch_id) : null,
-      supplier_id: body.supplier_id ? String(body.supplier_id) : null,
-      status: (body.status as PurchaseOrderStatus) ?? "DRAFT",
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-      created_by: body.created_by ? String(body.created_by) : null,
-      updated_by: body.updated_by ? String(body.updated_by) : null
-    };
-    this.purchaseOrders.push(order);
-    return order;
+    return this.prisma.purchaseOrder.create({
+      data: {
+        organization_id: String(body.organization_id ?? "00000000-0000-0000-0000-000000000001"),
+        branch_id: body.branch_id ? String(body.branch_id) : null,
+        supplier_id: body.supplier_id ? String(body.supplier_id) : null,
+        status: (body.status as PurchaseOrderStatus) ?? "DRAFT",
+        created_by: body.created_by ? String(body.created_by) : null,
+        updated_by: body.updated_by ? String(body.updated_by) : null
+      }
+    });
   }
 
-  update(id: string, body: Record<string, unknown>) {
-    const order = this.purchaseOrders.find((entry) => entry.id === id);
-    if (!order) {
+  async update(id: string, body: Record<string, unknown>) {
+    const existing = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+    if (!existing) {
       throw new NotFoundException("Purchase order not found");
     }
-    Object.assign(order, body, { updated_at: new Date().toISOString() });
-    return order;
+
+    return this.prisma.purchaseOrder.update({
+      where: { id },
+      data: {
+        supplier_id:
+          body.supplier_id === undefined ? undefined : (body.supplier_id ? String(body.supplier_id) : null),
+        status: body.status ? (String(body.status) as PurchaseOrderStatus) : undefined,
+        deleted_at: body.deleted_at === undefined ? undefined : (body.deleted_at as Date | null),
+        updated_by: body.updated_by ? String(body.updated_by) : undefined
+      }
+    });
   }
 }
-

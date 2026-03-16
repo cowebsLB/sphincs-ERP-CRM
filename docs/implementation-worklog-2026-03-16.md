@@ -251,3 +251,33 @@ Validation executed against local PostgreSQL 18:
   - Reused running instance for endpoint validation and then cleared listener.
 - Why:
   - Confirms runtime health without invalidating the validation run.
+
+## Update: Service Persistence Wiring (2026-03-16)
+
+Completed conversion from in-memory storage to Prisma-backed persistence for:
+
+- `core/organizations`
+- `core/branches`
+- `core/users`
+- `erp/items`
+- `erp/suppliers`
+- `erp/purchasing` (purchase orders)
+
+### What changed
+
+1. Services now inject `PrismaService` and execute real `findMany/create/update` operations.
+2. Soft-delete filtering is preserved:
+   - default reads exclude `deleted_at != null`
+   - `includeDeleted` flow still supported in ERP services.
+3. Controller `PATCH` signatures in core modules were corrected to pass route `:id` to update methods.
+4. Purchasing unit test was updated to use mocked Prisma calls because service methods are now async DB-backed.
+
+### Validation
+
+- `pnpm -r --if-present build` passed
+- `pnpm -r --if-present test` passed
+
+### Remaining in persistence track
+
+- CRM services (`contacts`, `leads`, `opportunities`) are still in-memory and should be converted next.
+- Auth remains scaffolded and should be linked to real user/password verification against DB records.

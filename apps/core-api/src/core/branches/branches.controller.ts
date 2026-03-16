@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 import { BranchesService } from "./branches.service";
 
 @Controller("branches")
@@ -16,8 +16,7 @@ export class BranchesController {
   }
 
   @Patch(":id")
-  update(@Body() body: Record<string, unknown>) {
-    return this.branchesService.update(body);
+  update(@Param("id") id: string, @Body() body: Record<string, unknown>) {
+    return this.branchesService.update(id, body);
   }
 }
-
