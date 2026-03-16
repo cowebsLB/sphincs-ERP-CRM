@@ -1,0 +1,270 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  DISQUALIFIED
+  CONVERTED
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model Organization {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_by String?  @db.Uuid
+  updated_by String?  @db.Uuid
+
+  branches Branch[]
+  users    User[]
+
+  @@map("organizations")
+}
+
+model Branch {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  name            String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  users        User[]
+
+  @@index([organization_id], map: "idx_branches_org")
+  @@index([deleted_at], map: "idx_branches_deleted_at")
+  @@index([created_at], map: "idx_branches_created_at")
+  @@map("branches")
+}
+
+model User {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  branch_id       String?  @db.Uuid
+  email           String   @unique
+  password_hash   String
+  status          String   @default("ACTIVE")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch?      @relation(fields: [branch_id], references: [id])
+  user_roles   UserRole[]
+
+  @@index([organization_id], map: "idx_users_org")
+  @@index([branch_id], map: "idx_users_branch")
+  @@index([deleted_at], map: "idx_users_deleted_at")
+  @@index([created_at], map: "idx_users_created_at")
+  @@map("users")
+}
+
+model Role {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @unique
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_by String?  @db.Uuid
+  updated_by String?  @db.Uuid
+
+  user_roles UserRole[]
+
+  @@index([deleted_at], map: "idx_roles_deleted_at")
+  @@index([created_at], map: "idx_roles_created_at")
+  @@map("roles")
+}
+
+model UserRole {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  role_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_by String?  @db.Uuid
+  updated_by String?  @db.Uuid
+
+  user User @relation(fields: [user_id], references: [id])
+  role Role @relation(fields: [role_id], references: [id])
+
+  @@unique([user_id, role_id], map: "uq_user_roles_user_role")
+  @@index([user_id], map: "idx_user_roles_user")
+  @@index([role_id], map: "idx_user_roles_role")
+  @@index([deleted_at], map: "idx_user_roles_deleted_at")
+  @@map("user_roles")
+}
+
+model Item {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  branch_id       String?  @db.Uuid
+  name            String
+  sku             String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  @@index([organization_id], map: "idx_items_org")
+  @@index([branch_id], map: "idx_items_branch")
+  @@index([deleted_at], map: "idx_items_deleted_at")
+  @@index([created_at], map: "idx_items_created_at")
+  @@index([organization_id, deleted_at, created_at], map: "idx_items_org_deleted_created")
+  @@index([organization_id, branch_id, deleted_at, created_at], map: "idx_items_org_branch_deleted_created")
+  @@map("items")
+}
+
+model Supplier {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  branch_id       String?  @db.Uuid
+  name            String
+  email           String?
+  phone           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  @@index([organization_id], map: "idx_suppliers_org")
+  @@index([branch_id], map: "idx_suppliers_branch")
+  @@index([deleted_at], map: "idx_suppliers_deleted_at")
+  @@index([created_at], map: "idx_suppliers_created_at")
+  @@index([organization_id, deleted_at, created_at], map: "idx_suppliers_org_deleted_created")
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String              @db.Uuid
+  branch_id       String?             @db.Uuid
+  supplier_id     String?             @db.Uuid
+  status          PurchaseOrderStatus @default(DRAFT)
+  created_at      DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime            @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?           @db.Timestamptz(6)
+  created_by      String?             @db.Uuid
+  updated_by      String?             @db.Uuid
+
+  @@index([organization_id], map: "idx_purchase_orders_org")
+  @@index([branch_id], map: "idx_purchase_orders_branch")
+  @@index([status], map: "idx_purchase_orders_status")
+  @@index([deleted_at], map: "idx_purchase_orders_deleted_at")
+  @@index([created_at], map: "idx_purchase_orders_created_at")
+  @@index([organization_id, branch_id, deleted_at, created_at], map: "idx_purchase_orders_org_branch_deleted_created")
+  @@map("purchase_orders")
+}
+
+model Contact {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String   @db.Uuid
+  branch_id       String?  @db.Uuid
+  full_name       String
+  email           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  @@index([organization_id], map: "idx_contacts_org")
+  @@index([branch_id], map: "idx_contacts_branch")
+  @@index([deleted_at], map: "idx_contacts_deleted_at")
+  @@index([created_at], map: "idx_contacts_created_at")
+  @@index([organization_id, deleted_at, created_at], map: "idx_contacts_org_deleted_created")
+  @@map("contacts")
+}
+
+model Lead {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String     @db.Uuid
+  branch_id       String?    @db.Uuid
+  contact_id      String?    @db.Uuid
+  status          LeadStatus @default(NEW)
+  created_at      DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime   @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?  @db.Timestamptz(6)
+  created_by      String?    @db.Uuid
+  updated_by      String?    @db.Uuid
+
+  @@index([organization_id], map: "idx_leads_org")
+  @@index([branch_id], map: "idx_leads_branch")
+  @@index([status], map: "idx_leads_status")
+  @@index([deleted_at], map: "idx_leads_deleted_at")
+  @@index([created_at], map: "idx_leads_created_at")
+  @@index([organization_id, deleted_at, created_at], map: "idx_leads_org_deleted_created")
+  @@map("leads")
+}
+
+model Opportunity {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String            @db.Uuid
+  branch_id       String?           @db.Uuid
+  lead_id         String?           @db.Uuid
+  status          OpportunityStatus @default(OPEN)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?         @db.Timestamptz(6)
+  created_by      String?           @db.Uuid
+  updated_by      String?           @db.Uuid
+
+  @@index([organization_id], map: "idx_opportunities_org")
+  @@index([branch_id], map: "idx_opportunities_branch")
+  @@index([status], map: "idx_opportunities_status")
+  @@index([deleted_at], map: "idx_opportunities_deleted_at")
+  @@index([created_at], map: "idx_opportunities_created_at")
+  @@index([organization_id, deleted_at, created_at], map: "idx_opportunities_org_deleted_created")
+  @@map("opportunities")
+}
+
+model AuditLog {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String?  @db.Uuid
+  user_id         String?  @db.Uuid
+  action          String
+  entity_type     String
+  entity_id       String?
+  metadata        Json?
+  timestamp       DateTime @default(now()) @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_by      String?  @db.Uuid
+  updated_by      String?  @db.Uuid
+
+  @@index([organization_id], map: "idx_audit_logs_org")
+  @@index([user_id], map: "idx_audit_logs_user")
+  @@index([created_at], map: "idx_audit_logs_created_at")
+  @@index([deleted_at], map: "idx_audit_logs_deleted_at")
+  @@map("audit_logs")
+}

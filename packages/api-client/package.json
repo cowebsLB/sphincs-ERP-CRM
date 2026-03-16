@@ -1,0 +1,17 @@
+{
+  "name": "@sphincs/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo api-client build",
+    "test": "echo api-client test",
+    "lint": "echo api-client lint"
+  },
+  "dependencies": {
+    "@sphincs/shared-types": "workspace:*"
+  }
+}
+

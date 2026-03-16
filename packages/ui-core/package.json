@@ -1,0 +1,14 @@
+{
+  "name": "@sphincs/ui-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo ui-core build",
+    "test": "echo ui-core test",
+    "lint": "echo ui-core lint"
+  }
+}
+
