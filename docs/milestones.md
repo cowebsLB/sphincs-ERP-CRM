@@ -44,6 +44,7 @@ Deliver Phase 1 as a usable internal alpha with:
 
 - Frontend implementation track: In progress
 - Frontend implementation track: In progress (phase 2)
+- Frontend implementation track: In progress (phase 3 visual polish)
   - Completed:
     - auth login + token persistence in ERP and CRM apps
     - protected routing per app
@@ -54,9 +55,12 @@ Deliver Phase 1 as a usable internal alpha with:
     - reusable shared UI components in `packages/ui-core` (`DataTable`, `ResourceManager`)
     - real edit forms replacing JSON patch prompt flow
     - search/sort/pagination table behavior across resource screens
+    - shared style system and app shell layout (sidebar + topbar)
+    - toast feedback for create/update/delete/restore actions
+    - inline required-field validation in resource forms
   - Remaining:
-    - improve UI/UX styling and layout polish
     - add frontend tests for auth/session/resource flows
+    - optional: richer charts/widgets and advanced filter presets
 
 ## Milestone 1: Backend Persistence Foundation
 

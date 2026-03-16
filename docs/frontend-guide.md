@@ -59,6 +59,18 @@ Shared reusable components now live in `packages/ui-core`:
   - real edit form (replaces JSON prompt workflow)
   - row actions (edit/delete/restore)
 
+## Visual Polish (Current)
+
+- Shared style tokens and UI classes in `packages/ui-core/src/ui.css`
+- App shell layout:
+  - left sidebar navigation
+  - top bar with contextual title and logout
+- UX feedback:
+  - toast banners for success/error actions
+  - loading and empty states in resource views
+- Form UX:
+  - inline required-field validation in create/edit flows
+
 ## Local Run
 
 From repo root:

@@ -420,3 +420,29 @@ Validation:
 
 - workspace build: pass
 - workspace tests: pass
+
+## Update: Frontend Visual Pass (2026-03-16)
+
+Completed:
+
+1. Added shared styling system in `ui-core` (`ui.css`) with:
+   - design tokens (color/spacing/radius/shadow)
+   - form/button/table primitives
+   - app shell layout styles
+   - toast/feedback styles
+
+2. Applied app-shell layout to ERP and CRM:
+   - sidebar navigation
+   - topbar actions
+   - content pane structure
+
+3. UX feedback improvements:
+   - success/error toasts for CRUD actions
+   - loading indicator and empty state handling in resource manager
+
+4. Form UX improvements:
+   - inline required-field validation for create/edit forms
+
+Validation:
+
+- workspace install/build/test all passing after visual pass.

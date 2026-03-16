@@ -53,18 +53,20 @@ export function DataTable<T extends { id: string }>({
   }, [page, totalPages]);
 
   return (
-    <section>
+    <section className="ui-table-wrap">
       <input
+        className="ui-input ui-search"
         placeholder="Search..."
         value={searchText}
         onChange={(e) => onSearchTextChange(e.target.value)}
       />
-      <table>
+      <table className="ui-table">
         <thead>
           <tr>
             {columns.map((column) => (
               <th key={String(column.key)}>
                 <button
+                  className="ui-th-btn"
                   type="button"
                   disabled={!column.sortable}
                   onClick={() => {
@@ -95,14 +97,14 @@ export function DataTable<T extends { id: string }>({
           ))}
         </tbody>
       </table>
-      <div>
-        <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))}>
+      <div className="ui-table-footer">
+        <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPage((p) => Math.max(1, p - 1))}>
           Prev
         </button>
-        <span>
+        <span className="ui-muted">
           Page {page} / {totalPages}
         </span>
-        <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+        <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
           Next
         </button>
       </div>

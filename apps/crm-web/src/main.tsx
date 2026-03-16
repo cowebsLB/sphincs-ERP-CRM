@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, type SessionState, type SessionTokens } from "@sphincs/api-client";
 import { ResourceManager } from "@sphincs/ui-core";
+import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const STORAGE_KEY = "sphincs.crm.session";
@@ -103,13 +104,15 @@ function ResourcePage({
   setSession,
   endpoint,
   title,
-  fields
+  fields,
+  notify
 }: {
   session: SessionState;
   setSession: (next: SessionState | null) => void;
   endpoint: string;
   title: string;
   fields: Array<{ key: string; label: string }>;
+  notify: (type: "success" | "error", message: string) => void;
 }) {
   const [rows, setRows] = React.useState<RecordData[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -128,19 +131,29 @@ function ResourcePage({
   }, [load]);
 
   async function createItem(form: Record<string, string>) {
-    await withAuth(session, setSession, endpoint, {
-      method: "POST",
-      body: JSON.stringify(form)
-    });
-    await load();
+    try {
+      await withAuth(session, setSession, endpoint, {
+        method: "POST",
+        body: JSON.stringify(form)
+      });
+      notify("success", `${title}: record created`);
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
   }
 
   async function patchItem(id: string, payload: Record<string, unknown>) {
-    await withAuth(session, setSession, `${endpoint}/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload)
-    });
-    await load();
+    try {
+      await withAuth(session, setSession, `${endpoint}/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", `${title}: record updated`);
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
   }
 
   return (
@@ -157,11 +170,16 @@ function ResourcePage({
       onUpdate={(id, payload) => patchItem(id, payload)}
       onSoftDelete={(id) => patchItem(id, { deleted_at: new Date().toISOString() })}
       onRestore={async (id) => {
-        await withAuth(session, setSession, `${endpoint}/${id}/restore`, {
-          method: "POST",
-          body: JSON.stringify({})
-        });
-        await load();
+        try {
+          await withAuth(session, setSession, `${endpoint}/${id}/restore`, {
+            method: "POST",
+            body: JSON.stringify({})
+          });
+          notify("success", `${title}: record restored`);
+          await load();
+        } catch (error) {
+          notify("error", error instanceof Error ? error.message : "Restore failed");
+        }
       }}
     />
   );
@@ -175,74 +193,91 @@ function CRMApp({
   setSession: (next: SessionState | null) => void;
 }) {
   const navigate = useNavigate();
+  const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
+  const notify = React.useCallback((type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 2600);
+  }, []);
+
   if (!hasRole(session, "Admin", "CRM Manager")) {
     return <p>Your account does not have CRM access.</p>;
   }
   return (
-    <main>
-      <h1>CRM</h1>
-      <p>{session.user.email}</p>
-      <nav>
-        <Link to="/contacts">Contacts</Link> | <Link to="/leads">Leads</Link> |{" "}
+    <main className="app-shell">
+      <aside className="app-sidebar">
+        <h2>SPHINCS CRM</h2>
+        <p className="ui-muted">{session.user.email}</p>
+        <Link to="/contacts">Contacts</Link>
+        <Link to="/leads">Leads</Link>
         <Link to="/opportunities">Opportunities</Link>
-      </nav>
-      <button
-        type="button"
-        onClick={() => {
-          setSession(null);
-          navigate("/login");
-        }}
-      >
-        Logout
-      </button>
-      <Routes>
-        <Route
-          path="/contacts"
-          element={
-            <ResourcePage
-              session={session}
-              setSession={setSession}
-              endpoint="/crm/contacts"
-              title="Contacts"
-              fields={[
-                { key: "full_name", label: "Full Name" },
-                { key: "email", label: "Email" }
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/leads"
-          element={
-            <ResourcePage
-              session={session}
-              setSession={setSession}
-              endpoint="/crm/leads"
-              title="Leads"
-              fields={[
-                { key: "contact_id", label: "Contact ID" },
-                { key: "status", label: "Status (NEW/QUALIFIED/...)" }
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/opportunities"
-          element={
-            <ResourcePage
-              session={session}
-              setSession={setSession}
-              endpoint="/crm/opportunities"
-              title="Opportunities"
-              fields={[
-                { key: "lead_id", label: "Lead ID" },
-                { key: "status", label: "Status (OPEN/WON/LOST)" }
-              ]}
-            />
-          }
-        />
-        <Route path="*" element={<Navigate to="/contacts" replace />} />
-      </Routes>
+      </aside>
+      <section className="app-main">
+        <header className="app-topbar">
+          <strong>CRM Operations</strong>
+          <button
+            className="ui-btn ui-btn-secondary"
+            type="button"
+            onClick={() => {
+              setSession(null);
+              navigate("/login");
+            }}
+          >
+            Logout
+          </button>
+        </header>
+        {toast && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
+        <Routes>
+          <Route
+            path="/contacts"
+            element={
+              <ResourcePage
+                session={session}
+                setSession={setSession}
+                endpoint="/crm/contacts"
+                title="Contacts"
+                fields={[
+                  { key: "full_name", label: "Full Name" },
+                  { key: "email", label: "Email" }
+                ]}
+                notify={notify}
+              />
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <ResourcePage
+                session={session}
+                setSession={setSession}
+                endpoint="/crm/leads"
+                title="Leads"
+                fields={[
+                  { key: "contact_id", label: "Contact ID" },
+                  { key: "status", label: "Status (NEW/QUALIFIED/...)" }
+                ]}
+                notify={notify}
+              />
+            }
+          />
+          <Route
+            path="/opportunities"
+            element={
+              <ResourcePage
+                session={session}
+                setSession={setSession}
+                endpoint="/crm/opportunities"
+                title="Opportunities"
+                fields={[
+                  { key: "lead_id", label: "Lead ID" },
+                  { key: "status", label: "Status (OPEN/WON/LOST)" }
+                ]}
+                notify={notify}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to="/contacts" replace />} />
+        </Routes>
+      </section>
     </main>
   );
 }
