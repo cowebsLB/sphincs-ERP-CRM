@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, type SessionState, type SessionTokens } from "@sphincs/api-client";
 import { ResourceManager } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
@@ -285,7 +285,7 @@ function ERPApp({
 export function RootApp() {
   const { session, setSession } = useSessionState();
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route
           path="/login"
@@ -300,6 +300,6 @@ export function RootApp() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

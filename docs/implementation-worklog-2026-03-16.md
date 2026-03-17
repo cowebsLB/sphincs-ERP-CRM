@@ -482,3 +482,36 @@ Notes:
 
 - React Router future-flag warnings were emitted during tests but did not fail execution.
 - Next frontend testing step is to add resource CRUD + refresh token/session behavior coverage.
+
+## Update: GitHub Pages Deployment Fix (2026-03-17)
+
+Issue observed:
+
+- Visiting `https://cowebslb.github.io/sphincs-ERP-CRM` showed repository README content
+  instead of deployed frontend apps.
+
+Root cause:
+
+- GitHub Pages had no explicit built site artifact for this monorepo frontend setup.
+
+Fix implemented:
+
+1. Added Pages workflow: `.github/workflows/deploy-pages.yml`
+   - builds ERP app with Pages base path `/sphincs-ERP-CRM/erp/`
+   - builds CRM app with Pages base path `/sphincs-ERP-CRM/crm/`
+   - assembles `_site` artifact with:
+     - root landing page
+     - `/erp/` app assets
+     - `/crm/` app assets
+2. Added static landing page:
+   - `apps/web-home/index.html`
+   - links users to ERP and CRM entry points
+3. Added frontend base-path support:
+   - `apps/erp-web/vite.config.ts` reads `VITE_PUBLIC_BASE`
+   - `apps/crm-web/vite.config.ts` reads `VITE_PUBLIC_BASE`
+4. Switched both frontend apps to `HashRouter` for static-hosting route stability.
+
+Why this approach:
+
+- Keeps the monorepo structure intact while deploying both apps from one Pages site.
+- Prevents deep-link refresh failures common with static hosting and browser history routing.

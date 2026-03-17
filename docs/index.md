@@ -17,6 +17,7 @@ This is the canonical entry point for all project documentation.
 ## Delivery
 
 - [Setup Guide](./setup.md)
+- [Deployment Guide](./deployment.md)
 - [Testing Strategy](./testing.md)
 - [Implementation Worklog (2026-03-16)](./implementation-worklog-2026-03-16.md)
 - [Milestones And Tickets](./milestones.md)
