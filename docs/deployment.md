@@ -35,3 +35,30 @@ This must point to your deployed backend API (for example:
   - ERP: `/sphincs-ERP-CRM/erp/`
   - CRM: `/sphincs-ERP-CRM/crm/`
 - Frontend apps use `HashRouter` so deep links are stable on static hosting.
+
+## CI Troubleshooting (2026-03-17)
+
+### Failure: `Multiple versions of pnpm specified`
+
+Symptom:
+
+- Pages workflow failed with:
+  - `Multiple versions of pnpm specified`
+  - one version came from workflow `pnpm/action-setup`
+  - one version came from root `package.json` `packageManager`
+
+Fix:
+
+- Removed explicit `version` from `pnpm/action-setup`.
+- Kept canonical pnpm version source in root `package.json`:
+  - `packageManager: pnpm@10.0.0`
+
+### Warning: Node 20 action runtime deprecation
+
+Fix:
+
+- Updated actions:
+  - `actions/checkout@v5`
+  - `actions/setup-node@v5`
+- Added workflow env:
+  - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`

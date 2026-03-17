@@ -515,3 +515,31 @@ Why this approach:
 
 - Keeps the monorepo structure intact while deploying both apps from one Pages site.
 - Prevents deep-link refresh failures common with static hosting and browser history routing.
+
+## Update: GitHub Pages CI Follow-up Fix (2026-03-17)
+
+Issue observed after initial workflow push:
+
+- GitHub Actions failure:
+  - `Multiple versions of pnpm specified`
+- Runtime warning:
+  - Node 20 JavaScript action runtime deprecation notice
+
+Root cause:
+
+- `pnpm/action-setup` pinned a version while root `package.json` already pins pnpm via
+  `packageManager`, creating an explicit version conflict.
+
+Fix implemented:
+
+1. Removed explicit pnpm version from `.github/workflows/deploy-pages.yml`.
+2. Updated workflow actions:
+   - `actions/checkout@v5`
+   - `actions/setup-node@v5`
+3. Added workflow env:
+   - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`
+
+Why this approach:
+
+- Keeps one source of truth for pnpm version.
+- Aligns workflow with GitHub's Node 24 runtime transition path.
