@@ -543,3 +543,24 @@ Why this approach:
 
 - Keeps one source of truth for pnpm version.
 - Aligns workflow with GitHub's Node 24 runtime transition path.
+
+## Update: GitHub Pages CI Lockfile Fix (2026-03-17)
+
+Issue observed after CI follow-up push:
+
+- GitHub Actions build failure:
+  - `Dependencies lock file is not found ... Supported file patterns: pnpm-lock.yaml`
+
+Root cause:
+
+- `pnpm-lock.yaml` existed locally but was excluded from source control by `.gitignore`.
+
+Fix implemented:
+
+1. Removed `pnpm-lock.yaml` from `.gitignore`.
+2. Added `pnpm-lock.yaml` to git and pushed to `main`.
+
+Why this approach:
+
+- CI install step intentionally uses `pnpm install --frozen-lockfile`, which requires
+  a committed lockfile to ensure deterministic dependency resolution.

@@ -62,3 +62,23 @@ Fix:
   - `actions/setup-node@v5`
 - Added workflow env:
   - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`
+
+### Failure: `Dependencies lock file is not found`
+
+Symptom:
+
+- Workflow failed during dependency install on GitHub runner:
+  - `pnpm-lock.yaml` not found
+
+Root cause:
+
+- Lockfile was present locally but excluded from git by `.gitignore`, so CI checkout did not include it.
+
+Fix:
+
+- Removed `pnpm-lock.yaml` from `.gitignore`.
+- Committed `pnpm-lock.yaml` to repository.
+
+Why:
+
+- Workflow uses `pnpm install --frozen-lockfile`, which requires the lockfile in source control.
