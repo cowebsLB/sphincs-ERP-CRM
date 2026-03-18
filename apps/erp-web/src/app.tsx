@@ -1,6 +1,6 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { ApiClient, type SessionState, type SessionTokens } from "@sphincs/api-client";
+import { ApiClient, type SessionState } from "@sphincs/api-client";
 import { ResourceManager } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
@@ -117,14 +117,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
     setBusy(true);
     try {
       const tokens = await client.login(email, password);
-      const user = await client.authorized<SessionState["user"]>(
-        "/auth/me",
-        tokens as SessionTokens
-      );
       setSession({
-        accessToken: user.tokens.accessToken,
-        refreshToken: user.tokens.refreshToken,
-        user: user.data
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: tokens.user
       });
       navigate("/items");
     } catch (err) {

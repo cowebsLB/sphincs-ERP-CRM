@@ -167,6 +167,31 @@ Why:
 - quick operational visibility for users and maintainers directly from the UI
 - immediate confirmation that API and deployment metadata are reachable
 
+### 11) Login latency optimization (single-round-trip sign-in)
+
+Observed UX issue:
+
+- login felt slow due to sequential API flow:
+  - `POST /api/v1/auth/login`
+  - then `GET /api/v1/auth/me`
+
+Optimization implemented:
+
+1. Backend login response now includes user payload directly:
+   - file: `apps/core-api/src/core/auth/auth.service.ts`
+2. API client login contract updated:
+   - file: `packages/api-client/src/index.ts`
+3. ERP and CRM login flows now hydrate session from login response without `/auth/me` follow-up:
+   - `apps/erp-web/src/app.tsx`
+   - `apps/crm-web/src/app.tsx`
+4. Frontend tests updated for new login response shape:
+   - `apps/erp-web/src/app.test.tsx`
+   - `apps/crm-web/src/app.test.tsx`
+
+Expected impact:
+
+- faster perceived login on hosted environments by removing one network round trip from sign-in.
+
 ## Outcome
 
 - Production backend deploy is operational.

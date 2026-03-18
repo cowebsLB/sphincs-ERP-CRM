@@ -102,7 +102,18 @@ export class AuthService {
       }
     }
 
-    return { accessToken, refreshToken, tokenType: "Bearer" };
+    return {
+      accessToken,
+      refreshToken,
+      tokenType: "Bearer",
+      user: {
+        id: user.id,
+        email: user.email,
+        roles,
+        organizationId: user.organization_id,
+        branchId: user.branch_id
+      }
+    };
   }
 
   async refresh(refreshToken: string) {

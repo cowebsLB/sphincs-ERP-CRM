@@ -25,20 +25,15 @@ describe("CRM RootApp", () => {
     vi.spyOn(ApiClient.prototype, "login").mockResolvedValue({
       accessToken: "access",
       refreshToken: "refresh",
-      tokenType: "Bearer"
-    });
-    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
-      if (path === "/auth/me") {
-        return {
-          data: {
-            id: "u1",
-            email: "admin@sphincs.local",
-            roles: ["Admin"],
-            organizationId: "org1"
-          },
-          tokens
-        };
+      tokenType: "Bearer",
+      user: {
+        id: "u1",
+        email: "admin@sphincs.local",
+        roles: ["Admin"],
+        organizationId: "org1"
       }
+    });
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (_path, tokens) => {
       return { data: [], tokens };
     });
 

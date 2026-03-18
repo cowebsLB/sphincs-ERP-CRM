@@ -65,6 +65,7 @@ Deliver Phase 1 as a usable internal alpha with:
     - GitHub Pages deployment pipeline for monorepo frontends (`/erp` + `/crm`)
     - login form autocomplete attributes for better browser autofill and fewer console warnings
     - system status card in ERP and CRM app shells (`/health` + `/api/v1/system/info`)
+    - single-call login session hydration (removed extra `/auth/me` call during sign-in)
   - Remaining:
     - expand frontend tests for session refresh flow and CRUD resource interactions
     - optional: richer charts/widgets and advanced filter presets

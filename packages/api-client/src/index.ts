@@ -27,7 +27,10 @@ export class ApiClient {
     return response.json() as Promise<T>;
   }
 
-  async login(email: string, password: string): Promise<SessionTokens & { tokenType: string }> {
+  async login(
+    email: string,
+    password: string
+  ): Promise<SessionTokens & { tokenType: string; user: AuthUser }> {
     return this.rawRequest("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
