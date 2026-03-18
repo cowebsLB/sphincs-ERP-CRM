@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLES_KEY } from "../decorators/roles.decorator";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import { PrismaService } from "../../prisma.service";
 
 @Injectable()

@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import { PrismaService } from "../../prisma.service";
 import { hashPassword, verifyPassword } from "../../common/security/password";
 import { createHash, randomUUID } from "crypto";

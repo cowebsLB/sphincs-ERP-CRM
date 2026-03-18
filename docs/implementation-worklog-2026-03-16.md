@@ -650,3 +650,29 @@ Why:
 
 - Removes refresh-token collision edge cases as a source of 500 errors.
 - Improves observability so future runtime failures are diagnosable directly from Render logs.
+
+## Update: Login 500 Resolved via JWT Import Fix (2026-03-18)
+
+Observed production error:
+
+- `TypeError: Cannot read properties of undefined (reading 'sign')`
+- emitted on `POST /api/v1/auth/login`
+- trace pointed to `AuthService.createAccessToken`
+
+Root cause:
+
+- `jsonwebtoken` default import shape mismatch under production runtime transpilation.
+- code used:
+  - `import jwt from "jsonwebtoken"`
+- runtime object had no default export; `jwt` was `undefined`.
+
+Fix:
+
+1. Updated auth and guard imports to namespace form:
+   - `import * as jwt from "jsonwebtoken"`
+2. Rebuilt and pushed backend for redeploy.
+
+Why:
+
+- namespace import is stable for CommonJS-backed modules and prevents `jwt.sign` / `jwt.verify`
+  undefined access at runtime.

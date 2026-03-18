@@ -86,6 +86,27 @@ Hardening shipped:
 - refresh-token insert retries once on Prisma unique conflict (`P2002`).
 - global exception filter logs stack traces for non-HTTP server errors.
 
+## Login 500 Root Cause: jsonwebtoken Import Shape (2026-03-18)
+
+Production stack trace:
+
+- `TypeError: Cannot read properties of undefined (reading 'sign')`
+- source: `AuthService.createAccessToken(...)`
+
+Root cause:
+
+- `jsonwebtoken` was imported as default (`import jwt from "jsonwebtoken"`), but runtime output
+  in this deployment resolves the module without a default export object.
+
+Fix:
+
+- switched to namespace import in backend auth/guard code:
+  - `import * as jwt from "jsonwebtoken"`
+
+Why:
+
+- namespace import is CommonJS-safe and avoids `undefined.sign`/`undefined.verify` at runtime.
+
 ## CI Troubleshooting (2026-03-17)
 
 ### Failure: `Multiple versions of pnpm specified`
