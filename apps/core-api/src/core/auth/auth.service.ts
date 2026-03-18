@@ -4,6 +4,7 @@ import { PrismaService } from "../../prisma.service";
 import { hashPassword, verifyPassword } from "../../common/security/password";
 import { createHash, randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
+import { AuthRateLimitService } from "./auth-rate-limit.service";
 
 @Injectable()
 export class AuthService {
@@ -14,7 +15,10 @@ export class AuthService {
     process.env.JWT_REFRESH_SECRET?.trim() || process.env.JWT_SECRET?.trim() || "change-me";
   private readonly accessTokenExpiresIn = "1h";
   private readonly refreshTokenExpiresIn = "7d";
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authRateLimitService: AuthRateLimitService
+  ) {}
 
   private hashRefreshToken(refreshToken: string): string {
     return createHash("sha256").update(refreshToken).digest("hex");
@@ -58,6 +62,10 @@ export class AuthService {
     return createHash("sha256").update(email).digest("hex").slice(0, 12);
   }
 
+  private buildRateLimitKey(email: string, clientFingerprint: string): string {
+    return `${email}|${clientFingerprint}`;
+  }
+
   private getRoleNamesFromUser(user: {
     user_roles: Array<{ role: { name: string } }>;
   }): string[] {
@@ -77,10 +85,12 @@ export class AuthService {
     this.logger.log(JSON.stringify(metrics));
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, clientFingerprint = "unknown") {
     const loginStart = Date.now();
     const normalizedEmail = this.sanitizeEmail(email);
     const emailFingerprint = this.obfuscateEmail(normalizedEmail);
+    const rateLimitKey = this.buildRateLimitKey(normalizedEmail, clientFingerprint);
+    this.authRateLimitService.consume(rateLimitKey);
 
     const dbLookupStart = Date.now();
     const user = await this.prisma.user.findFirst({
@@ -100,6 +110,7 @@ export class AuthService {
     const dbLookupMs = Date.now() - dbLookupStart;
 
     if (!user) {
+      this.authRateLimitService.recordFailure(rateLimitKey);
       this.logLoginPerformance({
         emailFingerprint,
         userFound: false,
@@ -128,6 +139,7 @@ export class AuthService {
     const passwordMs = Date.now() - passwordStart;
 
     if (!validPassword) {
+      this.authRateLimitService.recordFailure(rateLimitKey);
       this.logLoginPerformance({
         emailFingerprint,
         userFound: true,
@@ -140,6 +152,7 @@ export class AuthService {
       });
       throw new UnauthorizedException("Invalid credentials");
     }
+    this.authRateLimitService.reset(rateLimitKey);
 
     const roles = this.getRoleNamesFromUser(user);
     const jwtStart = Date.now();
@@ -202,12 +215,29 @@ export class AuthService {
       const existing = await this.prisma.refreshToken.findFirst({
         where: {
           token_hash: tokenHash,
-          user_id: decoded.sub,
-          revoked_at: null,
-          expires_at: { gt: new Date() }
+          user_id: decoded.sub
         }
       });
       if (!existing) {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+      if (existing.revoked_at) {
+        await this.prisma.refreshToken.updateMany({
+          where: {
+            user_id: decoded.sub,
+            revoked_at: null
+          },
+          data: { revoked_at: new Date() }
+        });
+        this.logger.warn(
+          JSON.stringify({
+            event: "refresh_reuse_detected",
+            userId: decoded.sub
+          })
+        );
+        throw new UnauthorizedException("Refresh token reuse detected. Please login again.");
+      }
+      if (existing.expires_at.getTime() <= Date.now()) {
         throw new UnauthorizedException("Invalid refresh token");
       }
 
@@ -251,7 +281,10 @@ export class AuthService {
       }
 
       return { accessToken, refreshToken: newRefreshToken, tokenType: "Bearer" };
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException("Invalid refresh token");
     }
   }

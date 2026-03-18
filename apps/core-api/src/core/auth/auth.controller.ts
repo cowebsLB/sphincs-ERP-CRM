@@ -4,14 +4,22 @@ import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Req } from "@nestjs/common";
+import { Request } from "express";
 
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private getClientFingerprint(req: Request): string {
+    const forwarded = req.headers["x-forwarded-for"];
+    const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    const ip = forwardedValue?.split(",")[0].trim() || req.ip || "unknown";
+    return ip;
+  }
+
   @Post("login")
-  login(@Body() body: LoginDto) {
-    return this.authService.login(body.email, body.password);
+  login(@Body() body: LoginDto, @Req() req: Request) {
+    return this.authService.login(body.email, body.password, this.getClientFingerprint(req));
   }
 
   @Post("refresh")

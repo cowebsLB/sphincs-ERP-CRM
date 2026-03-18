@@ -312,6 +312,31 @@ Reason:
 - avoids repeated secret churn while active backend development/deploy cycles continue
 - keeps one final controlled cutover for credentials and full regression verification
 
+### 16) Auth hardening: login rate limiting + refresh-token reuse detection
+
+Implemented:
+
+1. Login brute-force protection:
+   - added `AuthRateLimitService` (in-memory limiter)
+   - login now enforces attempt window and temporary block
+   - key uses normalized email + client IP fingerprint
+   - successful login resets limiter entry
+
+2. Refresh-token reuse detection:
+   - refresh flow now checks token record even if revoked
+   - when revoked token is reused:
+     - revoke all active refresh tokens for that user
+     - reject request with explicit unauthorized response
+     - emit security warning log
+
+3. Coverage added:
+   - new unit tests in `apps/core-api/src/core/auth/auth.service.spec.ts`
+   - includes:
+     - successful login path
+     - failed login rate-limit tracking
+     - rate-limit block path
+     - refresh-token reuse detection and revocation
+
 ## Outcome
 
 - Production backend deploy is operational.

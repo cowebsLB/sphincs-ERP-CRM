@@ -294,3 +294,14 @@ Planned final sweep sequence:
    - `GET /api/v1/system/info`
    - representative ERP/CRM list endpoints
    - audit log writes/reads for key flows
+
+## Auth Rate Limit Settings (2026-03-18)
+
+Login brute-force protection is now enabled in backend auth flow with in-memory
+rate limiting keyed by `normalized_email + client_ip`.
+
+Optional environment variables:
+
+- `AUTH_LOGIN_MAX_ATTEMPTS` (default: `5`)
+- `AUTH_LOGIN_WINDOW_MS` (default: `600000` / 10 minutes)
+- `AUTH_LOGIN_BLOCK_MS` (default: `900000` / 15 minutes)

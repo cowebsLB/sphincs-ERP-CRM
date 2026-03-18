@@ -5,6 +5,9 @@
   - Status transitions
   - Soft-delete + restore behavior
   - Audit writer and request logging
+  - Auth hardening:
+    - login rate-limiter behavior
+    - refresh-token reuse detection and revocation
 - Integration tests:
   - Versioned routes
   - Scoped CRUD
