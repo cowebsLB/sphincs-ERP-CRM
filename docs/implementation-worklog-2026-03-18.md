@@ -86,6 +86,25 @@ Why:
 
 - guarantees required binaries are present for migration/seed/build steps during Render auto deployments.
 
+### 7) Backend e2e smoke coverage
+
+Added a dedicated backend e2e smoke suite:
+
+- config: `apps/core-api/jest.e2e.config.ts`
+- test file: `apps/core-api/test/auth-items.e2e-spec.ts`
+- script: `pnpm --filter @sphincs/core-api test:e2e`
+
+Coverage includes:
+
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me` with Bearer token
+- `GET /api/v1/erp/items` with Bearer token
+
+Implementation note:
+
+- tests run against `AppModule` with overridden `PrismaService` mock for deterministic behavior
+  and fast smoke validation.
+
 ## Outcome
 
 - Production backend deploy is operational.

@@ -13,6 +13,10 @@
   - ERP and CRM core flows
   - Audit trace checks
   - Health and system info endpoint checks
+  - Backend auth + ERP smoke:
+    - `POST /api/v1/auth/login`
+    - `GET /api/v1/auth/me`
+    - `GET /api/v1/erp/items`
 
 ## Frontend Test Baseline (2026-03-16)
 
@@ -33,3 +37,7 @@ Run commands:
 - Per app:
   - `pnpm --filter @sphincs/erp-web test`
   - `pnpm --filter @sphincs/crm-web test`
+
+Backend smoke e2e command:
+
+- `pnpm --filter @sphincs/core-api test:e2e`
