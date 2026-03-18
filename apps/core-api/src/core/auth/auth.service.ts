@@ -2,7 +2,8 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import jwt from "jsonwebtoken";
 import { PrismaService } from "../../prisma.service";
 import { hashPassword, verifyPassword } from "../../common/security/password";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,23 @@ export class AuthService {
   }
 
   private createRefreshToken(sub: string): string {
-    return jwt.sign({ sub, type: "refresh" }, this.refreshSecret, { expiresIn: "7d" });
+    return jwt.sign({ sub, type: "refresh", jti: randomUUID() }, this.refreshSecret, {
+      expiresIn: "7d"
+    });
+  }
+
+  private async persistRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    const decoded = jwt.decode(refreshToken) as { exp?: number } | null;
+    const expiresAt = decoded?.exp
+      ? new Date(decoded.exp * 1000)
+      : new Date(Date.now() + 7 * 86400 * 1000);
+    await this.prisma.refreshToken.create({
+      data: {
+        user_id: userId,
+        token_hash: this.hashRefreshToken(refreshToken),
+        expires_at: expiresAt
+      }
+    });
   }
 
   private async fetchUserRoles(userId: string): Promise<string[]> {
@@ -70,17 +87,20 @@ export class AuthService {
       organizationId: user.organization_id,
       branchId: user.branch_id
     });
-    const refreshToken = this.createRefreshToken(user.id);
-    const decoded = jwt.decode(refreshToken) as { exp?: number } | null;
-    const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 86400 * 1000);
-
-    await this.prisma.refreshToken.create({
-      data: {
-        user_id: user.id,
-        token_hash: this.hashRefreshToken(refreshToken),
-        expires_at: expiresAt
+    let refreshToken = this.createRefreshToken(user.id);
+    try {
+      await this.persistRefreshToken(user.id, refreshToken);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        refreshToken = this.createRefreshToken(user.id);
+        await this.persistRefreshToken(user.id, refreshToken);
+      } else {
+        throw error;
       }
-    });
+    }
 
     return { accessToken, refreshToken, tokenType: "Bearer" };
   }
@@ -118,24 +138,28 @@ export class AuthService {
         organizationId: user.organization_id,
         branchId: user.branch_id
       });
-      const newRefreshToken = this.createRefreshToken(user.id);
-      const refreshDecoded = jwt.decode(newRefreshToken) as { exp?: number } | null;
-      const expiresAt =
-        refreshDecoded?.exp ? new Date(refreshDecoded.exp * 1000) : new Date(Date.now() + 7 * 86400 * 1000);
+      let newRefreshToken = this.createRefreshToken(user.id);
+      const createNextRefreshToken = async () => {
+        await this.persistRefreshToken(user.id, newRefreshToken);
+      };
 
-      await this.prisma.$transaction([
-        this.prisma.refreshToken.update({
-          where: { id: existing.id },
-          data: { revoked_at: new Date() }
-        }),
-        this.prisma.refreshToken.create({
-          data: {
-            user_id: user.id,
-            token_hash: this.hashRefreshToken(newRefreshToken),
-            expires_at: expiresAt
-          }
-        })
-      ]);
+      await this.prisma.refreshToken.update({
+        where: { id: existing.id },
+        data: { revoked_at: new Date() }
+      });
+      try {
+        await createNextRefreshToken();
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          newRefreshToken = this.createRefreshToken(user.id);
+          await createNextRefreshToken();
+        } else {
+          throw error;
+        }
+      }
 
       return { accessToken, refreshToken: newRefreshToken, tokenType: "Bearer" };
     } catch {

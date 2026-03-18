@@ -625,3 +625,28 @@ Why:
 
 - Aligns code with deployment env naming.
 - Removes a common production footgun where empty string env values bypass nullish fallback.
+
+## Update: Login Runtime Hardening + Error Visibility (2026-03-18)
+
+Issue:
+
+- Production login continued returning HTTP 500 after:
+  - successful migrations
+  - successful seed
+  - confirmed non-empty JWT secret env vars
+
+Hardening implemented:
+
+1. `apps/core-api/src/core/auth/auth.service.ts`
+   - refresh token payload now includes random `jti`.
+   - introduced `persistRefreshToken(...)` helper.
+   - on login/refresh, retries refresh-token insert once when Prisma returns `P2002` (unique conflict).
+
+2. `apps/core-api/src/common/filters/http-exception.filter.ts`
+   - logs non-HTTP unhandled exceptions with stack traces.
+   - keeps response envelope unchanged for clients.
+
+Why:
+
+- Removes refresh-token collision edge cases as a source of 500 errors.
+- Improves observability so future runtime failures are diagnosable directly from Render logs.

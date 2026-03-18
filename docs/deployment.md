@@ -73,6 +73,19 @@ Why:
 - Prevents runtime failures when `JWT_SECRET` exists but is blank.
 - Matches deployment envs that split access and refresh secrets.
 
+## Login 500 Hardening (2026-03-18)
+
+If `/api/v1/auth/login` still returns `500` after successful deploy and seed:
+
+1. Redeploy latest commit so refresh-token hardening is live.
+2. Check Render logs for `HttpExceptionFilter` `Unhandled exception` lines.
+
+Hardening shipped:
+
+- refresh tokens include random `jti` to reduce collision risk.
+- refresh-token insert retries once on Prisma unique conflict (`P2002`).
+- global exception filter logs stack traces for non-HTTP server errors.
+
 ## CI Troubleshooting (2026-03-17)
 
 ### Failure: `Multiple versions of pnpm specified`
