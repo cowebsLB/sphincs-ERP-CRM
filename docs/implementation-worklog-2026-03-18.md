@@ -145,6 +145,28 @@ Why:
 - removes UI-level command drift
 - makes Render deploy behavior reproducible and version-controlled
 
+### 10) Frontend System Status card (ERP + CRM)
+
+Added lightweight production status panels to both frontend apps:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+
+Card behavior:
+
+- checks backend `/health` endpoint
+- fetches `/api/v1/system/info`
+- displays health state + environment/version snapshot in app shell
+
+Styling:
+
+- shared styles added in `packages/ui-core/src/ui.css` (`.ui-status-card`)
+
+Why:
+
+- quick operational visibility for users and maintainers directly from the UI
+- immediate confirmation that API and deployment metadata are reachable
+
 ## Outcome
 
 - Production backend deploy is operational.

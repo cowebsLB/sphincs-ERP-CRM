@@ -5,10 +5,66 @@ import { ResourceManager } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
+const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.erp.session";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
+type SystemInfo = {
+  version?: string;
+  environment?: string;
+  timestamp?: string;
+};
+
+function SystemStatusCard() {
+  const [healthOk, setHealthOk] = React.useState<boolean | null>(null);
+  const [systemInfo, setSystemInfo] = React.useState<SystemInfo | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    async function run() {
+      try {
+        const health = await fetch(`${API_ROOT}/health`);
+        if (active) {
+          setHealthOk(health.ok);
+        }
+      } catch {
+        if (active) {
+          setHealthOk(false);
+        }
+      }
+
+      try {
+        const info = await fetch(`${API_BASE_URL}/system/info`);
+        const data = (await info.json()) as SystemInfo;
+        if (active) {
+          setSystemInfo(data);
+        }
+      } catch {
+        if (active) {
+          setSystemInfo(null);
+        }
+      }
+    }
+
+    void run();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <section className="ui-status-card">
+      <strong>System Status</strong>
+      <p className="ui-muted">
+        API health: {healthOk === null ? "checking..." : healthOk ? "online" : "offline"}
+      </p>
+      <p className="ui-muted">
+        Env: {systemInfo?.environment ?? "unknown"} · Version: {systemInfo?.version ?? "n/a"}
+      </p>
+    </section>
+  );
+}
 
 function useSessionState() {
   const [session, setSession] = React.useState<SessionState | null>(() => {
@@ -230,6 +286,7 @@ function ERPApp({
             Logout
           </button>
         </header>
+        <SystemStatusCard />
         {toast && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
         <Routes>
           <Route
