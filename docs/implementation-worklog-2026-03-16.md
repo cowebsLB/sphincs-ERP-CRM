@@ -676,3 +676,18 @@ Why:
 
 - namespace import is stable for CommonJS-backed modules and prevents `jwt.sign` / `jwt.verify`
   undefined access at runtime.
+
+## Update: Hosting Documentation Added (2026-03-18)
+
+Added dedicated hosting documentation:
+
+- `docs/hosting.md`
+
+Includes:
+
+- current production hosting stack
+  - GitHub Pages (frontend)
+  - Render (API)
+  - Supabase Postgres (DB)
+- portfolio-ready one-line hosting summary
+- Vercel readiness notes and migration checklist for frontend deployment.
