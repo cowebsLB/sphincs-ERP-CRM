@@ -22,6 +22,19 @@ describe("Auth + ERP smoke (e2e)", () => {
 
   const mockPrisma = {
     user: {
+      findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
+        if (where.email === adminUser.email || where.id === adminUser.id) {
+          return {
+            id: adminUser.id,
+            email: adminUser.email,
+            password_hash: adminUser.password_hash,
+            organization_id: adminUser.organization_id,
+            branch_id: adminUser.branch_id,
+            user_roles: [{ role: { name: "Admin" } }]
+          };
+        }
+        return null;
+      }),
       findUnique: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
         if (where.email === adminUser.email || where.id === adminUser.id) {
           return adminUser;
@@ -95,13 +108,16 @@ describe("Auth + ERP smoke (e2e)", () => {
   });
 
   it("logs in, resolves /auth/me, and reads /erp/items", async () => {
+    const loginStart = Date.now();
     const login = await request(app.getHttpServer())
       .post("/api/v1/auth/login")
       .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
       .expect(201);
+    const loginDurationMs = Date.now() - loginStart;
 
     expect(login.body.accessToken).toBeDefined();
     expect(login.body.refreshToken).toBeDefined();
+    expect(loginDurationMs).toBeLessThan(1200);
 
     const token = login.body.accessToken as string;
 

@@ -41,3 +41,15 @@ Run commands:
 Backend smoke e2e command:
 
 - `pnpm --filter @sphincs/core-api test:e2e`
+
+## Auth Login Latency Guardrail (2026-03-18)
+
+Added a login response-time assertion in backend e2e smoke:
+
+- file: `apps/core-api/test/auth-items.e2e-spec.ts`
+- assertion: login request duration must be `< 1200ms` in CI smoke context
+
+Purpose:
+
+- catches significant auth-path performance regressions early in CI
+- keeps login latency visible as part of deployment quality gates

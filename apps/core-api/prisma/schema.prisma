@@ -82,6 +82,7 @@ model User {
 
   @@index([organization_id], map: "idx_users_org")
   @@index([branch_id], map: "idx_users_branch")
+  @@index([email, deleted_at, status], map: "idx_users_email_deleted_status")
   @@index([deleted_at], map: "idx_users_deleted_at")
   @@index([created_at], map: "idx_users_created_at")
   @@map("users")

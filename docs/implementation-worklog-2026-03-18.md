@@ -192,6 +192,66 @@ Expected impact:
 
 - faster perceived login on hosted environments by removing one network round trip from sign-in.
 
+### 12) Auth login performance instrumentation + hot-path optimization
+
+Scope completed:
+
+1. Added structured auth performance logging in backend login flow:
+   - file: `apps/core-api/src/core/auth/auth.service.ts`
+   - logger namespace: `AuthPerformance`
+   - metrics emitted:
+     - `dbLookupMs`
+     - `passwordMs`
+     - `jwtSignMs`
+     - `totalMs`
+     - `userFound`
+     - `passwordValid`
+     - `roleCount`
+     - `emailFingerprint` (hashed, no raw email)
+
+2. Reduced login query work:
+   - switched to one filtered query for active/non-deleted user:
+     - `findFirst({ where: { email, deleted_at: null, status: "ACTIVE" } })`
+   - pulled role names in the same query via `user_roles` relation include.
+   - removed separate role-fetch round trip from successful login path.
+   - selected only required fields for auth token creation.
+
+3. Tightened auth token config path:
+   - centralized token expiry constants in `AuthService`:
+     - access: `1h`
+     - refresh: `7d`
+   - keeps token generation path consistent and easier to tune.
+
+4. Added DB index for auth lookup pattern:
+   - schema: `apps/core-api/prisma/schema.prisma`
+   - migration:
+     - `apps/core-api/prisma/migrations/20260318_auth_login_performance/migration.sql`
+   - index:
+     - `idx_users_email_deleted_status` on `users(email, deleted_at, status)`
+
+5. Added CI guardrail for login latency:
+   - e2e file: `apps/core-api/test/auth-items.e2e-spec.ts`
+   - assertion: login request must complete in `< 1200ms` (smoke environment)
+
+Validation summary (local):
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
+
+Baseline and improvement snapshot:
+
+- Baseline (production logs before auth-path optimizations):
+  - observed login request durations around `2160ms` to `2834ms`
+- Current smoke benchmark (local e2e run after changes):
+  - login completed in `196ms`
+
+How to measure in production now:
+
+- check Render logs for `AuthPerformance` entries from `/api/v1/auth/login`
+- use `dbLookupMs`, `passwordMs`, `jwtSignMs`, and `totalMs` to identify bottlenecks
+  (DB vs hashing vs token generation)
+
 ## Outcome
 
 - Production backend deploy is operational.
