@@ -105,6 +105,21 @@ Implementation note:
 - tests run against `AppModule` with overridden `PrismaService` mock for deterministic behavior
   and fast smoke validation.
 
+### 8) GitHub pipeline deploy gate for backend checks
+
+Updated Pages workflow to gate deployment on backend checks:
+
+- workflow: `.github/workflows/deploy-pages.yml`
+- new job: `test_core_api`
+  - runs:
+    - `pnpm --filter @sphincs/core-api test`
+    - `pnpm --filter @sphincs/core-api test:e2e`
+- `build` job now depends on `test_core_api`.
+
+Why:
+
+- prevents frontend Pages deployment when backend auth/ERP contract smoke fails.
+
 ## Outcome
 
 - Production backend deploy is operational.

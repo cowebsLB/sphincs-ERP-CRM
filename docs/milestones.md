@@ -243,11 +243,13 @@ Deliver Phase 1 as a usable internal alpha with:
   - Add unit + integration + e2e coverage for persistence and scopes
 - Acceptance criteria:
   - Critical paths have passing automated tests in CI
- - Progress update (2026-03-18):
-   - Added backend e2e smoke suite covering:
-     - login (`/api/v1/auth/login`)
-     - identity fetch (`/api/v1/auth/me`)
-     - ERP items read (`/api/v1/erp/items`)
+- Progress update (2026-03-18):
+  - Added backend e2e smoke suite covering:
+    - login (`/api/v1/auth/login`)
+    - identity fetch (`/api/v1/auth/me`)
+    - ERP items read (`/api/v1/erp/items`)
+  - Added deploy gate in GitHub Pages workflow:
+    - backend unit + e2e smoke must pass before Pages build/deploy runs
 
 ### T7.2 Internal Alpha Readiness
 

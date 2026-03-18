@@ -6,6 +6,12 @@ This repository deploys static frontend assets to GitHub Pages using:
 
 - `.github/workflows/deploy-pages.yml`
 
+Deployment gate:
+
+- Pages artifact build/deploy now runs only after backend test checks pass:
+  - `pnpm --filter @sphincs/core-api test`
+  - `pnpm --filter @sphincs/core-api test:e2e`
+
 Published structure:
 
 - `/` -> lightweight landing page

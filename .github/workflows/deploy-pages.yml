@@ -19,7 +19,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test_core_api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run core-api unit tests
+        run: pnpm --filter @sphincs/core-api test
+
+      - name: Run core-api e2e smoke tests
+        run: pnpm --filter @sphincs/core-api test:e2e
+
   build:
+    needs: test_core_api
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
