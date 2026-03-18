@@ -564,3 +564,30 @@ Why this approach:
 
 - CI install step intentionally uses `pnpm install --frozen-lockfile`, which requires
   a committed lockfile to ensure deterministic dependency resolution.
+
+## Update: Render API Go-Live Wiring (2026-03-18)
+
+Context:
+
+- Backend deployed on Render and exposed at:
+  - `https://sphincs-erp-crm.onrender.com`
+- Frontend Pages landing and app routes were already live.
+
+Final integration changes:
+
+1. Enabled backend CORS in `apps/core-api/src/main.ts`.
+   - Added `app.enableCors(...)`.
+   - Added `CORS_ORIGINS` support with defaults:
+     - `https://cowebslb.github.io`
+     - `http://localhost:5173`
+     - `http://localhost:5174`
+
+2. Wired frontend API base URL into Pages workflow.
+   - `.github/workflows/deploy-pages.yml` now injects:
+     - `VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}`
+   - Applied for both ERP and CRM frontend build steps.
+
+Why:
+
+- Without CORS allowlist, browser requests from Pages frontend to Render API are blocked.
+- Without passing `VITE_API_BASE_URL` at Pages build time, frontend defaults to localhost API.

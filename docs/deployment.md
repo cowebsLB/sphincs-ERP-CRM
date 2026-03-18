@@ -29,12 +29,31 @@ Both frontends support:
 This must point to your deployed backend API (for example:
 `https://your-api-host/api/v1`), otherwise login/API calls will fail.
 
+For GitHub Pages builds, set this as a repository variable:
+
+1. GitHub repo -> `Settings` -> `Secrets and variables` -> `Actions` -> `Variables`
+2. Add `VITE_API_BASE_URL`
+3. Value example:
+   - `https://sphincs-erp-crm.onrender.com/api/v1`
+
 ## Notes
 
 - Frontend build base paths for Pages are injected in CI using `VITE_PUBLIC_BASE`:
   - ERP: `/sphincs-ERP-CRM/erp/`
   - CRM: `/sphincs-ERP-CRM/crm/`
+- Frontend workflow also injects:
+  - `VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}`
 - Frontend apps use `HashRouter` so deep links are stable on static hosting.
+
+## Backend CORS For Pages
+
+`apps/core-api/src/main.ts` enables CORS using `CORS_ORIGINS`.
+
+Default origins include:
+
+- `https://cowebslb.github.io`
+- `http://localhost:5173`
+- `http://localhost:5174`
 
 ## CI Troubleshooting (2026-03-17)
 

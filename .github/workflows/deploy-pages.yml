@@ -41,11 +41,13 @@ jobs:
         run: pnpm --filter @sphincs/erp-web build
         env:
           VITE_PUBLIC_BASE: /sphincs-ERP-CRM/erp/
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
       - name: Build CRM (Pages base path)
         run: pnpm --filter @sphincs/crm-web build
         env:
           VITE_PUBLIC_BASE: /sphincs-ERP-CRM/crm/
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
       - name: Assemble Pages artifact
         run: |
