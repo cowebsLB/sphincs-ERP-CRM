@@ -1,0 +1,70 @@
+# Implementation Worklog (2026-03-18)
+
+## Context
+
+This worklog captures production deployment stabilization and post-deploy fixes completed on 2026-03-18.
+
+## Completed Today
+
+### 1) Render + Supabase production bring-up
+
+- Validated production backend deploy on Render:
+  - `https://sphincs-erp-crm.onrender.com`
+- Confirmed Prisma migration deploy and seed execution in production:
+  - organization, branch, roles, admin user seeded
+- Confirmed service startup and route registration.
+
+### 2) Pages-to-API integration completion
+
+- Confirmed frontend Pages app targets production API via:
+  - `VITE_API_BASE_URL=https://sphincs-erp-crm.onrender.com/api/v1`
+- Validated CORS preflight on production API for:
+  - origin `https://cowebslb.github.io`
+
+### 3) Login 500 diagnosis and fixes
+
+Observed failures:
+
+- `/api/v1/auth/login` returned `500` in production after deployment.
+- Stack trace identified:
+  - `TypeError: Cannot read properties of undefined (reading 'sign')`
+  - origin: `AuthService.createAccessToken(...)`
+
+Root causes addressed:
+
+1. JWT secret resolution hardening:
+   - access: `JWT_ACCESS_SECRET` -> `JWT_SECRET` -> `"change-me"`
+   - refresh: `JWT_REFRESH_SECRET` -> `JWT_SECRET` -> `"change-me"`
+   - trim-based fallback to avoid blank secret traps.
+
+2. Refresh-token persistence hardening:
+   - refresh tokens include random `jti`.
+   - persistence retries once on Prisma unique conflict (`P2002`).
+
+3. Runtime module import compatibility:
+   - switched `jsonwebtoken` import to CommonJS-safe namespace import:
+     - `import * as jwt from "jsonwebtoken"`
+
+4. Error visibility:
+   - global exception filter now logs stack traces for non-HTTP exceptions.
+
+### 4) Production usability polish
+
+- Request logger improved to resolve authenticated user ID from request context:
+  - order: `req.user.id` -> `x-user-id` -> `anonymous`
+- Frontend login fields updated with autocomplete attributes:
+  - email: `autoComplete="email"`
+  - password: `autoComplete="current-password"`
+
+### 5) Documentation additions
+
+- Added hosting documentation:
+  - `docs/hosting.md`
+- Updated deployment documentation with production troubleshooting and fixes.
+
+## Outcome
+
+- Production backend deploy is operational.
+- Frontend Pages integration with production API is configured.
+- Primary login 500 root causes were identified and patched.
+- Documentation now includes hosting strategy and deployment troubleshooting for this production phase.
