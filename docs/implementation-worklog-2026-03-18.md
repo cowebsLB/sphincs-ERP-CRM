@@ -120,6 +120,31 @@ Why:
 
 - prevents frontend Pages deployment when backend auth/ERP contract smoke fails.
 
+### 9) Repository-managed Render build script
+
+Added canonical backend deploy script:
+
+- `scripts/render-build-core-api.sh`
+
+Sequence performed by script:
+
+1. remove potentially stale install paths
+2. install core-api workspace deps with tooling
+3. `prisma generate`
+4. `prisma migrate deploy`
+5. `prisma db seed`
+6. `nest build`
+
+Related package script:
+
+- `apps/core-api/package.json`
+  - `render:build`: `bash ../../scripts/render-build-core-api.sh`
+
+Why:
+
+- removes UI-level command drift
+- makes Render deploy behavior reproducible and version-controlled
+
 ## Outcome
 
 - Production backend deploy is operational.

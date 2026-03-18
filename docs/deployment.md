@@ -185,3 +185,21 @@ Permanent fix:
 Why:
 
 - ensures required binaries are always present in build environments regardless of production-pruning behavior in cached installs.
+
+## Render Build Command (Canonical)
+
+Use repository-managed build script:
+
+- Build command:
+  - `bash scripts/render-build-core-api.sh`
+- Start command:
+  - `pnpm --filter @sphincs/core-api start`
+
+Equivalent package script:
+
+- `pnpm --filter @sphincs/core-api render:build`
+
+Why this is now the default:
+
+- avoids fragile inline command drift in Render UI
+- enforces cache-safe install + Prisma generate/migrate/seed + Nest build sequence from source control
