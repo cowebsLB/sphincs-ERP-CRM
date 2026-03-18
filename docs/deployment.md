@@ -227,3 +227,28 @@ Why this is now the default:
 
 - avoids fragile inline command drift in Render UI
 - enforces cache-safe install + Prisma generate/migrate/seed + Nest build sequence from source control
+
+## Render + Supabase Connection Mode For Login Performance (2026-03-18)
+
+Observed production auth timing showed database latency as the main bottleneck
+(`dbLookupMs` dominating `totalMs`).
+
+Recommended environment setup in Render:
+
+- `DATABASE_URL`:
+  - use Supabase pooler host on port `6543`
+  - include `pgbouncer=true`, `sslmode=require`, and `connection_limit=1`
+- `DIRECT_URL`:
+  - use direct connection on port `5432`
+  - include `sslmode=require`
+
+Automation applied:
+
+- `scripts/render-build-core-api.sh` now uses:
+  - `DIRECT_URL` for `prisma migrate deploy` when available
+  - `DATABASE_URL` fallback when `DIRECT_URL` is not set
+
+Why:
+
+- runtime traffic uses pooled connections (better latency and connection handling)
+- migrations use direct DB connection (more reliable for schema operations)

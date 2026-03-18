@@ -252,6 +252,26 @@ How to measure in production now:
 - use `dbLookupMs`, `passwordMs`, `jwtSignMs`, and `totalMs` to identify bottlenecks
   (DB vs hashing vs token generation)
 
+### 13) Render migration path now auto-uses `DIRECT_URL`
+
+Follow-up from production measurement:
+
+- login metrics showed DB lookup as the largest contributor to auth latency.
+- to support pooled runtime traffic plus reliable migrations, build scripting was updated.
+
+Change:
+
+- `scripts/render-build-core-api.sh` now detects `DIRECT_URL`.
+- when set, it runs `prisma migrate deploy` with `DATABASE_URL="$DIRECT_URL"`.
+- otherwise it falls back to default `DATABASE_URL`.
+
+Operational impact:
+
+- no manual script edits needed for deployment mode switching.
+- recommended Render env shape is now:
+  - pooled `DATABASE_URL` for app runtime
+  - direct `DIRECT_URL` for migration deploy step
+
 ## Outcome
 
 - Production backend deploy is operational.
