@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client for test typecheck
+        run: pnpm --filter @sphincs/core-api prisma:generate
+
       - name: Run core-api unit tests
         run: pnpm --filter @sphincs/core-api test
 

@@ -1,5 +1,28 @@
 # Deployment Guide
 
+## CI Test Failure: Missing Prisma Client Generation (2026-03-18)
+
+Symptom:
+
+- `test_core_api` failed in GitHub Actions with TypeScript compile errors:
+  - `Property 'purchaseOrder' does not exist on type 'PrismaService'`
+  - `Property 'lead' does not exist on type 'PrismaService'`
+
+Root cause:
+
+- CI test job executed `jest` before generating Prisma Client for the current schema.
+- Without generated Prisma types, model delegates were missing at compile time.
+
+Fix:
+
+- Added a Prisma generation step in `.github/workflows/deploy-pages.yml` before unit tests:
+  - `pnpm --filter @sphincs/core-api prisma:generate`
+
+Why this works:
+
+- Prisma Client generation restores schema-based delegate typings used by `PrismaService`,
+  so `purchaseOrder` and `lead` are available during test compilation.
+
 ## GitHub Pages Frontend Deploy
 
 This repository deploys static frontend assets to GitHub Pages using:
@@ -9,6 +32,7 @@ This repository deploys static frontend assets to GitHub Pages using:
 Deployment gate:
 
 - Pages artifact build/deploy now runs only after backend test checks pass:
+  - `pnpm --filter @sphincs/core-api prisma:generate`
   - `pnpm --filter @sphincs/core-api test`
   - `pnpm --filter @sphincs/core-api test:e2e`
 
