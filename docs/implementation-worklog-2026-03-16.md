@@ -691,3 +691,27 @@ Includes:
   - Supabase Postgres (DB)
 - portfolio-ready one-line hosting summary
 - Vercel readiness notes and migration checklist for frontend deployment.
+
+## Update: Logging + Login UX Polish (2026-03-18)
+
+Completed:
+
+1. Backend request logging now prefers JWT user context.
+   - file: `apps/core-api/src/logging/request-logging.middleware.ts`
+   - `user_id` resolution order:
+     - `req.user.id` (from auth guard context)
+     - `x-user-id` header fallback
+     - `"anonymous"`
+
+2. Frontend login form autocomplete improvements.
+   - files:
+     - `apps/erp-web/src/app.tsx`
+     - `apps/crm-web/src/app.tsx`
+   - added:
+     - `autoComplete="email"` on email input
+     - `autoComplete="current-password"` on password input
+
+Why:
+
+- log entries become attributable to authenticated actors in production.
+- removes browser form warnings and improves login autofill UX.

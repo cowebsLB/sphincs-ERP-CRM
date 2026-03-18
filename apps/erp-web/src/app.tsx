@@ -82,12 +82,18 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
     <main>
       <h1>ERP Login</h1>
       <form onSubmit={onSubmit}>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          autoComplete="email"
+        />
         <input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           type="password"
+          autoComplete="current-password"
         />
         <button disabled={busy} type="submit">
           {busy ? "Signing in..." : "Sign in"}

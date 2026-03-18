@@ -37,6 +37,8 @@ Deliver Phase 1 as a usable internal alpha with:
     - JWT bearer role checks resolved from DB (`user_roles` + `roles`)
   - Audit persistence completed:
     - audit writes now stored in `audit_logs`
+  - Request logging polish completed:
+    - request logs now resolve authenticated `user_id` from JWT context when available
   - Soft-delete restore endpoints completed for core/ERP/CRM resources
   - Remaining:
     - expand integration/e2e backend test coverage for DB auth/RBAC/audit/restore paths
@@ -61,6 +63,7 @@ Deliver Phase 1 as a usable internal alpha with:
     - Vitest + React Testing Library setup in ERP and CRM apps
     - app-level tests for login render, login success path, and role-block behavior
     - GitHub Pages deployment pipeline for monorepo frontends (`/erp` + `/crm`)
+    - login form autocomplete attributes for better browser autofill and fewer console warnings
   - Remaining:
     - expand frontend tests for session refresh flow and CRUD resource interactions
     - optional: richer charts/widgets and advanced filter presets
