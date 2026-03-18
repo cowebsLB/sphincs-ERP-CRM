@@ -66,6 +66,12 @@ export class AuthService {
     return `${email}|${clientFingerprint}`;
   }
 
+  resetLoginRateLimit(email: string): { email: string; removedKeys: number } {
+    const normalizedEmail = this.sanitizeEmail(email);
+    const removedKeys = this.authRateLimitService.resetByEmail(normalizedEmail);
+    return { email: normalizedEmail, removedKeys };
+  }
+
   private getRoleNamesFromUser(user: {
     user_roles: Array<{ role: { name: string } }>;
   }): string[] {

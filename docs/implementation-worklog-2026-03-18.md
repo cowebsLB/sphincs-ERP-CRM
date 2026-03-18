@@ -337,6 +337,24 @@ Implemented:
      - rate-limit block path
      - refresh-token reuse detection and revocation
 
+### 17) Auth lockout operations + Beta API/final-sweep docs
+
+Added:
+
+1. Admin unlock endpoint for in-memory lockouts:
+   - `POST /api/v1/auth/rate-limit/reset`
+   - role: `Admin`
+   - body: `{ "email": "<address>" }`
+
+2. `Retry-After` header support:
+   - global HTTP exception filter now sets `Retry-After` on `429` responses when retry
+     metadata is present.
+
+3. Beta operations docs:
+   - `docs/api-snapshot-beta-v1.md`
+   - `docs/backend-final-sweep.md`
+   - `docs/index.md` updated with navigation links
+
 ## Outcome
 
 - Production backend deploy is operational.

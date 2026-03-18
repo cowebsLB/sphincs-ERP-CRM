@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { ResetRateLimitDto } from "./dto/reset-rate-limit.dto";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Req } from "@nestjs/common";
 import { Request } from "express";
@@ -25,6 +26,12 @@ export class AuthController {
   @Post("refresh")
   refresh(@Body() body: RefreshTokenDto) {
     return this.authService.refresh(body.refreshToken);
+  }
+
+  @Post("rate-limit/reset")
+  @Roles("Admin")
+  resetRateLimit(@Body() body: ResetRateLimitDto) {
+    return this.authService.resetLoginRateLimit(body.email);
   }
 
   @Get("me")

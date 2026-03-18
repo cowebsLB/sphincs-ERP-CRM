@@ -20,6 +20,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const isHttpException = exception instanceof HttpException;
     const status = isHttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
     const rawError = isHttpException ? exception.getResponse() : "Internal server error";
+    const retryAfterSeconds =
+      typeof rawError === "object" && rawError !== null
+        ? (rawError as { retryAfterSeconds?: number }).retryAfterSeconds
+        : undefined;
     const message =
       typeof rawError === "string"
         ? rawError
@@ -30,6 +34,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `Unhandled exception on ${request.method} ${request.url}`,
         exception instanceof Error ? exception.stack : JSON.stringify(exception)
       );
+    }
+
+    if (status === HttpStatus.TOO_MANY_REQUESTS && retryAfterSeconds) {
+      response.setHeader("Retry-After", String(retryAfterSeconds));
     }
 
     response.status(status).json({

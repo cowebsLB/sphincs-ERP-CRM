@@ -305,3 +305,10 @@ Optional environment variables:
 - `AUTH_LOGIN_MAX_ATTEMPTS` (default: `5`)
 - `AUTH_LOGIN_WINDOW_MS` (default: `600000` / 10 minutes)
 - `AUTH_LOGIN_BLOCK_MS` (default: `900000` / 15 minutes)
+
+Operational helpers:
+
+- Admin unlock endpoint for in-memory lockouts:
+  - `POST /api/v1/auth/rate-limit/reset`
+  - body: `{ "email": "user@example.com" }`
+- Rate-limit responses (`429`) include `Retry-After` header.

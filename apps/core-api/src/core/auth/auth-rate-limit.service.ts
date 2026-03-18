@@ -22,7 +22,10 @@ export class AuthRateLimitService {
     if (entry.blockedUntil > now) {
       const retryAfterSeconds = Math.max(1, Math.ceil((entry.blockedUntil - now) / 1000));
       throw new HttpException(
-        `Too many login attempts. Retry in ${retryAfterSeconds}s`,
+        {
+          message: `Too many login attempts. Retry in ${retryAfterSeconds}s`,
+          retryAfterSeconds
+        },
         HttpStatus.TOO_MANY_REQUESTS
       );
     }
@@ -54,5 +57,17 @@ export class AuthRateLimitService {
 
   reset(key: string): void {
     this.failures.delete(key);
+  }
+
+  resetByEmail(email: string): number {
+    const normalizedEmail = email.trim().toLowerCase();
+    let removed = 0;
+    for (const key of this.failures.keys()) {
+      if (key.startsWith(`${normalizedEmail}|`)) {
+        this.failures.delete(key);
+        removed += 1;
+      }
+    }
+    return removed;
   }
 }
