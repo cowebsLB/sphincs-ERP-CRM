@@ -290,6 +290,28 @@ Why:
 - keeps deploys moving while environment credentials are corrected
 - preserves best-practice path (`DIRECT_URL`) when valid, with safe fallback behavior
 
+### 15) Region alignment validation complete + deferred secret rotation decision
+
+Validation results after moving backend service to Singapore:
+
+- login `dbLookupMs` improved from multi-second range to roughly sub-second range
+- login `totalMs` improved to ~1.3s to ~1.7s in repeated checks
+- CRM/ERP list endpoints improved from ~5-6s to ~1-1.5s range
+
+Decision recorded:
+
+- DB password rotation is intentionally deferred until backend feature work is complete.
+- once backend work reaches a stable checkpoint, perform one coordinated final sweep:
+  1. rotate Supabase DB password
+  2. update Render `DATABASE_URL` and `DIRECT_URL`
+  3. redeploy and run backend verification checklist
+  4. confirm auth + ERP + CRM routes + health/system + audit behavior
+
+Reason:
+
+- avoids repeated secret churn while active backend development/deploy cycles continue
+- keeps one final controlled cutover for credentials and full regression verification
+
 ## Outcome
 
 - Production backend deploy is operational.

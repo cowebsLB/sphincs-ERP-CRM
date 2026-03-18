@@ -273,3 +273,24 @@ Safety behavior:
 
 - if `DIRECT_URL` migration fails, build script now retries migration with `DATABASE_URL`
   so deploys are not blocked by a single misconfigured direct URL.
+
+## Security Note: Deferred DB Password Rotation (2026-03-18)
+
+Current project decision:
+
+- DB password rotation is deferred until backend implementation is complete.
+- credential rotation will be executed as part of a final backend verification sweep.
+
+Planned final sweep sequence:
+
+1. Rotate Supabase DB password.
+2. Update Render `DATABASE_URL` and `DIRECT_URL`.
+3. Redeploy backend service.
+4. Verify:
+   - `POST /api/v1/auth/login`
+   - `POST /api/v1/auth/refresh`
+   - `GET /api/v1/auth/me`
+   - `GET /health`
+   - `GET /api/v1/system/info`
+   - representative ERP/CRM list endpoints
+   - audit log writes/reads for key flows
