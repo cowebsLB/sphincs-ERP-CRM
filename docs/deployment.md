@@ -55,6 +55,24 @@ Default origins include:
 - `http://localhost:5173`
 - `http://localhost:5174`
 
+## JWT Secret Environment Variables (2026-03-18)
+
+Backend auth now resolves secrets in this order:
+
+- access token signing/verification:
+  - `JWT_ACCESS_SECRET`
+  - fallback `JWT_SECRET`
+  - fallback `"change-me"` for local scaffolding only
+- refresh token signing/verification:
+  - `JWT_REFRESH_SECRET`
+  - fallback `JWT_SECRET`
+  - fallback `"change-me"` for local scaffolding only
+
+Why:
+
+- Prevents runtime failures when `JWT_SECRET` exists but is blank.
+- Matches deployment envs that split access and refresh secrets.
+
 ## CI Troubleshooting (2026-03-17)
 
 ### Failure: `Multiple versions of pnpm specified`

@@ -591,3 +591,37 @@ Why:
 
 - Without CORS allowlist, browser requests from Pages frontend to Render API are blocked.
 - Without passing `VITE_API_BASE_URL` at Pages build time, frontend defaults to localhost API.
+
+## Update: Render Login 500 Fix (2026-03-18)
+
+Issue observed:
+
+- `/api/v1/auth/login` returned HTTP 500 in production despite:
+  - successful DB migration
+  - successful seed
+  - successful service startup
+
+Root cause addressed:
+
+- Auth/guard secret resolution relied primarily on `JWT_SECRET`.
+- In production environments where split secrets are used (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`)
+  and legacy `JWT_SECRET` may be blank, token operations can fail at runtime.
+
+Fix implemented:
+
+1. `apps/core-api/src/core/auth/auth.service.ts`
+   - access token secret resolution now:
+     - `JWT_ACCESS_SECRET` -> `JWT_SECRET` -> `"change-me"`
+   - refresh token secret resolution now:
+     - `JWT_REFRESH_SECRET` -> `JWT_SECRET` -> `"change-me"`
+   - all secret lookups use `.trim()` and logical fallback to avoid blank-value traps.
+
+2. `apps/core-api/src/common/guards/roles.guard.ts`
+   - token verification secret now:
+     - `JWT_ACCESS_SECRET` -> `JWT_SECRET` -> `"change-me"`
+   - includes `.trim()` fallback behavior.
+
+Why:
+
+- Aligns code with deployment env naming.
+- Removes a common production footgun where empty string env values bypass nullish fallback.

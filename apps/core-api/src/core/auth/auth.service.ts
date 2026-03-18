@@ -6,7 +6,10 @@ import { createHash } from "crypto";
 
 @Injectable()
 export class AuthService {
-  private readonly secret = process.env.JWT_SECRET ?? "change-me";
+  private readonly accessSecret =
+    process.env.JWT_ACCESS_SECRET?.trim() || process.env.JWT_SECRET?.trim() || "change-me";
+  private readonly refreshSecret =
+    process.env.JWT_REFRESH_SECRET?.trim() || process.env.JWT_SECRET?.trim() || "change-me";
   constructor(private readonly prisma: PrismaService) {}
 
   private hashRefreshToken(refreshToken: string): string {
@@ -20,11 +23,11 @@ export class AuthService {
     organizationId: string;
     branchId: string | null;
   }): string {
-    return jwt.sign(payload, this.secret, { expiresIn: "1h" });
+    return jwt.sign(payload, this.accessSecret, { expiresIn: "1h" });
   }
 
   private createRefreshToken(sub: string): string {
-    return jwt.sign({ sub, type: "refresh" }, this.secret, { expiresIn: "7d" });
+    return jwt.sign({ sub, type: "refresh" }, this.refreshSecret, { expiresIn: "7d" });
   }
 
   private async fetchUserRoles(userId: string): Promise<string[]> {
@@ -84,7 +87,7 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     try {
-      const decoded = jwt.verify(refreshToken, this.secret) as { sub: string; exp?: number; type?: string };
+      const decoded = jwt.verify(refreshToken, this.refreshSecret) as { sub: string; exp?: number; type?: string };
       if (decoded.type !== "refresh") {
         throw new UnauthorizedException("Invalid refresh token");
       }

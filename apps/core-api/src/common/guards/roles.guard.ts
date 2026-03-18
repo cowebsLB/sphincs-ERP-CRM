@@ -6,7 +6,8 @@ import { PrismaService } from "../../prisma.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  private readonly secret = process.env.JWT_SECRET ?? "change-me";
+  private readonly secret =
+    process.env.JWT_ACCESS_SECRET?.trim() || process.env.JWT_SECRET?.trim() || "change-me";
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService
