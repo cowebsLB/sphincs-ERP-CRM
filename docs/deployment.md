@@ -247,8 +247,29 @@ Automation applied:
 - `scripts/render-build-core-api.sh` now uses:
   - `DIRECT_URL` for `prisma migrate deploy` when available
   - `DATABASE_URL` fallback when `DIRECT_URL` is not set
+  - `DATABASE_URL` fallback when `DIRECT_URL` is set but migration authentication fails
 
 Why:
 
 - runtime traffic uses pooled connections (better latency and connection handling)
 - migrations use direct DB connection (more reliable for schema operations)
+
+### Common error: `P1000` on `DIRECT_URL`
+
+Symptom during Render build:
+
+- `Authentication failed ... provided database credentials ... are not valid`
+- host usually shows `...pooler.supabase.com:5432`
+
+Fix checklist:
+
+1. Re-copy the exact connection strings from Supabase (same password in both URLs).
+2. Keep password URL-encoded (`%2B`, `%24`, `%25`, etc.).
+3. Ensure `DATABASE_URL` uses `6543` with `pgbouncer=true`.
+4. Ensure `DIRECT_URL` uses `5432` with `sslmode=require`.
+5. Redeploy.
+
+Safety behavior:
+
+- if `DIRECT_URL` migration fails, build script now retries migration with `DATABASE_URL`
+  so deploys are not blocked by a single misconfigured direct URL.

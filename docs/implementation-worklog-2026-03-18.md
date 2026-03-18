@@ -272,6 +272,24 @@ Operational impact:
   - pooled `DATABASE_URL` for app runtime
   - direct `DIRECT_URL` for migration deploy step
 
+### 14) Resilience fix: `DIRECT_URL` auth failure fallback
+
+Observed issue:
+
+- Render build failed with Prisma `P1000` when `DIRECT_URL` credentials were invalid.
+- this blocked deploy even though pooled `DATABASE_URL` was valid.
+
+Fix:
+
+- updated `scripts/render-build-core-api.sh`:
+  - try migration with `DIRECT_URL` first
+  - if that command fails, retry migration with `DATABASE_URL`
+
+Why:
+
+- keeps deploys moving while environment credentials are corrected
+- preserves best-practice path (`DIRECT_URL`) when valid, with safe fallback behavior
+
 ## Outcome
 
 - Production backend deploy is operational.

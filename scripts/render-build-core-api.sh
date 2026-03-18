@@ -13,7 +13,14 @@ pnpm --filter @sphincs/core-api exec prisma generate --schema prisma/schema.pris
 echo "[render-build] prisma migrate deploy"
 if [[ -n "${DIRECT_URL:-}" ]]; then
   echo "[render-build] using DIRECT_URL for migration deploy"
+  set +e
   DATABASE_URL="$DIRECT_URL" pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
+  DIRECT_MIGRATE_EXIT=$?
+  set -e
+  if [[ $DIRECT_MIGRATE_EXIT -ne 0 ]]; then
+    echo "[render-build] DIRECT_URL migration failed, falling back to DATABASE_URL"
+    pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
+  fi
 else
   echo "[render-build] DIRECT_URL not set, using DATABASE_URL for migration deploy"
   pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
