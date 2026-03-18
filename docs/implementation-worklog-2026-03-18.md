@@ -62,6 +62,30 @@ Root causes addressed:
   - `docs/hosting.md`
 - Updated deployment documentation with production troubleshooting and fixes.
 
+### 6) Render auto-deploy stabilization (prisma binary availability)
+
+Issue:
+
+- Render auto deploy repeatedly failed with:
+  - `sh: 1: prisma: not found`
+  - even when manual clear-cache deploys could pass.
+
+Root cause:
+
+- cached production-pruned installs did not consistently expose build/deploy toolchain binaries.
+
+Fix:
+
+- moved deploy/build-critical packages from `devDependencies` to `dependencies` in `apps/core-api/package.json`:
+  - `prisma`
+  - `ts-node`
+  - `@nestjs/cli`
+  - `typescript`
+
+Why:
+
+- guarantees required binaries are present for migration/seed/build steps during Render auto deployments.
+
 ## Outcome
 
 - Production backend deploy is operational.

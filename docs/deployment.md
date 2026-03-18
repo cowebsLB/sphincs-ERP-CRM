@@ -153,3 +153,29 @@ Fix:
 Why:
 
 - Workflow uses `pnpm install --frozen-lockfile`, which requires the lockfile in source control.
+
+## Render Auto-Deploy Prisma Binary Missing (2026-03-18)
+
+Symptom:
+
+- Render auto deploy failed with:
+  - `sh: 1: prisma: not found`
+  - at step: `pnpm --filter @sphincs/core-api prisma:generate`
+- manual deploy with clear cache could succeed intermittently.
+
+Root cause:
+
+- Render cached installs were reusing production-pruned dependency layouts.
+- deploy/build scripts relied on toolchain packages previously in `devDependencies`.
+
+Permanent fix:
+
+- moved deploy/build-critical packages into `apps/core-api` `dependencies`:
+  - `prisma`
+  - `ts-node`
+  - `@nestjs/cli`
+  - `typescript`
+
+Why:
+
+- ensures required binaries are always present in build environments regardless of production-pruning behavior in cached installs.
