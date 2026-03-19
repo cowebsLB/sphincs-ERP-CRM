@@ -19,10 +19,59 @@ describe("Auth + ERP smoke (e2e)", () => {
     status: "ACTIVE",
     deleted_at: null
   };
+  let signupUser: null | {
+    id: string;
+    email: string;
+    password_hash: string;
+    organization_id: string;
+    branch_id: string | null;
+    status: string;
+    deleted_at: null;
+  } = null;
 
   const mockPrisma = {
+    organization: {
+      findFirst: jest.fn(async () => ({
+        id: adminUser.organization_id,
+        name: "SPHINCS",
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+        created_by: null,
+        updated_by: null
+      }))
+    },
+    branch: {
+      findFirst: jest.fn(async () => ({
+        id: adminUser.branch_id,
+        organization_id: adminUser.organization_id,
+        name: "Main",
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+        created_by: null,
+        updated_by: null
+      }))
+    },
+    role: {
+      findFirst: jest.fn(async () => ({
+        id: "role-staff",
+        name: "Staff",
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+        created_by: null,
+        updated_by: null
+      }))
+    },
     user: {
       findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
+        if (signupUser && (where.email === signupUser.email || where.id === signupUser.id)) {
+          return {
+            ...signupUser,
+            user_roles: [{ role: { name: "Staff" } }]
+          };
+        }
         if (where.email === adminUser.email || where.id === adminUser.id) {
           return {
             id: adminUser.id,
@@ -36,10 +85,25 @@ describe("Auth + ERP smoke (e2e)", () => {
         return null;
       }),
       findUnique: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
+        if (signupUser && (where.email === signupUser.email || where.id === signupUser.id)) {
+          return signupUser;
+        }
         if (where.email === adminUser.email || where.id === adminUser.id) {
           return adminUser;
         }
         return null;
+      }),
+      create: jest.fn(async ({ data }: { data: Record<string, string | null> }) => {
+        signupUser = {
+          id: "55555555-5555-5555-5555-555555555555",
+          email: String(data.email),
+          password_hash: String(data.password_hash),
+          organization_id: String(data.organization_id),
+          branch_id: data.branch_id ? String(data.branch_id) : null,
+          status: "ACTIVE",
+          deleted_at: null
+        };
+        return signupUser;
       }),
       update: jest.fn(async ({ data }: { data: Partial<typeof adminUser> }) => ({
         ...adminUser,
@@ -47,7 +111,17 @@ describe("Auth + ERP smoke (e2e)", () => {
       }))
     },
     userRole: {
-      findMany: jest.fn(async () => [{ role: { name: "Admin" } }])
+      findMany: jest.fn(async ({ where }: { where?: { user_id?: string } }) => {
+        if (where?.user_id === signupUser?.id) {
+          return [{ role: { name: "Staff" } }];
+        }
+        return [{ role: { name: "Admin" } }];
+      }),
+      create: jest.fn(async () => ({
+        id: "ur-1",
+        user_id: signupUser?.id ?? "none",
+        role_id: "role-staff"
+      }))
     },
     refreshToken: {
       create: jest.fn(async () => ({
@@ -136,5 +210,17 @@ describe("Auth + ERP smoke (e2e)", () => {
 
     expect(Array.isArray(items.body)).toBe(true);
     expect(items.body[0].name).toBe("Seed Item");
+  });
+
+  it("allows tester signup and returns a session payload", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/api/v1/auth/signup")
+      .send({ email: "tester@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+
+    expect(response.body.accessToken).toBeDefined();
+    expect(response.body.refreshToken).toBeDefined();
+    expect(response.body.user.email).toBe("tester@sphincs.local");
+    expect(response.body.user.roles).toContain("Staff");
   });
 });

@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import * as jwt from "jsonwebtoken";
 import { PrismaService } from "../../prisma.service";
 import { hashPassword, verifyPassword } from "../../common/security/password";
@@ -208,6 +208,57 @@ export class AuthService {
         branchId: user.branch_id
       }
     };
+  }
+
+  async signup(email: string, password: string, clientFingerprint = "unknown") {
+    const normalizedEmail = this.sanitizeEmail(email);
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail, deleted_at: null }
+    });
+    if (existingUser) {
+      throw new ConflictException("Email already exists");
+    }
+
+    const organization = await this.prisma.organization.findFirst({
+      where: { deleted_at: null },
+      orderBy: { created_at: "asc" }
+    });
+    if (!organization) {
+      throw new UnauthorizedException("Signup unavailable. Organization is not initialized.");
+    }
+
+    const branch = await this.prisma.branch.findFirst({
+      where: { organization_id: organization.id, deleted_at: null },
+      orderBy: { created_at: "asc" }
+    });
+
+    const userRole = await this.prisma.role.findFirst({
+      where: { name: "Staff", deleted_at: null }
+    });
+    if (!userRole) {
+      throw new UnauthorizedException("Signup unavailable. Staff role is missing.");
+    }
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        password_hash: await hashPassword(password),
+        organization_id: organization.id,
+        branch_id: branch?.id ?? null,
+        status: "ACTIVE"
+      }
+    });
+
+    await this.prisma.userRole.create({
+      data: {
+        user_id: newUser.id,
+        role_id: userRole.id,
+        created_by: newUser.id,
+        updated_by: newUser.id
+      }
+    });
+
+    return this.login(normalizedEmail, password, clientFingerprint);
   }
 
   async refresh(refreshToken: string) {

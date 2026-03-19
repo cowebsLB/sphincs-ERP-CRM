@@ -1,6 +1,6 @@
 # Beta V1 Checklist (No BS Edition)
 
-Date: 2026-03-18
+Date: 2026-03-19
 
 ## Core Principle
 
@@ -10,31 +10,31 @@ If it does not help a tester log in, use the system, and break something, it is 
 
 New required scope for Beta V1:
 
-- [ ] Simple `sign up` flow for beta testers (backend + frontend)
+- [x] Simple `sign up` flow for beta testers (backend + frontend)
 - [x] Existing `sign in` flow for existing users
-- [ ] Private data retention per user (no cross-user visibility by default)
-- [ ] Frontend can remain minimal and functional (no design polish requirement)
+- [x] Private data retention per user (no cross-user visibility by default)
+- [x] Frontend can remain minimal and functional (no design polish requirement)
 
 ## Requested Beta V1 Tasks (Pinned)
 
 ### Auth (minimum viable)
 
 - [x] Login (email + password)
-- [ ] Signup (basic, no fancy validation)
+- [x] Signup (basic, no fancy validation)
 - [x] JWT/session works
 - [x] Logout works
 
 ### User isolation (very important)
 
-- [ ] Each user sees only their own data
-- [ ] Data linked to `user_id`
-- [ ] No cross-user leakage
+- [x] Each user sees only their own data
+- [x] Data linked to `user_id`
+- [x] No cross-user leakage
 
 ### Persistence
 
 - [x] Data survives refresh
 - [x] Data survives logout/login
-- [ ] Basic CRUD works per user (with user-isolated visibility)
+- [x] Basic CRUD works per user (with user-isolated visibility)
 
 ## 1) Core System (Must Work)
 
@@ -74,7 +74,7 @@ Chosen flow status:
 
 Privacy rule for this flow:
 
-- [ ] User A cannot see records created by User B unless explicitly allowed by policy.
+- [x] User A cannot see records created by User B unless explicitly allowed by policy.
 
 ## 3) Minimal Frontend (Ugly But Alive)
 
@@ -124,7 +124,7 @@ Frontend:
 
 - [x] Seeded test users exist (`admin@sphincs.local`).
 - [x] Beta URL available and shareable.
-- [ ] Self-service beta tester signup flow enabled.
+- [x] Self-service beta tester signup flow enabled.
 - [ ] Tester access list finalized (friends/testers list).
 - [ ] Short tester instruction note finalized.
 
@@ -146,10 +146,10 @@ Frontend:
 Beta V1 is done when all of these are true:
 
 - [x] Users can log in.
-- [ ] Users can sign up (beta flow).
+- [x] Users can sign up (beta flow).
 - [x] Users can complete one full flow.
 - [x] Data persists.
-- [ ] Data is private by default per user.
+- [x] Data is private by default per user.
 - [x] System does not randomly explode on normal usage.
 
 ## Deferred Security Action (Already Agreed)

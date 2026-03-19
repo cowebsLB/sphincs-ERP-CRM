@@ -12,7 +12,10 @@ describe("LeadsService", () => {
       }
     };
     const service = new LeadsService(prismaMock as never);
-    const lead = await service.create({ organization_id: "org-1" });
+    const lead = await service.create(
+      {},
+      { id: "user-1", organizationId: "org-1", branchId: "branch-1" }
+    );
     expect(prismaMock.lead.create).toHaveBeenCalled();
     expect(lead.status).toBe("NEW");
   });
@@ -24,9 +27,15 @@ describe("LeadsService", () => {
       }
     };
     const service = new LeadsService(prismaMock as never);
-    await service.findAll(false);
+    await service.findAll(false, { id: "user-1", organizationId: "org-1", branchId: "branch-1" });
     expect(prismaMock.lead.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { deleted_at: null } })
+      expect.objectContaining({
+        where: {
+          organization_id: "org-1",
+          created_by: "user-1",
+          deleted_at: null
+        }
+      })
     );
   });
 });

@@ -107,6 +107,7 @@ async function withAuth<T>(
 function LoginPage({ setSession }: { setSession: (next: SessionState | null) => void }) {
   const [email, setEmail] = React.useState("admin@sphincs.local");
   const [password, setPassword] = React.useState("ChangeMe123!");
+  const [mode, setMode] = React.useState<"login" | "signup">("login");
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const navigate = useNavigate();
@@ -116,7 +117,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
     setError(null);
     setBusy(true);
     try {
-      const tokens = await client.login(email, password);
+      const tokens =
+        mode === "signup"
+          ? await client.signup(email, password)
+          : await client.login(email, password);
       setSession({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -132,7 +136,7 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
 
   return (
     <main>
-      <h1>ERP Login</h1>
+      <h1>{mode === "signup" ? "ERP Signup" : "ERP Login"}</h1>
       <form onSubmit={onSubmit}>
         <input
           value={email}
@@ -148,10 +152,22 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
           autoComplete="current-password"
         />
         <button disabled={busy} type="submit">
-          {busy ? "Signing in..." : "Sign in"}
+          {busy ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
         </button>
       </form>
       {error && <p>{error}</p>}
+      <p>
+        {mode === "signup" ? "Already have an account?" : "New tester?"}{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "signup" ? "login" : "signup");
+            setError(null);
+          }}
+        >
+          {mode === "signup" ? "Sign in" : "Create account"}
+        </button>
+      </p>
     </main>
   );
 }
@@ -256,7 +272,7 @@ function ERPApp({
     setTimeout(() => setToast(null), 2600);
   }, []);
 
-  if (!hasRole(session, "Admin", "ERP Manager")) {
+  if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
     return <p>Your account does not have ERP access.</p>;
   }
   return (

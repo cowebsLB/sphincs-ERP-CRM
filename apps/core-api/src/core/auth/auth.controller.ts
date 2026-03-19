@@ -3,6 +3,7 @@ import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { ResetRateLimitDto } from "./dto/reset-rate-limit.dto";
+import { SignupDto } from "./dto/signup.dto";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Req } from "@nestjs/common";
 import { Request } from "express";
@@ -21,6 +22,11 @@ export class AuthController {
   @Post("login")
   login(@Body() body: LoginDto, @Req() req: Request) {
     return this.authService.login(body.email, body.password, this.getClientFingerprint(req));
+  }
+
+  @Post("signup")
+  signup(@Body() body: SignupDto, @Req() req: Request) {
+    return this.authService.signup(body.email, body.password, this.getClientFingerprint(req));
   }
 
   @Post("refresh")

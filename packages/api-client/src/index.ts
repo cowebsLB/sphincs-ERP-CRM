@@ -38,6 +38,17 @@ export class ApiClient {
     });
   }
 
+  async signup(
+    email: string,
+    password: string
+  ): Promise<SessionTokens & { tokenType: string; user: AuthUser }> {
+    return this.rawRequest("/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+  }
+
   async refresh(refreshToken: string): Promise<SessionTokens & { tokenType: string }> {
     return this.rawRequest("/auth/refresh", {
       method: "POST",

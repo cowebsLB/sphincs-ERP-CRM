@@ -70,6 +70,22 @@ Deliver Phase 1 as a usable internal alpha with:
     - expand frontend tests for session refresh flow and CRUD resource interactions
     - optional: richer charts/widgets and advanced filter presets
 
+## Beta Scope Adjustment (2026-03-18)
+
+Priority shift for Beta V1:
+
+1. Add simple tester authentication onboarding:
+   - backend signup endpoint
+   - minimal frontend signup page/form
+   - Status (2026-03-19): completed
+2. Enforce private data retention by default:
+   - records should be isolated so one user cannot see another user's data by default
+   - apply consistently across ERP/CRM list/read/write flows
+   - Status (2026-03-19): completed
+3. Keep frontend intentionally simple for Beta:
+   - functionality first, no design/perfection pass required
+   - Status (2026-03-19): completed
+
 ## Milestone 1: Backend Persistence Foundation
 
 ### T1.1 Prisma Client + Database Bootstrapping

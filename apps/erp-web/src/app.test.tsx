@@ -54,7 +54,7 @@ describe("ERP RootApp", () => {
         user: {
           id: "u1",
           email: "staff@sphincs.local",
-          roles: ["Staff"],
+          roles: ["CRM Manager"],
           organizationId: "org1"
         }
       })

@@ -20,13 +20,24 @@ describe("AuthService hardening", () => {
 
   function createPrismaMock() {
     return {
+      organization: {
+        findFirst: jest.fn()
+      },
+      branch: {
+        findFirst: jest.fn()
+      },
+      role: {
+        findFirst: jest.fn()
+      },
       user: {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
-        update: jest.fn()
+        update: jest.fn(),
+        create: jest.fn()
       },
       userRole: {
-        findMany: jest.fn()
+        findMany: jest.fn(),
+        create: jest.fn()
       },
       refreshToken: {
         create: jest.fn(),
@@ -41,7 +52,8 @@ describe("AuthService hardening", () => {
     return {
       consume: jest.fn(),
       recordFailure: jest.fn(),
-      reset: jest.fn()
+      reset: jest.fn(),
+      resetByEmail: jest.fn()
     } as unknown as jest.Mocked<AuthRateLimitService>;
   }
 
@@ -129,5 +141,82 @@ describe("AuthService hardening", () => {
       "Refresh token reuse detected. Please login again."
     );
     expect(prisma.refreshToken.updateMany).toHaveBeenCalled();
+  });
+
+  it("creates a beta tester account through signup and returns a session", async () => {
+    const prisma = createPrismaMock();
+    const limiter = createRateLimiterMock();
+    const service = new AuthService(prisma as never, limiter);
+    const passwordHash = await hashPassword("ChangeMe123!");
+
+    prisma.user.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "user-2",
+        email: "tester@sphincs.local",
+        password_hash: passwordHash,
+        organization_id: "org-1",
+        branch_id: "branch-1",
+        user_roles: [{ role: { name: "Staff" } }]
+      });
+    prisma.organization.findFirst.mockResolvedValue({
+      id: "org-1",
+      created_at: new Date(),
+      updated_at: new Date(),
+      name: "SPHINCS",
+      deleted_at: null,
+      created_by: null,
+      updated_by: null
+    });
+    prisma.branch.findFirst.mockResolvedValue({
+      id: "branch-1",
+      organization_id: "org-1",
+      name: "Main",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      created_by: null,
+      updated_by: null
+    });
+    prisma.role.findFirst.mockResolvedValue({
+      id: "role-staff",
+      name: "Staff",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      created_by: null,
+      updated_by: null
+    });
+    prisma.user.create.mockResolvedValue({
+      id: "user-2",
+      email: "tester@sphincs.local",
+      organization_id: "org-1",
+      branch_id: "branch-1",
+      status: "ACTIVE",
+      password_hash: passwordHash,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      created_by: null,
+      updated_by: null
+    });
+    prisma.userRole.create.mockResolvedValue({
+      id: "ur-1",
+      user_id: "user-2",
+      role_id: "role-staff",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      created_by: "user-2",
+      updated_by: "user-2"
+    });
+    prisma.refreshToken.create.mockResolvedValue({ id: "rt-1" });
+
+    const session = await service.signup("tester@sphincs.local", "ChangeMe123!", "ip-signup");
+    expect(session.accessToken).toBeDefined();
+    expect(session.refreshToken).toBeDefined();
+    expect(session.user.roles).toContain("Staff");
+    expect(prisma.user.create).toHaveBeenCalled();
+    expect(prisma.userRole.create).toHaveBeenCalled();
   });
 });

@@ -54,7 +54,7 @@ describe("CRM RootApp", () => {
         user: {
           id: "u1",
           email: "staff@sphincs.local",
-          roles: ["Staff"],
+          roles: ["ERP Manager"],
           organizationId: "org1"
         }
       })

@@ -13,7 +13,10 @@ describe("PurchasingService", () => {
     };
 
     const service = new PurchasingService(prismaMock as never);
-    const order = await service.create({ organization_id: "org-1" });
+    const order = await service.create(
+      {},
+      { id: "user-1", organizationId: "org-1", branchId: "branch-1" }
+    );
 
     expect(prismaMock.purchaseOrder.create).toHaveBeenCalled();
     expect(order.status).toBe("DRAFT");

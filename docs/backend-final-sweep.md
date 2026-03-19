@@ -1,10 +1,11 @@
 # Backend Final Sweep Checklist
 
-Date: 2026-03-18
+Date: 2026-03-19
 
 ## Auth
 
 - [x] `POST /api/v1/auth/login` returns token + user payload
+- [x] `POST /api/v1/auth/signup` works for beta tester onboarding
 - [x] `POST /api/v1/auth/refresh` works with valid refresh token
 - [x] `GET /api/v1/auth/me` resolves authenticated user context
 - [x] Invalid login returns `401`
@@ -27,6 +28,8 @@ Date: 2026-03-18
 - [x] CRM list endpoint healthy (`/api/v1/crm/contacts`)
 - [x] Resource create/update/restore routes present in API
 - [x] Soft-delete behavior active via `deleted_at`
+- [x] Data isolation validated:
+  - user A cannot list/read user B private records by default
 
 ## Data + Migrations
 

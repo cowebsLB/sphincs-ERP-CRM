@@ -355,6 +355,21 @@ Added:
    - `docs/backend-final-sweep.md`
    - `docs/index.md` updated with navigation links
 
+### 18) Beta V1 scope update logged
+
+Team decision captured in docs:
+
+- Beta V1 now explicitly requires:
+  - simple tester signup + existing signin
+  - private data retention by default (no cross-user visibility)
+  - minimal functional frontend only (no design polish requirement)
+
+Docs updated:
+
+- `docs/beta-v1-checklist.md`
+- `docs/milestones.md`
+- `docs/backend-final-sweep.md`
+
 ## Outcome
 
 - Production backend deploy is operational.
