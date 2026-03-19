@@ -703,3 +703,72 @@ Validation:
 - `pnpm --filter @sphincs/core-api prisma:generate` passed
 - `pnpm --filter @sphincs/core-api test` passed
 - `pnpm --filter @sphincs/erp-web build` passed
+
+### 23) Beta V2 purchase-order workflow rebuild
+
+Problem observed:
+
+- purchase orders were still a thin header form with only supplier and status
+- that was not enough to represent real purchasing flow, line-item totals, payment state, approval, logistics, or receiving progress
+- even with better supplier records, the purchase-order module still behaved like a placeholder instead of a transactional workflow
+
+Implemented:
+
+- expanded purchase-order backend shape in:
+  - `apps/core-api/prisma/schema.prisma`
+- added workflow migration:
+  - `apps/core-api/prisma/migrations/20260319_purchase_orders_v2_workflow/migration.sql`
+- purchase orders now support:
+  - `po_number`
+  - workflow dates
+  - totals
+  - payment status
+  - notes and shipping fields
+  - approval metadata
+  - line items with `received_quantity`
+- added line-item model:
+  - `purchase_order_line_items`
+- rebuilt purchase-order service in:
+  - `apps/core-api/src/erp/purchasing/purchasing.service.ts`
+- backend now:
+  - validates composite payloads
+  - computes totals
+  - validates receiving quantities
+  - persists line items with the order
+- expanded backend test coverage in:
+  - `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+- replaced the old PO UI with a full-page workflow screen in:
+  - `apps/erp-web/src/app.tsx`
+- the new PO screen now includes:
+  - header area for identity and timing
+  - line-item grid with add, remove, and duplicate row behavior
+  - live computed line totals
+  - summary/sidebar for totals, payment, notes, and logistics
+  - approval fields shown only when status requires them
+  - receiving context shown only in receiving stages
+  - partial delivery support tracked through line-level `received_quantity`
+- updated Beta V2 checklist, changelog, versioning, schema docs, and current-version metadata
+- bumped product release to:
+  - `Beta V1.9.0`
+
+Files:
+
+- `apps/core-api/prisma/schema.prisma`
+- `apps/core-api/prisma/migrations/20260319_purchase_orders_v2_workflow/migration.sql`
+- `apps/core-api/src/erp/purchasing/purchasing.service.ts`
+- `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+- `apps/erp-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+- `docs/database-schema.md`
+- `docs/beta-v2-checklist.md`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/erp-web build` passed

@@ -100,15 +100,15 @@ then it belongs in Beta V3, not Beta V2.
 
 ### Purchase Orders
 
-- [ ] Keep purchase orders as a full-page workflow, never a modal.
-- [ ] Build PO header area with:
+- [x] Keep purchase orders as a full-page workflow, never a modal.
+- [x] Build PO header area with:
   - `po_number` (read-only / auto-generated)
   - `supplier`
   - `status`
   - `order_date`
   - `expected_delivery_date`
   - `payment_terms`
-- [ ] Build line-items table/grid with:
+- [x] Build line-items table/grid with:
   - `item picker`
   - `description override`
   - `quantity`
@@ -116,11 +116,11 @@ then it belongs in Beta V3, not Beta V2.
   - `tax_rate`
   - `discount`
   - `line_total` (computed)
-- [ ] Line items support:
+- [x] Line items support:
   - add row
   - remove row
   - duplicate row
-- [ ] Add summary sidebar with:
+- [x] Add summary sidebar with:
   - `subtotal`
   - `total_tax`
   - `total_discount`
@@ -130,16 +130,16 @@ then it belongs in Beta V3, not Beta V2.
   - `shipping_address`
   - `shipping_method`
   - `tracking_number`
-- [ ] Totals are computed live and read-only.
-- [ ] Workflow-state visibility is enforced:
+- [x] Totals are computed live and read-only.
+- [x] Workflow-state visibility is enforced:
   - draft
   - submitted
   - approved
   - received
   - cancelled
-- [ ] Approval fields only appear when the workflow actually needs them.
-- [ ] Receiving fields only appear when the order has progressed to receiving stages.
-- [ ] Partial delivery support is implemented or explicitly deferred with a documented constraint.
+- [x] Approval fields only appear when the workflow actually needs them.
+- [x] Receiving fields only appear when the order has progressed to receiving stages.
+- [x] Partial delivery support is implemented or explicitly deferred with a documented constraint.
 
 ## 3) CRM UX Consistency
 
@@ -162,10 +162,10 @@ then it belongs in Beta V3, not Beta V2.
 
 - [x] Items backend supports the expanded field set required for Beta V2 UX.
 - [x] Suppliers backend supports the expanded field set required for Beta V2 UX.
-- [ ] Purchase orders backend supports composite transaction data cleanly.
-- [ ] PO line items are modeled in a way that supports totals and workflow states.
+- [x] Purchase orders backend supports composite transaction data cleanly.
+- [x] PO line items are modeled in a way that supports totals and workflow states.
 - [ ] Approval/receiving fields are either implemented cleanly or explicitly deferred with docs.
-- [ ] Validation rules match frontend conditional behavior.
+- [x] Validation rules match frontend conditional behavior.
 - [ ] Existing user-level data isolation remains intact after model expansion.
 
 ## 6) Quality And Observability
@@ -202,7 +202,7 @@ Beta V2 is complete only when all of these are true:
 - [ ] Access/session hardening is shipped and validated.
 - [x] Items UX rebuild is shipped.
 - [x] Suppliers UX rebuild is shipped.
-- [ ] Purchase-order workflow screen is shipped.
+- [x] Purchase-order workflow screen is shipped.
 - [ ] CRM page consistency and relation flows are stable.
 - [ ] Critical e2e and smoke checks pass.
 - [ ] Release, changelog, and triage workflow are active and being used.
@@ -212,6 +212,6 @@ Beta V2 is complete only when all of these are true:
 - [x] Finalize this checklist as the Beta V2 source of truth.
 - [x] Implement `Items` rebuild first.
 - [x] Implement `Suppliers` rebuild second.
-- [ ] Implement `Purchase Orders` workflow rebuild third.
+- [x] Implement `Purchase Orders` workflow rebuild third.
 - [ ] Finish access/session hardening tasks in parallel where safe.
 - [ ] Close Beta V2 only after the hard-stop section is truly satisfied.

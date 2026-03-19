@@ -586,6 +586,96 @@ body {
   font-size: 13px;
 }
 
+.purchase-orders-page {
+  display: grid;
+  gap: 16px;
+}
+
+.purchase-order-workflow {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  align-items: start;
+}
+
+.purchase-order-editor {
+  display: grid;
+  gap: 16px;
+}
+
+.purchase-order-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.purchase-order-section-header h3 {
+  margin: 0;
+}
+
+.purchase-order-section-header p {
+  margin: 4px 0 0;
+}
+
+.purchase-order-header-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.purchase-order-line-items {
+  display: grid;
+  gap: 12px;
+}
+
+.purchase-order-line-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.2fr) minmax(180px, 1.4fr) repeat(4, minmax(90px, 0.65fr)) minmax(110px, 0.8fr) minmax(170px, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.purchase-order-line-grid-receiving {
+  grid-template-columns: minmax(170px, 1.2fr) minmax(180px, 1.4fr) repeat(5, minmax(90px, 0.65fr)) minmax(110px, 0.8fr) minmax(170px, 1fr);
+}
+
+.purchase-order-line-grid-header {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.purchase-order-line-total {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  font-weight: 700;
+}
+
+.purchase-order-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.purchase-order-summary {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.purchase-order-summary h3 {
+  margin: 0;
+}
+
 .auth-page {
   min-height: 100vh;
   display: grid;
@@ -682,5 +772,18 @@ body {
 
   .purchase-order-actions {
     flex-wrap: wrap;
+  }
+
+  .purchase-order-workflow {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-order-line-grid,
+  .purchase-order-line-grid-receiving {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-order-summary {
+    position: static;
   }
 }

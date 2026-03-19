@@ -22,10 +22,16 @@ enum OpportunityStatus {
 
 enum PurchaseOrderStatus {
   DRAFT
-  SENT
-  PARTIALLY_RECEIVED
+  SUBMITTED
+  APPROVED
   RECEIVED
   CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
 }
 
 enum ItemStatus {
@@ -239,16 +245,33 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String              @db.Uuid
-  branch_id       String?             @db.Uuid
-  supplier_id     String?             @db.Uuid
-  status          PurchaseOrderStatus @default(DRAFT)
-  created_at      DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime            @updatedAt @db.Timestamptz(6)
-  deleted_at      DateTime?           @db.Timestamptz(6)
-  created_by      String?             @db.Uuid
-  updated_by      String?             @db.Uuid
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id        String                @db.Uuid
+  branch_id              String?               @db.Uuid
+  po_number              String                @unique
+  supplier_id            String?               @db.Uuid
+  status                 PurchaseOrderStatus   @default(DRAFT)
+  order_date             DateTime              @default(now()) @db.Timestamptz(6)
+  expected_delivery_date DateTime?             @db.Timestamptz(6)
+  payment_terms          String?
+  subtotal               Float                 @default(0)
+  total_tax              Float                 @default(0)
+  total_discount         Float                 @default(0)
+  grand_total            Float                 @default(0)
+  payment_status         PaymentStatus         @default(UNPAID)
+  notes                  String?
+  shipping_address       String?
+  shipping_method        String?
+  tracking_number        String?
+  approved_by            String?               @db.Uuid
+  approved_at            DateTime?             @db.Timestamptz(6)
+  created_at             DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime              @updatedAt @db.Timestamptz(6)
+  deleted_at             DateTime?             @db.Timestamptz(6)
+  created_by             String?               @db.Uuid
+  updated_by             String?               @db.Uuid
+
+  line_items PurchaseOrderLineItem[]
 
   @@index([organization_id], map: "idx_purchase_orders_org")
   @@index([branch_id], map: "idx_purchase_orders_branch")
@@ -257,6 +280,27 @@ model PurchaseOrder {
   @@index([created_at], map: "idx_purchase_orders_created_at")
   @@index([organization_id, branch_id, deleted_at, created_at], map: "idx_purchase_orders_org_branch_deleted_created")
   @@map("purchase_orders")
+}
+
+model PurchaseOrderLineItem {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchase_order_id String        @db.Uuid
+  item_id           String?       @db.Uuid
+  description       String?
+  quantity          Int           @default(1)
+  unit_cost         Float         @default(0)
+  tax_rate          Float         @default(0)
+  discount          Float         @default(0)
+  line_total        Float         @default(0)
+  received_quantity Int           @default(0)
+  created_at        DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime      @updatedAt @db.Timestamptz(6)
+
+  purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+
+  @@index([purchase_order_id], map: "idx_po_line_items_po")
+  @@index([item_id], map: "idx_po_line_items_item")
+  @@map("purchase_order_line_items")
 }
 
 model Contact {

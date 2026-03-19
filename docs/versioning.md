@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.8.0`
+- `Beta V1.9.0`
 
 Rationale:
 
@@ -93,6 +93,10 @@ Rationale:
   - expanded supplier backend shape for business, address, finance, and contact context
   - structured ERP supplier create/edit experience
   - supplier preview flow and richer purchase-order picker context
+- `Beta V1.9.0` marks the purchase-order workflow rebuild:
+  - composite purchase-order backend shape with line items and totals
+  - full-page purchase-order workflow editor
+  - approval, receiving, logistics, and payment state grouped without clutter
 
 ## Workflow For Future Updates
 
@@ -115,5 +119,6 @@ For every meaningful product update until `Beta V2.0.0`:
 Target release flow:
 
 - `Beta V1.7.x` for fixes on the first Beta V2 module rebuild baseline
-- `Beta V1.8.x` for supplier and purchase-flow rebuild work ahead of Beta V2.0.0
+- `Beta V1.8.x` for supplier rebuild work ahead of Beta V2.0.0
+- `Beta V1.9.x` for purchase-order workflow stabilization ahead of Beta V2.0.0
 - `Beta V2.0.0` once the next major product milestone is intentionally declared

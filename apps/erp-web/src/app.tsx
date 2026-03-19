@@ -1,14 +1,14 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, type SessionState } from "@sphincs/api-client";
-import { DataTable, ResourceManager } from "@sphincs/ui-core";
+import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.8.0";
+const APP_RELEASE_VERSION = "Beta V1.9.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -60,9 +60,37 @@ type SupplierRecord = RecordData & {
   preferred_supplier?: boolean | null;
 };
 type PurchaseOrderRecord = RecordData & {
+  po_number?: string | null;
   supplier_id?: string | null;
   supplier_name?: string;
   status?: string | null;
+  order_date?: string | null;
+  expected_delivery_date?: string | null;
+  payment_terms?: string | null;
+  subtotal?: number | string | null;
+  total_tax?: number | string | null;
+  total_discount?: number | string | null;
+  grand_total?: number | string | null;
+  payment_status?: string | null;
+  notes?: string | null;
+  shipping_address?: string | null;
+  shipping_method?: string | null;
+  tracking_number?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  line_items?: PurchaseOrderLineItemRecord[] | null;
+};
+
+type PurchaseOrderLineItemRecord = {
+  id?: string;
+  item_id?: string | null;
+  description?: string | null;
+  quantity?: number | null;
+  unit_cost?: number | string | null;
+  tax_rate?: number | string | null;
+  discount?: number | string | null;
+  line_total?: number | string | null;
+  received_quantity?: number | null;
 };
 type SystemInfo = {
   version?: string;
@@ -82,8 +110,30 @@ type BugReportForm = {
 };
 
 type PurchaseOrderFormState = {
+  po_number: string;
   supplier_id: string;
   status: string;
+  order_date: string;
+  expected_delivery_date: string;
+  payment_terms: string;
+  payment_status: string;
+  notes: string;
+  shipping_address: string;
+  shipping_method: string;
+  tracking_number: string;
+  approved_by: string;
+  approved_at: string;
+  line_items: PurchaseOrderLineItemFormState[];
+};
+
+type PurchaseOrderLineItemFormState = {
+  item_id: string;
+  description: string;
+  quantity: string;
+  unit_cost: string;
+  tax_rate: string;
+  discount: string;
+  received_quantity: string;
 };
 
 type ItemFormState = {
@@ -328,92 +378,6 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   );
 }
 
-function ResourcePage({
-  session,
-  setSession,
-  endpoint,
-  title,
-  fields,
-  notify
-}: {
-  session: SessionState;
-  setSession: (next: SessionState | null) => void;
-  endpoint: string;
-  title: string;
-  fields: Array<{ key: string; label: string }>;
-  notify: (type: "success" | "error", message: string) => void;
-}) {
-  const [rows, setRows] = React.useState<RecordData[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [includeDeleted, setIncludeDeleted] = React.useState(false);
-
-  const load = React.useCallback(async () => {
-    setLoading(true);
-    const query = includeDeleted ? "?includeDeleted=true" : "";
-    const data = await withAuth<RecordData[]>(session, setSession, `${endpoint}${query}`);
-    setRows(data);
-    setLoading(false);
-  }, [endpoint, includeDeleted, session, setSession]);
-
-  React.useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function createItem(form: Record<string, string>) {
-    try {
-      await withAuth(session, setSession, endpoint, {
-        method: "POST",
-        body: JSON.stringify(form)
-      });
-      notify("success", `${title}: record created`);
-      await load();
-    } catch (error) {
-      notify("error", error instanceof Error ? error.message : "Create failed");
-    }
-  }
-
-  async function patchItem(id: string, payload: Record<string, unknown>) {
-    try {
-      await withAuth(session, setSession, `${endpoint}/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload)
-      });
-      notify("success", `${title}: record updated`);
-      await load();
-    } catch (error) {
-      notify("error", error instanceof Error ? error.message : "Update failed");
-    }
-  }
-
-  return (
-    <ResourceManager<RecordData>
-      title={title}
-      rows={rows}
-      loading={loading}
-      includeDeleted={includeDeleted}
-      onToggleIncludeDeleted={setIncludeDeleted}
-      columns={fields.map((f) => ({ key: f.key as keyof RecordData, label: f.label, sortable: true }))}
-      createFields={fields}
-      editFields={fields}
-      onCreate={createItem}
-      onUpdate={(id, payload) => patchItem(id, payload)}
-      onSoftDelete={(id) => patchItem(id, { deleted_at: new Date().toISOString() })}
-      onRestore={async (id) => {
-        try {
-          await withAuth(session, setSession, `${endpoint}/${id}/restore`, {
-            method: "POST",
-            body: JSON.stringify({})
-          });
-          notify("success", `${title}: record restored`);
-          await load();
-        } catch (error) {
-          notify("error", error instanceof Error ? error.message : "Restore failed");
-        }
-      }}
-    />
-  );
-}
-
 function createDefaultItemForm(): ItemFormState {
   return {
     name: "",
@@ -576,6 +540,136 @@ function buildSupplierPayload(form: SupplierFormState) {
     website: form.website || undefined,
     mobile: form.mobile || undefined
   };
+}
+
+function toDateInputValue(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function createDefaultPurchaseOrderLineItem(): PurchaseOrderLineItemFormState {
+  return {
+    item_id: "",
+    description: "",
+    quantity: "1",
+    unit_cost: "0",
+    tax_rate: "0",
+    discount: "0",
+    received_quantity: "0"
+  };
+}
+
+function createDefaultPurchaseOrderForm(): PurchaseOrderFormState {
+  return {
+    po_number: "",
+    supplier_id: "",
+    status: "DRAFT",
+    order_date: toDateInputValue(new Date().toISOString()),
+    expected_delivery_date: "",
+    payment_terms: "Net 30",
+    payment_status: "UNPAID",
+    notes: "",
+    shipping_address: "",
+    shipping_method: "",
+    tracking_number: "",
+    approved_by: "",
+    approved_at: "",
+    line_items: [createDefaultPurchaseOrderLineItem()]
+  };
+}
+
+function toPurchaseOrderFormState(order?: PurchaseOrderRecord | null): PurchaseOrderFormState {
+  if (!order) {
+    return createDefaultPurchaseOrderForm();
+  }
+
+  return {
+    po_number: String(order.po_number ?? ""),
+    supplier_id: String(order.supplier_id ?? ""),
+    status: String(order.status ?? "DRAFT"),
+    order_date: toDateInputValue(order.order_date ?? order.created_at ?? null),
+    expected_delivery_date: toDateInputValue(order.expected_delivery_date ?? null),
+    payment_terms: String(order.payment_terms ?? "Net 30"),
+    payment_status: String(order.payment_status ?? "UNPAID"),
+    notes: String(order.notes ?? ""),
+    shipping_address: String(order.shipping_address ?? ""),
+    shipping_method: String(order.shipping_method ?? ""),
+    tracking_number: String(order.tracking_number ?? ""),
+    approved_by: String(order.approved_by ?? ""),
+    approved_at: toDateInputValue(order.approved_at ?? null),
+    line_items:
+      order.line_items && order.line_items.length > 0
+        ? order.line_items.map((item) => ({
+            item_id: String(item.item_id ?? ""),
+            description: String(item.description ?? ""),
+            quantity: String(item.quantity ?? 1),
+            unit_cost: String(item.unit_cost ?? 0),
+            tax_rate: String(item.tax_rate ?? 0),
+            discount: String(item.discount ?? 0),
+            received_quantity: String(item.received_quantity ?? 0)
+          }))
+        : [createDefaultPurchaseOrderLineItem()]
+  };
+}
+
+function buildPurchaseOrderPayload(form: PurchaseOrderFormState) {
+  return {
+    po_number: form.po_number || undefined,
+    supplier_id: form.supplier_id || undefined,
+    status: form.status,
+    order_date: form.order_date || undefined,
+    expected_delivery_date: form.expected_delivery_date || undefined,
+    payment_terms: form.payment_terms || undefined,
+    payment_status: form.payment_status || undefined,
+    notes: form.notes || undefined,
+    shipping_address: form.shipping_address || undefined,
+    shipping_method: form.shipping_method || undefined,
+    tracking_number: form.tracking_number || undefined,
+    approved_by: form.approved_by || undefined,
+    approved_at: form.approved_at || undefined,
+    line_items: form.line_items.map((item) => ({
+      item_id: item.item_id || undefined,
+      description: item.description || undefined,
+      quantity: item.quantity || "0",
+      unit_cost: item.unit_cost || "0",
+      tax_rate: item.tax_rate || "0",
+      discount: item.discount || "0",
+      received_quantity: item.received_quantity || "0"
+    }))
+  };
+}
+
+function computePurchaseOrderLineTotal(item: PurchaseOrderLineItemFormState) {
+  const quantity = Number(item.quantity || 0);
+  const unitCost = Number(item.unit_cost || 0);
+  const taxRate = Number(item.tax_rate || 0);
+  const discount = Number(item.discount || 0);
+  const subtotal = quantity * unitCost;
+  const tax = subtotal * (taxRate / 100);
+  return Number((subtotal + tax - discount).toFixed(2));
+}
+
+function computePurchaseOrderSummary(form: PurchaseOrderFormState) {
+  const subtotal = Number(
+    form.line_items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_cost || 0), 0).toFixed(2)
+  );
+  const totalTax = Number(
+    form.line_items
+      .reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_cost || 0) * (Number(item.tax_rate || 0) / 100), 0)
+      .toFixed(2)
+  );
+  const totalDiscount = Number(form.line_items.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2));
+  const grandTotal = Number((subtotal + totalTax - totalDiscount).toFixed(2));
+  const partialDelivery = form.line_items.some(
+    (item) => Number(item.received_quantity || 0) > 0 && Number(item.received_quantity || 0) < Number(item.quantity || 0)
+  );
+  return { subtotal, totalTax, totalDiscount, grandTotal, partialDelivery };
 }
 
 function slugifySkuPart(value: string): string {
@@ -1947,18 +2041,13 @@ function PurchaseOrdersPage({
 }) {
   const [rows, setRows] = React.useState<PurchaseOrderRecord[]>([]);
   const [suppliers, setSuppliers] = React.useState<SupplierRecord[]>([]);
+  const [items, setItems] = React.useState<ItemRecord[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [includeDeleted, setIncludeDeleted] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [createForm, setCreateForm] = React.useState<PurchaseOrderFormState>({
-    supplier_id: "",
-    status: "DRAFT"
-  });
+  const [createForm, setCreateForm] = React.useState<PurchaseOrderFormState>(createDefaultPurchaseOrderForm);
   const [editing, setEditing] = React.useState<PurchaseOrderRecord | null>(null);
-  const [editForm, setEditForm] = React.useState<PurchaseOrderFormState>({
-    supplier_id: "",
-    status: "DRAFT"
-  });
+  const [editForm, setEditForm] = React.useState<PurchaseOrderFormState>(createDefaultPurchaseOrderForm);
   const [supplierPickerOpen, setSupplierPickerOpen] = React.useState<"create" | "edit" | null>(null);
 
   const supplierMap = React.useMemo(
@@ -1972,14 +2061,39 @@ function PurchaseOrdersPage({
     [suppliers]
   );
 
+  const itemMap = React.useMemo(
+    () =>
+      new Map(
+        items.map((item) => [
+          item.id,
+          {
+            label: item.name?.trim() || item.sku?.trim() || "Unnamed item",
+            price: Number(item.cost_price ?? item.selling_price ?? 0),
+            description: String(item.description ?? "")
+          }
+        ])
+      ),
+    [items]
+  );
+
   const supplierOptions = React.useMemo(
     () =>
       suppliers.map((supplier) => ({
         id: supplier.id,
         name: supplier.name?.trim() || "Unnamed supplier",
-        meta: [supplier.supplier_code, supplier.status, supplier.email, supplier.phone].filter(Boolean).join(" • ")
+        meta: [supplier.supplier_code, supplier.status, supplier.email, supplier.phone].filter(Boolean).join(" ? ")
       })),
     [suppliers]
+  );
+
+  const itemOptions = React.useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        name: item.name?.trim() || item.sku?.trim() || "Unnamed item",
+        meta: [item.sku, item.category_id, item.cost_price].filter(Boolean).join(" ? ")
+      })),
+    [items]
   );
 
   const rowsWithSupplierNames = React.useMemo(
@@ -1991,16 +2105,21 @@ function PurchaseOrdersPage({
     [rows, supplierMap]
   );
 
+  const createSummary = React.useMemo(() => computePurchaseOrderSummary(createForm), [createForm]);
+  const editSummary = React.useMemo(() => computePurchaseOrderSummary(editForm), [editForm]);
+
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const query = includeDeleted ? "?includeDeleted=true" : "";
-      const [purchaseOrders, visibleSuppliers] = await Promise.all([
+      const [purchaseOrders, visibleSuppliers, visibleItems] = await Promise.all([
         withAuth<PurchaseOrderRecord[]>(session, setSession, `/erp/purchase-orders${query}`),
-        withAuth<SupplierRecord[]>(session, setSession, "/erp/suppliers")
+        withAuth<SupplierRecord[]>(session, setSession, "/erp/suppliers"),
+        withAuth<ItemRecord[]>(session, setSession, "/erp/items")
       ]);
       setRows(purchaseOrders);
       setSuppliers(visibleSuppliers);
+      setItems(visibleItems);
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Failed to load purchase orders");
     } finally {
@@ -2012,10 +2131,7 @@ function PurchaseOrdersPage({
     void load();
   }, [load]);
 
-  function updateForm(
-    target: "create" | "edit",
-    patch: Partial<PurchaseOrderFormState>
-  ) {
+  function updateForm(target: "create" | "edit", patch: Partial<PurchaseOrderFormState>) {
     if (target === "create") {
       setCreateForm((prev) => ({ ...prev, ...patch }));
       return;
@@ -2023,12 +2139,72 @@ function PurchaseOrdersPage({
     setEditForm((prev) => ({ ...prev, ...patch }));
   }
 
+  function updateLineItem(
+    target: "create" | "edit",
+    index: number,
+    patch: Partial<PurchaseOrderLineItemFormState>
+  ) {
+    const setForm = target === "create" ? setCreateForm : setEditForm;
+    setForm((prev) => ({
+      ...prev,
+      line_items: prev.line_items.map((item, itemIndex) => {
+        if (itemIndex !== index) {
+          return item;
+        }
+        const next = { ...item, ...patch };
+        if (patch.item_id) {
+          const selected = itemMap.get(patch.item_id);
+          if (selected) {
+            if (!patch.description && !item.description) {
+              next.description = selected.description;
+            }
+            if (next.unit_cost === "0" || next.unit_cost === "") {
+              next.unit_cost = String(selected.price);
+            }
+          }
+        }
+        return next;
+      })
+    }));
+  }
+
+  function addLineItem(target: "create" | "edit") {
+    const setForm = target === "create" ? setCreateForm : setEditForm;
+    setForm((prev) => ({
+      ...prev,
+      line_items: [...prev.line_items, createDefaultPurchaseOrderLineItem()]
+    }));
+  }
+
+  function removeLineItem(target: "create" | "edit", index: number) {
+    const setForm = target === "create" ? setCreateForm : setEditForm;
+    setForm((prev) => ({
+      ...prev,
+      line_items:
+        prev.line_items.length === 1
+          ? prev.line_items
+          : prev.line_items.filter((_, itemIndex) => itemIndex !== index)
+    }));
+  }
+
+  function duplicateLineItem(target: "create" | "edit", index: number) {
+    const setForm = target === "create" ? setCreateForm : setEditForm;
+    setForm((prev) => {
+      const source = prev.line_items[index];
+      return {
+        ...prev,
+        line_items: [
+          ...prev.line_items.slice(0, index + 1),
+          { ...source },
+          ...prev.line_items.slice(index + 1)
+        ]
+      };
+    });
+  }
+
   function startEdit(row: PurchaseOrderRecord) {
     setEditing(row);
-    setEditForm({
-      supplier_id: row.supplier_id ? String(row.supplier_id) : "",
-      status: row.status ? String(row.status) : "DRAFT"
-    });
+    setEditForm(toPurchaseOrderFormState(row));
   }
 
   function getSupplierName(supplierId: string) {
@@ -2041,11 +2217,7 @@ function PurchaseOrdersPage({
     return (
       <div className="supplier-picker">
         <div className="supplier-picker-row">
-          <select
-            className="ui-input"
-            value={currentSupplierId}
-            onChange={(e) => updateForm(target, { supplier_id: e.target.value })}
-          >
+          <select className="ui-input" value={currentSupplierId} onChange={(e) => updateForm(target, { supplier_id: e.target.value })}>
             <option value="">No supplier selected</option>
             {supplierOptions.map((supplier) => (
               <option key={supplier.id} value={supplier.id}>
@@ -2053,11 +2225,7 @@ function PurchaseOrdersPage({
               </option>
             ))}
           </select>
-          <button
-            className="ui-btn ui-btn-secondary"
-            type="button"
-            onClick={() => setSupplierPickerOpen(target)}
-          >
+          <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setSupplierPickerOpen(target)}>
             Browse suppliers
           </button>
         </div>
@@ -2065,10 +2233,158 @@ function PurchaseOrdersPage({
           {currentSupplierId
             ? `Selected: ${getSupplierName(currentSupplierId)}`
             : suppliers.length > 0
-              ? "Pick a supplier by name instead of typing an internal ID."
+              ? "Pick a supplier by name so this order stays connected to the supplier profile."
               : "No suppliers available yet. Create one in Suppliers first."}
         </p>
       </div>
+    );
+  }
+
+  function renderLineItemsEditor(target: "create" | "edit", form: PurchaseOrderFormState) {
+    const showReceivingFields = form.status === "APPROVED" || form.status === "RECEIVED";
+    return (
+      <section className="ui-card purchase-order-line-items">
+        <div className="purchase-order-section-header">
+          <div>
+            <h3>Line Items</h3>
+            <p className="ui-muted">Build the order as a grid so quantity, cost, and receiving stay visible together.</p>
+          </div>
+          <button className="ui-btn ui-btn-secondary" type="button" onClick={() => addLineItem(target)}>
+            Add row
+          </button>
+        </div>
+
+        <div className={`purchase-order-line-grid${showReceivingFields ? " purchase-order-line-grid-receiving" : ""}`}>
+          <div className="purchase-order-line-grid-header">Item</div>
+          <div className="purchase-order-line-grid-header">Description</div>
+          <div className="purchase-order-line-grid-header">Qty</div>
+          <div className="purchase-order-line-grid-header">Unit Cost</div>
+          <div className="purchase-order-line-grid-header">Tax %</div>
+          <div className="purchase-order-line-grid-header">Discount</div>
+          {showReceivingFields && <div className="purchase-order-line-grid-header">Received</div>}
+          <div className="purchase-order-line-grid-header">Line Total</div>
+          <div className="purchase-order-line-grid-header">Actions</div>
+
+          {form.line_items.map((item, index) => (
+            <React.Fragment key={`${target}-line-${index}`}>
+              <div>
+                <select
+                  className="ui-input"
+                  value={item.item_id}
+                  onChange={(e) => updateLineItem(target, index, { item_id: e.target.value })}
+                >
+                  <option value="">Choose item</option>
+                  {itemOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+                <small className="item-form-hint">
+                  {item.item_id
+                    ? itemOptions.find((option) => option.id === item.item_id)?.meta || ""
+                    : "Select a saved item to keep inventory and purchasing connected."}
+                </small>
+              </div>
+              <div>
+                <input className="ui-input" value={item.description} onChange={(e) => updateLineItem(target, index, { description: e.target.value })} />
+              </div>
+              <div>
+                <input className="ui-input" type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateLineItem(target, index, { quantity: e.target.value })} />
+              </div>
+              <div>
+                <input className="ui-input" type="number" min="0" step="0.01" value={item.unit_cost} onChange={(e) => updateLineItem(target, index, { unit_cost: e.target.value })} />
+              </div>
+              <div>
+                <input className="ui-input" type="number" min="0" step="0.01" value={item.tax_rate} onChange={(e) => updateLineItem(target, index, { tax_rate: e.target.value })} />
+              </div>
+              <div>
+                <input className="ui-input" type="number" min="0" step="0.01" value={item.discount} onChange={(e) => updateLineItem(target, index, { discount: e.target.value })} />
+              </div>
+              {showReceivingFields && (
+                <div>
+                  <input className="ui-input" type="number" min="0" step="1" value={item.received_quantity} onChange={(e) => updateLineItem(target, index, { received_quantity: e.target.value })} />
+                </div>
+              )}
+              <div className="purchase-order-line-total">{computePurchaseOrderLineTotal(item).toFixed(2)}</div>
+              <div className="purchase-order-row-actions">
+                <button className="ui-btn ui-btn-secondary" type="button" onClick={() => duplicateLineItem(target, index)}>
+                  Duplicate
+                </button>
+                <button className="ui-btn ui-btn-danger" type="button" onClick={() => removeLineItem(target, index)}>
+                  Remove
+                </button>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  function renderSummarySidebar(target: "create" | "edit", form: PurchaseOrderFormState, summary: ReturnType<typeof computePurchaseOrderSummary>) {
+    const showApprovalFields = form.status === "APPROVED" || form.status === "RECEIVED";
+    const showReceivingFields = form.status === "RECEIVED";
+    return (
+      <aside className="ui-card purchase-order-summary">
+        <h3>Order Summary</h3>
+        <dl className="item-preview-list">
+          <div><dt>Subtotal</dt><dd>{summary.subtotal.toFixed(2)}</dd></div>
+          <div><dt>Total Tax</dt><dd>{summary.totalTax.toFixed(2)}</dd></div>
+          <div><dt>Total Discount</dt><dd>{summary.totalDiscount.toFixed(2)}</dd></div>
+          <div><dt>Grand Total</dt><dd>{summary.grandTotal.toFixed(2)}</dd></div>
+        </dl>
+
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Payment Status</span>
+          <select className="ui-input" value={form.payment_status} onChange={(e) => updateForm(target, { payment_status: e.target.value })}>
+            <option value="UNPAID">UNPAID</option>
+            <option value="PARTIAL">PARTIAL</option>
+            <option value="PAID">PAID</option>
+          </select>
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Notes</span>
+          <textarea className="ui-input item-textarea" value={form.notes} onChange={(e) => updateForm(target, { notes: e.target.value })} />
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Shipping Address</span>
+          <textarea className="ui-input item-textarea" value={form.shipping_address} onChange={(e) => updateForm(target, { shipping_address: e.target.value })} />
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Shipping Method</span>
+          <input className="ui-input" value={form.shipping_method} onChange={(e) => updateForm(target, { shipping_method: e.target.value })} />
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Tracking Number</span>
+          <input className="ui-input" value={form.tracking_number} onChange={(e) => updateForm(target, { tracking_number: e.target.value })} />
+        </label>
+
+        {showApprovalFields && (
+          <div className="supplier-readonly-panel">
+            <strong>Approval</strong>
+            <label className="purchase-order-field">
+              <span className="purchase-order-label">Approved By</span>
+              <input className="ui-input" value={form.approved_by} onChange={(e) => updateForm(target, { approved_by: e.target.value })} />
+            </label>
+            <label className="purchase-order-field">
+              <span className="purchase-order-label">Approved At</span>
+              <input className="ui-input" type="date" value={form.approved_at} onChange={(e) => updateForm(target, { approved_at: e.target.value })} />
+            </label>
+          </div>
+        )}
+
+        {showReceivingFields && (
+          <div className="supplier-readonly-panel">
+            <strong>Receiving</strong>
+            <p className="ui-muted">
+              {summary.partialDelivery
+                ? "Partial delivery is being tracked at the line level through received quantities."
+                : "Received quantities now appear in the line items grid for final receiving confirmation."}
+            </p>
+          </div>
+        )}
+      </aside>
     );
   }
 
@@ -2077,13 +2393,10 @@ function PurchaseOrdersPage({
     try {
       await withAuth(session, setSession, "/erp/purchase-orders", {
         method: "POST",
-        body: JSON.stringify({
-          supplier_id: createForm.supplier_id || undefined,
-          status: createForm.status || undefined
-        })
+        body: JSON.stringify(buildPurchaseOrderPayload(createForm))
       });
       notify("success", "Purchase Orders: record created");
-      setCreateForm({ supplier_id: "", status: "DRAFT" });
+      setCreateForm(createDefaultPurchaseOrderForm());
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Create failed");
@@ -2098,14 +2411,11 @@ function PurchaseOrdersPage({
     try {
       await withAuth(session, setSession, `/erp/purchase-orders/${editing.id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          supplier_id: editForm.supplier_id || null,
-          status: editForm.status || undefined
-        })
+        body: JSON.stringify(buildPurchaseOrderPayload(editForm))
       });
       notify("success", "Purchase Orders: record updated");
       setEditing(null);
-      setEditForm({ supplier_id: "", status: "DRAFT" });
+      setEditForm(createDefaultPurchaseOrderForm());
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
@@ -2126,137 +2436,159 @@ function PurchaseOrdersPage({
   }
 
   return (
-    <section className="ui-card">
-      <div className="purchase-orders-header">
-        <div>
-          <h2 className="ui-title">Purchase Orders</h2>
-          <p className="ui-muted purchase-orders-copy">
-            Choose a supplier by name. The app handles the internal supplier ID for you.
-          </p>
-        </div>
-        <label className="ui-checkline">
-          <input
-            type="checkbox"
-            checked={includeDeleted}
-            onChange={(e) => setIncludeDeleted(e.target.checked)}
-          />
-          Include deleted
-        </label>
-      </div>
-
-      <form className="ui-form purchase-order-form" onSubmit={createPurchaseOrder}>
-        <div className="purchase-order-field">
-          <span className="purchase-order-label">Supplier</span>
-          {renderSupplierPicker("create")}
-        </div>
-        <label className="purchase-order-field">
-          <span className="purchase-order-label">Status</span>
-          <select
-            className="ui-input"
-            value={createForm.status}
-            onChange={(e) => updateForm("create", { status: e.target.value })}
-          >
-            <option value="DRAFT">DRAFT</option>
-            <option value="SENT">SENT</option>
-            <option value="PARTIALLY_RECEIVED">PARTIALLY_RECEIVED</option>
-            <option value="RECEIVED">RECEIVED</option>
-            <option value="CANCELLED">CANCELLED</option>
-          </select>
-        </label>
-        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
-          Create
-        </button>
-      </form>
-
-      {editing && (
-        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updatePurchaseOrder}>
-          <div className="purchase-order-field">
-            <span className="purchase-order-label">Supplier</span>
-            {renderSupplierPicker("edit")}
+    <section className="purchase-orders-page">
+      <section className="ui-card">
+        <div className="purchase-orders-header">
+          <div>
+            <h2 className="ui-title">Purchase Orders</h2>
+            <p className="ui-muted purchase-orders-copy">
+              This is now a full workflow screen: supplier and timing up top, line items in the center, totals and logistics on the side.
+            </p>
           </div>
-          <label className="purchase-order-field">
-            <span className="purchase-order-label">Status</span>
-            <select
-              className="ui-input"
-              value={editForm.status}
-              onChange={(e) => updateForm("edit", { status: e.target.value })}
-            >
-              <option value="DRAFT">DRAFT</option>
-              <option value="SENT">SENT</option>
-              <option value="PARTIALLY_RECEIVED">PARTIALLY_RECEIVED</option>
-              <option value="RECEIVED">RECEIVED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
-          </label>
+          <div className="items-header-actions">
+            <label className="ui-checkline">
+              <input type="checkbox" checked={includeDeleted} onChange={(e) => setIncludeDeleted(e.target.checked)} />
+              Include deleted
+            </label>
+            <button className="ui-btn ui-btn-secondary" type="button" onClick={() => {
+              setEditing(null);
+              setEditForm(createDefaultPurchaseOrderForm());
+            }}>
+              New draft
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className="purchase-order-workflow">
+        <form className="purchase-order-editor" onSubmit={editing ? updatePurchaseOrder : createPurchaseOrder}>
+          <section className="ui-card">
+            <div className="purchase-order-section-header">
+              <div>
+                <h3>{editing ? "Edit Purchase Order" : "Create Purchase Order"}</h3>
+                <p className="ui-muted">
+                  Core identity and timing stay here so the order can move through draft, approval, and receiving without clutter.
+                </p>
+              </div>
+            </div>
+            <div className="purchase-order-header-grid">
+              <label className="purchase-order-field">
+                <span className="purchase-order-label">PO Number</span>
+                <input className="ui-input" value={(editing ? editForm : createForm).po_number} onChange={(e) => updateForm(editing ? "edit" : "create", { po_number: e.target.value })} placeholder="Auto-generated if left blank" />
+              </label>
+              <div className="purchase-order-field">
+                <span className="purchase-order-label">Supplier</span>
+                {renderSupplierPicker(editing ? "edit" : "create")}
+              </div>
+              <label className="purchase-order-field">
+                <span className="purchase-order-label">Status</span>
+                <select className="ui-input" value={(editing ? editForm : createForm).status} onChange={(e) => updateForm(editing ? "edit" : "create", { status: e.target.value })}>
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="SUBMITTED">SUBMITTED</option>
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="RECEIVED">RECEIVED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </label>
+              <label className="purchase-order-field">
+                <span className="purchase-order-label">Order Date</span>
+                <input className="ui-input" type="date" value={(editing ? editForm : createForm).order_date} onChange={(e) => updateForm(editing ? "edit" : "create", { order_date: e.target.value })} />
+              </label>
+              <label className="purchase-order-field">
+                <span className="purchase-order-label">Expected Delivery Date</span>
+                <input className="ui-input" type="date" value={(editing ? editForm : createForm).expected_delivery_date} onChange={(e) => updateForm(editing ? "edit" : "create", { expected_delivery_date: e.target.value })} />
+              </label>
+              <label className="purchase-order-field">
+                <span className="purchase-order-label">Payment Terms</span>
+                <select className="ui-input" value={(editing ? editForm : createForm).payment_terms} onChange={(e) => updateForm(editing ? "edit" : "create", { payment_terms: e.target.value })}>
+                  <option value="Net 7">Net 7</option>
+                  <option value="Net 15">Net 15</option>
+                  <option value="Net 30">Net 30</option>
+                  <option value="Due on receipt">Due on receipt</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          {renderLineItemsEditor(editing ? "edit" : "create", editing ? editForm : createForm)}
+
           <div className="purchase-order-actions">
             <button className="ui-btn ui-btn-primary" type="submit">
-              Save
+              {editing ? "Save Purchase Order" : "Create Purchase Order"}
             </button>
-            <button
-              className="ui-btn ui-btn-secondary"
-              type="button"
-              onClick={() => {
+            {editing && (
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => {
                 setEditing(null);
-                setEditForm({ supplier_id: "", status: "DRAFT" });
-              }}
-            >
-              Cancel
-            </button>
+                setEditForm(createDefaultPurchaseOrderForm());
+              }}>
+                Cancel Edit
+              </button>
+            )}
           </div>
         </form>
-      )}
 
-      {loading ? (
-        <div className="ui-loading">Loading data...</div>
-      ) : (
-        <DataTable<PurchaseOrderRecord>
-          rows={rowsWithSupplierNames}
-          columns={[
-            { key: "supplier_name", label: "Supplier", sortable: true },
-            { key: "status", label: "Status", sortable: true },
-            { key: "created_at", label: "Created At", sortable: true }
-          ]}
-          searchText={search}
-          onSearchTextChange={setSearch}
-          renderActions={(row) => (
-            <>
-              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
-                Edit
-              </button>
-              {!row.deleted_at && (
-                <button
-                  className="ui-btn ui-btn-danger"
-                  type="button"
-                  onClick={() => patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() })}
-                >
-                  Soft Delete
+        {renderSummarySidebar(editing ? "edit" : "create", editing ? editForm : createForm, editing ? editSummary : createSummary)}
+      </div>
+
+      <section className="ui-card">
+        <div className="purchase-order-section-header">
+          <div>
+            <h3>Saved Purchase Orders</h3>
+            <p className="ui-muted">Click a row to reopen the full workflow editor for that order.</p>
+          </div>
+        </div>
+        {loading ? (
+          <div className="ui-loading">Loading data...</div>
+        ) : (
+          <DataTable<PurchaseOrderRecord>
+            rows={rowsWithSupplierNames}
+            columns={[
+              { key: "po_number", label: "PO Number", sortable: true },
+              { key: "supplier_name", label: "Supplier", sortable: true },
+              { key: "status", label: "Status", sortable: true },
+              { key: "grand_total", label: "Grand Total", sortable: true },
+              { key: "payment_status", label: "Payment", sortable: true }
+            ]}
+            searchText={search}
+            onSearchTextChange={setSearch}
+            onRowClick={(row) => startEdit(row)}
+            renderActions={(row) => (
+              <>
+                <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                  Open
                 </button>
-              )}
-              {row.deleted_at && (
-                <button
-                  className="ui-btn ui-btn-primary"
-                  type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
-                      method: "POST",
-                      body: JSON.stringify({})
-                    })
-                      .then(async () => {
-                        notify("success", "Purchase Orders: record restored");
-                        await load();
+                {!row.deleted_at && (
+                  <button className="ui-btn ui-btn-danger" type="button" onClick={() => patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() })}>
+                    Soft Delete
+                  </button>
+                )}
+                {row.deleted_at && (
+                  <button
+                    className="ui-btn ui-btn-primary"
+                    type="button"
+                    onClick={() =>
+                      withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
+                        method: "POST",
+                        body: JSON.stringify({})
                       })
-                      .catch((error: unknown) => {
-                        notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
-                >
-                  Restore
-                </button>
-              )}
-            </>
-          )}
-        />
-      )}
+                        .then(async () => {
+                          notify("success", "Purchase Orders: record restored");
+                          await load();
+                        })
+                        .catch((error: unknown) => {
+                          notify("error", error instanceof Error ? error.message : "Restore failed");
+                        })
+                    }
+                  >
+                    Restore
+                  </button>
+                )}
+              </>
+            )}
+          />
+        )}
+      </section>
 
       {supplierPickerOpen && (
         <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
@@ -2264,15 +2596,9 @@ function PurchaseOrdersPage({
             <div className="supplier-modal-header">
               <div>
                 <h3>Select Supplier</h3>
-                <p className="ui-muted supplier-modal-copy">
-                  Showing suppliers available to this signed-in user.
-                </p>
+                <p className="ui-muted supplier-modal-copy">Showing suppliers available to this signed-in user.</p>
               </div>
-              <button
-                className="ui-btn ui-btn-secondary"
-                type="button"
-                onClick={() => setSupplierPickerOpen(null)}
-              >
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setSupplierPickerOpen(null)}>
                 Close
               </button>
             </div>
@@ -2283,11 +2609,7 @@ function PurchaseOrdersPage({
                 {supplierOptions.map((supplier) => (
                   <button
                     key={supplier.id}
-                    className={`supplier-option${(
-                      supplierPickerOpen === "create" ? createForm.supplier_id : editForm.supplier_id
-                    ) === supplier.id
-                      ? " supplier-option-active"
-                      : ""}`}
+                    className={`supplier-option${((supplierPickerOpen === "create" ? createForm : editForm).supplier_id) === supplier.id ? " supplier-option-active" : ""}`}
                     type="button"
                     onClick={() => {
                       updateForm(supplierPickerOpen, { supplier_id: supplier.id });
@@ -2295,7 +2617,7 @@ function PurchaseOrdersPage({
                     }}
                   >
                     <strong>{supplier.name}</strong>
-                    <span>{supplier.meta || "No email or phone saved"}</span>
+                    <span>{supplier.meta || "No extra supplier details saved"}</span>
                   </button>
                 ))}
               </div>

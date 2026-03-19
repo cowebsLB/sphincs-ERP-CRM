@@ -7,7 +7,29 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.8.0` - current active beta snapshot as of 2026-03-19
+- `Beta V1.9.0` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.9.0 - 2026-03-19
+
+### Added
+
+- Purchase orders now support a composite workflow data model with header fields, line items, computed totals, payment state, logistics, approval data, and receiving quantities.
+- Added purchase-order line item modeling and backend tests for computed totals and receiving validation.
+
+### Changed
+
+- ERP purchase orders are now managed through a full workflow page instead of a thin header-only form.
+- The purchase-order screen now separates:
+  - header identity/timing
+  - line-item grid editing
+  - sticky summary and logistics sidebar
+- Purchase-order statuses now align with the Beta V2 workflow stages:
+  - `DRAFT`
+  - `SUBMITTED`
+  - `APPROVED`
+  - `RECEIVED`
+  - `CANCELLED`
+- Partial delivery is now tracked at the line level through `received_quantity`.
 
 ## Beta V1.8.0 - 2026-03-19
 

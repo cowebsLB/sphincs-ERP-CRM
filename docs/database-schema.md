@@ -93,9 +93,66 @@ Schema notes:
 - `balance` remains system-owned/read-only in the current app flow.
 - The richer supplier record feeds purchase-order supplier selection and future vendor-linked flows.
 
+## Beta V2 Purchase Order Workflow Expansion (2026-03-19)
+
+The `purchase_orders` model was expanded for the Beta V2 ERP workflow rebuild so purchase orders can behave like transactional records instead of thin headers.
+
+Purchase order fields now include:
+
+- header:
+  - `po_number`
+  - `supplier_id`
+  - `status`
+  - `order_date`
+  - `expected_delivery_date`
+  - `payment_terms`
+- totals:
+  - `subtotal`
+  - `total_tax`
+  - `total_discount`
+  - `grand_total`
+- logistics and payment:
+  - `payment_status`
+  - `notes`
+  - `shipping_address`
+  - `shipping_method`
+  - `tracking_number`
+- workflow metadata:
+  - `approved_by`
+  - `approved_at`
+
+New line item model:
+
+- `purchase_order_line_items`
+  - `purchase_order_id`
+  - `item_id`
+  - `description`
+  - `quantity`
+  - `unit_cost`
+  - `tax_rate`
+  - `discount`
+  - `line_total`
+  - `received_quantity`
+
+Schema notes:
+
+- purchase-order statuses now align to:
+  - `DRAFT`
+  - `SUBMITTED`
+  - `APPROVED`
+  - `RECEIVED`
+  - `CANCELLED`
+- payment state is tracked separately via:
+  - `UNPAID`
+  - `PARTIAL`
+  - `PAID`
+- totals are computed in the application layer and stored on the order header.
+- partial delivery is represented at the line level through `received_quantity`.
+
 ## Migration Baseline
 
 - Initial migration: `apps/core-api/prisma/migrations/20260316_init/migration.sql`
 - Item expansion migration: `apps/core-api/prisma/migrations/20260319_item_v2_fields/migration.sql`
 - Supplier expansion migration: `apps/core-api/prisma/migrations/20260319_supplier_v2_fields/migration.sql`
+- Purchase-order workflow migration: `apps/core-api/prisma/migrations/20260319_purchase_orders_v2_workflow/migration.sql`
 - Migration lock: `apps/core-api/prisma/migrations/migration_lock.toml`
