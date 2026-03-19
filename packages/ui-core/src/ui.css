@@ -134,6 +134,107 @@ body {
   padding: 12px;
 }
 
+.purchase-orders-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.purchase-orders-copy {
+  margin: 0;
+}
+
+.purchase-order-form {
+  align-items: end;
+}
+
+.purchase-order-field {
+  display: grid;
+  gap: 8px;
+}
+
+.purchase-order-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.purchase-order-submit {
+  min-height: 44px;
+}
+
+.purchase-order-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.supplier-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.supplier-picker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.supplier-picker-hint {
+  margin: 0;
+}
+
+.supplier-modal {
+  width: min(840px, 100%);
+}
+
+.supplier-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.supplier-modal-copy {
+  margin: 4px 0 0;
+}
+
+.supplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.supplier-option {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #0f141c;
+  color: var(--text);
+  text-align: left;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.supplier-option:hover {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.08);
+  transform: translateY(-1px);
+}
+
+.supplier-option span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.supplier-option-active {
+  border-color: var(--primary);
+  background: rgba(245, 158, 11, 0.14);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18);
+}
+
 .ui-input {
   width: 100%;
   border: 1px solid var(--border);
@@ -365,5 +466,16 @@ body {
 @media (max-width: 820px) {
   .app-topnav {
     display: none;
+  }
+
+  .purchase-orders-header,
+  .supplier-modal-header,
+  .supplier-picker-row {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .purchase-order-actions {
+    flex-wrap: wrap;
   }
 }

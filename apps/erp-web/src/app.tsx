@@ -1,7 +1,7 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, type SessionState } from "@sphincs/api-client";
-import { ResourceManager } from "@sphincs/ui-core";
+import { DataTable, ResourceManager } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
@@ -11,6 +11,16 @@ const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as co
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
+type SupplierRecord = RecordData & {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+type PurchaseOrderRecord = RecordData & {
+  supplier_id?: string | null;
+  supplier_name?: string;
+  status?: string | null;
+};
 type SystemInfo = {
   version?: string;
   environment?: string;
@@ -26,6 +36,11 @@ type BugReportForm = {
   module: string;
   contactEmail: string;
   screenshotUrl: string;
+};
+
+type PurchaseOrderFormState = {
+  supplier_id: string;
+  status: string;
 };
 
 function SystemStatusCard() {
@@ -303,6 +318,377 @@ function ResourcePage({
   );
 }
 
+function PurchaseOrdersPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [rows, setRows] = React.useState<PurchaseOrderRecord[]>([]);
+  const [suppliers, setSuppliers] = React.useState<SupplierRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [createForm, setCreateForm] = React.useState<PurchaseOrderFormState>({
+    supplier_id: "",
+    status: "DRAFT"
+  });
+  const [editing, setEditing] = React.useState<PurchaseOrderRecord | null>(null);
+  const [editForm, setEditForm] = React.useState<PurchaseOrderFormState>({
+    supplier_id: "",
+    status: "DRAFT"
+  });
+  const [supplierPickerOpen, setSupplierPickerOpen] = React.useState<"create" | "edit" | null>(null);
+
+  const supplierMap = React.useMemo(
+    () =>
+      new Map(
+        suppliers.map((supplier) => [
+          supplier.id,
+          supplier.name?.trim() || supplier.email?.trim() || "Unnamed supplier"
+        ])
+      ),
+    [suppliers]
+  );
+
+  const supplierOptions = React.useMemo(
+    () =>
+      suppliers.map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name?.trim() || "Unnamed supplier",
+        meta: [supplier.email, supplier.phone].filter(Boolean).join(" • ")
+      })),
+    [suppliers]
+  );
+
+  const rowsWithSupplierNames = React.useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        supplier_name: row.supplier_id ? supplierMap.get(String(row.supplier_id)) || "Unknown supplier" : "No supplier"
+      })),
+    [rows, supplierMap]
+  );
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const [purchaseOrders, visibleSuppliers] = await Promise.all([
+        withAuth<PurchaseOrderRecord[]>(session, setSession, `/erp/purchase-orders${query}`),
+        withAuth<SupplierRecord[]>(session, setSession, "/erp/suppliers")
+      ]);
+      setRows(purchaseOrders);
+      setSuppliers(visibleSuppliers);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load purchase orders");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function updateForm(
+    target: "create" | "edit",
+    patch: Partial<PurchaseOrderFormState>
+  ) {
+    if (target === "create") {
+      setCreateForm((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function startEdit(row: PurchaseOrderRecord) {
+    setEditing(row);
+    setEditForm({
+      supplier_id: row.supplier_id ? String(row.supplier_id) : "",
+      status: row.status ? String(row.status) : "DRAFT"
+    });
+  }
+
+  function getSupplierName(supplierId: string) {
+    return supplierMap.get(supplierId) || "Unknown supplier";
+  }
+
+  function renderSupplierPicker(target: "create" | "edit") {
+    const currentSupplierId = target === "create" ? createForm.supplier_id : editForm.supplier_id;
+
+    return (
+      <div className="supplier-picker">
+        <div className="supplier-picker-row">
+          <select
+            className="ui-input"
+            value={currentSupplierId}
+            onChange={(e) => updateForm(target, { supplier_id: e.target.value })}
+          >
+            <option value="">No supplier selected</option>
+            {supplierOptions.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="ui-btn ui-btn-secondary"
+            type="button"
+            onClick={() => setSupplierPickerOpen(target)}
+          >
+            Browse suppliers
+          </button>
+        </div>
+        <p className="ui-muted supplier-picker-hint">
+          {currentSupplierId
+            ? `Selected: ${getSupplierName(currentSupplierId)}`
+            : suppliers.length > 0
+              ? "Pick a supplier by name instead of typing an internal ID."
+              : "No suppliers available yet. Create one in Suppliers first."}
+        </p>
+      </div>
+    );
+  }
+
+  async function createPurchaseOrder(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await withAuth(session, setSession, "/erp/purchase-orders", {
+        method: "POST",
+        body: JSON.stringify({
+          supplier_id: createForm.supplier_id || undefined,
+          status: createForm.status || undefined
+        })
+      });
+      notify("success", "Purchase Orders: record created");
+      setCreateForm({ supplier_id: "", status: "DRAFT" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
+  }
+
+  async function updatePurchaseOrder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/erp/purchase-orders/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          supplier_id: editForm.supplier_id || null,
+          status: editForm.status || undefined
+        })
+      });
+      notify("success", "Purchase Orders: record updated");
+      setEditing(null);
+      setEditForm({ supplier_id: "", status: "DRAFT" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchPurchaseOrder(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/erp/purchase-orders/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", "Purchase Orders: record updated");
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  return (
+    <section className="ui-card">
+      <div className="purchase-orders-header">
+        <div>
+          <h2 className="ui-title">Purchase Orders</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Choose a supplier by name. The app handles the internal supplier ID for you.
+          </p>
+        </div>
+        <label className="ui-checkline">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => setIncludeDeleted(e.target.checked)}
+          />
+          Include deleted
+        </label>
+      </div>
+
+      <form className="ui-form purchase-order-form" onSubmit={createPurchaseOrder}>
+        <div className="purchase-order-field">
+          <span className="purchase-order-label">Supplier</span>
+          {renderSupplierPicker("create")}
+        </div>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Status</span>
+          <select
+            className="ui-input"
+            value={createForm.status}
+            onChange={(e) => updateForm("create", { status: e.target.value })}
+          >
+            <option value="DRAFT">DRAFT</option>
+            <option value="SENT">SENT</option>
+            <option value="PARTIALLY_RECEIVED">PARTIALLY_RECEIVED</option>
+            <option value="RECEIVED">RECEIVED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </label>
+        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
+          Create
+        </button>
+      </form>
+
+      {editing && (
+        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updatePurchaseOrder}>
+          <div className="purchase-order-field">
+            <span className="purchase-order-label">Supplier</span>
+            {renderSupplierPicker("edit")}
+          </div>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Status</span>
+            <select
+              className="ui-input"
+              value={editForm.status}
+              onChange={(e) => updateForm("edit", { status: e.target.value })}
+            >
+              <option value="DRAFT">DRAFT</option>
+              <option value="SENT">SENT</option>
+              <option value="PARTIALLY_RECEIVED">PARTIALLY_RECEIVED</option>
+              <option value="RECEIVED">RECEIVED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </label>
+          <div className="purchase-order-actions">
+            <button className="ui-btn ui-btn-primary" type="submit">
+              Save
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setEditForm({ supplier_id: "", status: "DRAFT" });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : (
+        <DataTable<PurchaseOrderRecord>
+          rows={rowsWithSupplierNames}
+          columns={[
+            { key: "supplier_name", label: "Supplier", sortable: true },
+            { key: "status", label: "Status", sortable: true },
+            { key: "created_at", label: "Created At", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() })}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() =>
+                    withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Purchase Orders: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      })
+                  }
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+
+      {supplierPickerOpen && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card supplier-modal">
+            <div className="supplier-modal-header">
+              <div>
+                <h3>Select Supplier</h3>
+                <p className="ui-muted supplier-modal-copy">
+                  Showing suppliers available to this signed-in user.
+                </p>
+              </div>
+              <button
+                className="ui-btn ui-btn-secondary"
+                type="button"
+                onClick={() => setSupplierPickerOpen(null)}
+              >
+                Close
+              </button>
+            </div>
+            {supplierOptions.length === 0 ? (
+              <p className="ui-empty">No suppliers found yet. Create one from the Suppliers page first.</p>
+            ) : (
+              <div className="supplier-grid">
+                {supplierOptions.map((supplier) => (
+                  <button
+                    key={supplier.id}
+                    className={`supplier-option${(
+                      supplierPickerOpen === "create" ? createForm.supplier_id : editForm.supplier_id
+                    ) === supplier.id
+                      ? " supplier-option-active"
+                      : ""}`}
+                    type="button"
+                    onClick={() => {
+                      updateForm(supplierPickerOpen, { supplier_id: supplier.id });
+                      setSupplierPickerOpen(null);
+                    }}
+                  >
+                    <strong>{supplier.name}</strong>
+                    <span>{supplier.meta || "No email or phone saved"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ERPApp({
   session,
   setSession
@@ -564,15 +950,9 @@ function ERPApp({
           <Route
             path="/purchase-orders"
             element={
-              <ResourcePage
+              <PurchaseOrdersPage
                 session={session}
                 setSession={setSession}
-                endpoint="/erp/purchase-orders"
-                title="Purchase Orders"
-                fields={[
-                  { key: "supplier_id", label: "Supplier ID", required: false },
-                  { key: "status", label: "Status (DRAFT/SENT/...)", required: false }
-                ]}
                 notify={notify}
               />
             }

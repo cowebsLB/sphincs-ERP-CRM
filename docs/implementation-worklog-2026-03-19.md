@@ -302,6 +302,33 @@ Validation:
 - `pnpm --filter @sphincs/crm-web build` passed
 - `pnpm --filter @sphincs/erp-web build` passed
 
+### 14) ERP purchase-order supplier picker UX upgrade
+
+Problem:
+
+- purchase-order create/edit used raw `supplier_id` input
+- testers had to know or paste internal UUID values
+- this was valid technically, but poor beta UX
+
+Implemented:
+
+- replaced raw supplier ID entry in ERP purchase orders with a supplier picker flow
+- purchase-order form now loads the signed-in user's visible suppliers
+- added:
+  - styled supplier dropdown
+  - `Browse suppliers` modal/popup with supplier cards
+  - supplier name shown in purchase-order table instead of raw UUID
+- frontend still submits `supplier_id` to the backend, but selection is now done by supplier name in UI
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
