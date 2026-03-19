@@ -12,7 +12,7 @@ Date: 2026-03-19
 - [x] Login rate-limit returns `429` on repeated failures
 - [x] `Retry-After` header is set on rate-limit responses
 - [x] Refresh-token reuse detection revokes active refresh sessions
-- [ ] Admin reset endpoint validated in production:
+- [x] Admin reset endpoint validated in production:
   - `POST /api/v1/auth/rate-limit/reset`
 
 ## Core API + Ops
@@ -48,6 +48,31 @@ Date: 2026-03-19
 
 - [x] `POST /api/v1/bugs/report` creates GitHub issue successfully
 - [x] ERP/CRM in-app `Report Bug` UI submits structured payload
+
+## Production Validation Snapshot (2026-03-19)
+
+Validated against:
+
+- `https://sphincs-erp-crm-1.onrender.com`
+
+Verified pass:
+
+- `GET /health` -> `200`
+- `GET /api/v1/system/info` -> `200`
+- `POST /api/v1/auth/signup` -> `201`
+- `POST /api/v1/auth/login` -> `201`
+- `GET /api/v1/auth/me` -> `200`
+- `POST /api/v1/auth/refresh` -> `201`
+- `GET /api/v1/erp/items` -> `200`
+- `GET /api/v1/crm/contacts` -> `200`
+- `POST /api/v1/auth/rate-limit/reset` -> `201`
+- `POST /api/v1/bugs/report` -> `201`
+
+Rate-limit verification:
+
+- Failed login attempts return `401` for initial attempts
+- Rate limit activates with `429`
+- `Retry-After` header present (`900`)
 
 ## Security Closeout (Deferred)
 

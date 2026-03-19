@@ -118,6 +118,31 @@ Completed:
 - updated checklist status in:
   - `docs/beta-v1-checklist.md`
 
+### 7) Quick production backend final sweep run
+
+Executed live verification against:
+
+- `https://sphincs-erp-crm-1.onrender.com`
+
+Validated endpoints:
+
+- `GET /health` -> `200`
+- `GET /api/v1/system/info` -> `200`
+- `POST /api/v1/auth/signup` -> `201`
+- `POST /api/v1/auth/login` -> `201`
+- `GET /api/v1/auth/me` -> `200`
+- `POST /api/v1/auth/refresh` -> `201`
+- `GET /api/v1/erp/items` -> `200`
+- `GET /api/v1/crm/contacts` -> `200`
+- `POST /api/v1/auth/rate-limit/reset` -> `201`
+- `POST /api/v1/bugs/report` -> `201`
+
+Auth hardening checks:
+
+- invalid login returns `401`
+- rate limiter returns `429`
+- `Retry-After` header present (`900`)
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
