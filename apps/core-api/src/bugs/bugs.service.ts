@@ -11,6 +11,25 @@ type BugReporter = {
 
 @Injectable()
 export class BugsService {
+  private normalize(input: CreateBugReportDto) {
+    const rawSteps = input.steps as unknown;
+    const normalizedSteps = Array.isArray(rawSteps)
+      ? rawSteps.map((step) => String(step).trim()).filter(Boolean)
+      : typeof rawSteps === "string"
+        ? rawSteps
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+        : [];
+    return {
+      ...input,
+      summary: input.summary?.trim() || input.title.trim(),
+      module: input.module?.trim() || "general",
+      route: input.route?.trim() || "/",
+      steps: normalizedSteps
+    };
+  }
+
   private resolveRepository(): string {
     return (process.env.GITHUB_ISSUES_REPO || process.env.GITHUB_REPOSITORY || "").trim();
   }
@@ -33,11 +52,12 @@ export class BugsService {
   }
 
   private buildLabels(input: CreateBugReportDto): string[] {
-    const source = this.sanitizeLabel(input.sourceApp);
-    const area = this.sanitizeLabel(input.module);
+    const normalized = this.normalize(input);
+    const source = this.sanitizeLabel(normalized.sourceApp);
+    const area = this.sanitizeLabel(normalized.module);
     const labels = [
       ...this.resolveLabels(),
-      `severity:${input.severity}`,
+      `severity:${normalized.severity}`,
       `module:${source}`,
       `area:${area}`
     ];
@@ -45,13 +65,16 @@ export class BugsService {
   }
 
   private buildIssueBody(input: CreateBugReportDto, reporter: BugReporter): string {
-    const stepLines = input.steps.map((step, index) => `${index + 1}. ${step.trim()}`).join("\n");
+    const normalized = this.normalize(input);
+    const stepLines = normalized.steps.map((step, index) => `${index + 1}. ${step.trim()}`).join("\n");
     const timestamp = new Date().toISOString();
-    const pageUrlSection = input.pageUrl?.trim() ? `- Page URL: ${input.pageUrl.trim()}\n` : "";
+    const pageUrlSection = normalized.pageUrl?.trim()
+      ? `- Page URL: ${normalized.pageUrl.trim()}\n`
+      : "";
     return [
       "## Bug Summary",
       "",
-      input.summary.trim(),
+      normalized.summary.trim(),
       "",
       "## Steps To Reproduce",
       "",
@@ -59,31 +82,31 @@ export class BugsService {
       "",
       "## Expected Result",
       "",
-      input.expected.trim(),
+      normalized.expected.trim(),
       "",
       "## Actual Result",
       "",
-      input.actual.trim(),
+      normalized.actual.trim(),
       "",
       "## Severity",
       "",
-      input.severity.charAt(0).toUpperCase() + input.severity.slice(1),
+      normalized.severity.charAt(0).toUpperCase() + normalized.severity.slice(1),
       "",
       "## Context",
       "",
-      `- Module: ${input.module}`,
-      `- Route: ${input.route}`,
-      `- App: ${input.sourceApp}`,
-      `- Version: ${input.appVersion ?? "beta-v1"}`,
+      `- Module: ${normalized.module}`,
+      `- Route: ${normalized.route}`,
+      `- App: ${normalized.sourceApp}`,
+      `- Version: ${normalized.appVersion ?? "beta-v1"}`,
       `- User ID: ${reporter.id}`,
       `- User Email: ${reporter.email}`,
-      `- Contact Email: ${input.contactEmail ?? "not provided"}`,
+      `- Contact Email: ${normalized.contactEmail ?? "not provided"}`,
       `- Organization: ${reporter.organizationId}`,
       `- Branch: ${reporter.branchId ?? "none"}`,
       `- Time: ${timestamp}`,
-      `- User Agent: ${input.userAgent ?? "unknown"}`,
+      `- User Agent: ${normalized.userAgent ?? "unknown"}`,
       pageUrlSection ? pageUrlSection.trimEnd() : "",
-      input.screenshotUrl ? `- Screenshot URL: ${input.screenshotUrl}` : ""
+      normalized.screenshotUrl ? `- Screenshot URL: ${normalized.screenshotUrl}` : ""
     ]
       .filter((line) => line !== "")
       .join("\n");

@@ -10,6 +10,7 @@ import {
   MaxLength,
   MinLength
 } from "class-validator";
+import { Transform } from "class-transformer";
 
 enum BugSeverity {
   LOW = "low",
@@ -29,11 +30,26 @@ export class CreateBugReportDto {
   @MaxLength(120)
   title!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(5)
+  @MinLength(2)
   @MaxLength(4000)
-  summary!: string;
+  summary?: string;
 
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item).trim())
+        .filter(Boolean);
+    }
+    if (typeof value === "string") {
+      return value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+    return [];
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(20)
@@ -58,15 +74,17 @@ export class CreateBugReportDto {
   @IsEnum(SourceApp)
   sourceApp!: "ERP" | "CRM";
 
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(60)
-  module!: string;
+  module?: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(300)
-  route!: string;
+  route?: string;
 
   @IsOptional()
   @IsString()

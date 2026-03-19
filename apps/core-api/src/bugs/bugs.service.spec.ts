@@ -85,4 +85,46 @@ describe("BugsService", () => {
       )
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
+
+  it("accepts legacy payload shape with string steps and missing optional fields", async () => {
+    const service = new BugsService();
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        html_url: "https://github.com/cowebsLB/sphincs-ERP-CRM/issues/124",
+        number: 124,
+        title: "[ERP] Legacy payload bug",
+        state: "open"
+      })
+    }) as unknown as typeof fetch;
+
+    const result = await service.createGithubIssue(
+      {
+        title: "Legacy payload bug",
+        sourceApp: "ERP",
+        severity: "medium",
+        steps: "Open page\nClick save" as unknown as string[],
+        expected: "Save works",
+        actual: "Save fails"
+      } as unknown as {
+        title: string;
+        summary?: string;
+        sourceApp: "ERP" | "CRM";
+        severity: "low" | "medium" | "high" | "critical";
+        module?: string;
+        route?: string;
+        steps: string[];
+        expected: string;
+        actual: string;
+      },
+      {
+        id: "user-legacy",
+        email: "legacy@sphincs.local",
+        roles: ["Staff"],
+        organizationId: "org-1"
+      }
+    );
+
+    expect(result.issueNumber).toBe(124);
+  });
 });
