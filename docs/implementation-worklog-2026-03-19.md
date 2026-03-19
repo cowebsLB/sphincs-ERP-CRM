@@ -186,6 +186,37 @@ Validation:
 - `pnpm --filter @sphincs/crm-web test` passed
 - `pnpm --filter @sphincs/erp-web test` passed
 
+### 10) Landing/logo + unified login styling pass
+
+Requested updates completed:
+
+1. Landing now uses repo branding asset logo:
+   - `apps/web-home/index.html` now references:
+     - `./assets/branding/apple-touch-icon.png`
+   - Pages workflow now copies branding assets into published artifact:
+     - `.github/workflows/deploy-pages.yml`
+
+2. Landing + app UI palette aligned to provided theme tokens:
+   - core/background/surface/border/text/accent/status colors applied in shared UI CSS
+   - file updated:
+     - `packages/ui-core/src/ui.css`
+
+3. Unified login experience for ERP and CRM:
+   - both apps now use shared session key:
+     - `sphincs.session`
+   - legacy keys are still read/migrated:
+     - `sphincs.erp.session`
+     - `sphincs.crm.session`
+   - login screens updated to common styled `Sign in once for ERP + CRM` UX
+   - files updated:
+     - `apps/erp-web/src/app.tsx`
+     - `apps/crm-web/src/app.tsx`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

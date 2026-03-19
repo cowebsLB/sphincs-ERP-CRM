@@ -79,10 +79,11 @@ jobs:
 
       - name: Assemble Pages artifact
         run: |
-          mkdir -p _site/erp _site/crm
+          mkdir -p _site/erp _site/crm _site/assets/branding
           cp -r apps/erp-web/dist/* _site/erp/
           cp -r apps/crm-web/dist/* _site/crm/
           cp apps/web-home/index.html _site/index.html
+          cp assets/branding/* _site/assets/branding/
           touch _site/.nojekyll
 
       - name: Configure Pages

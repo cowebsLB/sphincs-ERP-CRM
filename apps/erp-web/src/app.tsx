@@ -6,7 +6,8 @@ import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
-const STORAGE_KEY = "sphincs.erp.session";
+const STORAGE_KEY = "sphincs.session";
+const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -79,7 +80,10 @@ function SystemStatusCard() {
 
 function useSessionState() {
   const [session, setSession] = React.useState<SessionState | null>(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ||
+      LEGACY_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean) ||
+      null;
     return raw ? (JSON.parse(raw) as SessionState) : null;
   });
 
@@ -87,8 +91,14 @@ function useSessionState() {
     setSession(next);
     if (next) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      LEGACY_STORAGE_KEYS.forEach((key) => {
+        if (key !== STORAGE_KEY) {
+          localStorage.removeItem(key);
+        }
+      });
     } else {
       localStorage.removeItem(STORAGE_KEY);
+      LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     }
   }, []);
 
@@ -146,30 +156,42 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   }
 
   return (
-    <main>
-      <h1>{mode === "signup" ? "ERP Signup" : "ERP Login"}</h1>
-      <form onSubmit={onSubmit}>
+    <main className="auth-page">
+      <section className="auth-card">
+        <p className="auth-eyebrow">SPHINCS Platform</p>
+        <h1>{mode === "signup" ? "Create your account" : "Sign in once for ERP + CRM"}</h1>
+        <p className="ui-muted">One session works across both modules in this beta.</p>
+        <form className="auth-form" onSubmit={onSubmit}>
+          <label>
+            <span>Email</span>
         <input
+          className="ui-input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           autoComplete="email"
         />
+          </label>
+          <label>
+            <span>Password</span>
         <input
+          className="ui-input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           type="password"
           autoComplete="current-password"
         />
-        <button disabled={busy} type="submit">
+          </label>
+          <button className="ui-btn ui-btn-primary" disabled={busy} type="submit">
           {busy ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
         </button>
-      </form>
-      {error && <p>{error}</p>}
-      <p>
+        </form>
+        {error && <p className="ui-error">{error}</p>}
+        <p className="auth-switch">
         {mode === "signup" ? "Already have an account?" : "New tester?"}{" "}
         <button
+          className="ui-btn ui-btn-secondary"
           type="button"
           onClick={() => {
             setMode(mode === "signup" ? "login" : "signup");
@@ -178,7 +200,8 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         >
           {mode === "signup" ? "Sign in" : "Create account"}
         </button>
-      </p>
+        </p>
+      </section>
     </main>
   );
 }

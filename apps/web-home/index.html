@@ -7,15 +7,14 @@
     <style>
       :root {
         color-scheme: light;
-        --ink: #101828;
-        --muted: #344054;
-        --surface: #fefefe;
-        --line: #d0d5dd;
-        --sunset: #f97316;
-        --gold: #facc15;
-        --lagoon: #0891b2;
-        --night: #0b1022;
-        --night-2: #121a34;
+        --bg: #0b0f14;
+        --surface: #121821;
+        --line: #1f2a37;
+        --text: #e5e7eb;
+        --text-2: #9ca3af;
+        --gold: #f59e0b;
+        --gold-hover: #d97706;
+        --soft-gold: rgba(245, 158, 11, 0.1);
       }
       * {
         box-sizing: border-box;
@@ -23,12 +22,12 @@
       body {
         margin: 0;
         font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
-        color: var(--ink);
+        color: var(--text);
         min-height: 100vh;
         background:
-          radial-gradient(circle at 18% 18%, rgba(250, 204, 21, 0.28), transparent 40%),
-          radial-gradient(circle at 85% 12%, rgba(8, 145, 178, 0.26), transparent 42%),
-          linear-gradient(135deg, var(--night) 0%, var(--night-2) 56%, #1f2937 100%);
+          radial-gradient(circle at 14% 14%, rgba(245, 158, 11, 0.18), transparent 38%),
+          radial-gradient(circle at 88% 22%, rgba(245, 158, 11, 0.12), transparent 46%),
+          var(--bg);
       }
       .page {
         min-height: 100vh;
@@ -42,8 +41,8 @@
         justify-content: space-between;
         align-items: center;
         padding: 14px 24px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-        background: rgba(11, 16, 34, 0.7);
+        border-bottom: 1px solid var(--line);
+        background: rgba(11, 15, 20, 0.8);
         backdrop-filter: blur(8px);
         z-index: 5;
       }
@@ -51,19 +50,17 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        color: #f9fafb;
+        color: var(--text);
         text-decoration: none;
       }
       .logo {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 10px;
-        display: grid;
-        place-items: center;
-        font-weight: 800;
-        color: #0b1022;
-        background: linear-gradient(135deg, var(--gold), var(--sunset));
-        box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+        object-fit: contain;
+        background: var(--soft-gold);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        padding: 4px;
       }
       .brand span {
         font-weight: 800;
@@ -74,15 +71,17 @@
         gap: 12px;
       }
       .nav a {
-        color: #e5e7eb;
+        color: var(--text-2);
         text-decoration: none;
         font-size: 14px;
         padding: 8px 12px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid var(--line);
       }
       .nav a:hover {
-        background: rgba(255, 255, 255, 0.09);
+        background: var(--soft-gold);
+        color: var(--text);
+        border-color: rgba(245, 158, 11, 0.4);
       }
       .hero-wrap {
         flex: 1;
@@ -92,24 +91,23 @@
       }
       .hero {
         width: min(980px, 100%);
-        border: 1px solid rgba(255, 255, 255, 0.16);
+        border: 1px solid var(--line);
         border-radius: 24px;
         padding: 44px 30px 34px;
-        background:
-          linear-gradient(170deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 247, 250, 0.94) 100%);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+        background: linear-gradient(170deg, rgba(18, 24, 33, 0.95) 0%, rgba(11, 15, 20, 0.95) 100%);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
         text-align: center;
       }
       .beta-tag {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        border: 1px solid #f59e0b;
+        border: 1px solid var(--gold);
         border-radius: 999px;
         padding: 6px 12px;
-        color: #b45309;
+        color: var(--gold);
         font-weight: 700;
-        background: #fffbeb;
+        background: var(--soft-gold);
         margin-bottom: 16px;
       }
       h1 {
@@ -117,12 +115,12 @@
         font-size: clamp(46px, 10vw, 112px);
         line-height: 0.94;
         letter-spacing: 0.06em;
-        color: #0f172a;
+        color: var(--text);
       }
       .subtitle {
         margin: 18px auto 0;
         max-width: 720px;
-        color: var(--muted);
+        color: var(--text-2);
         font-size: clamp(16px, 2.5vw, 22px);
       }
       .cta {
@@ -144,14 +142,15 @@
         transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
       }
       .btn-erp {
-        background: linear-gradient(135deg, #0ea5e9, #0284c7);
-        color: #f8fafc;
-        box-shadow: 0 12px 26px rgba(2, 132, 199, 0.35);
+        background: linear-gradient(135deg, var(--gold), var(--gold-hover));
+        color: #111827;
+        box-shadow: 0 12px 26px rgba(245, 158, 11, 0.32);
       }
       .btn-crm {
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        color: #fff7ed;
-        box-shadow: 0 12px 26px rgba(234, 88, 12, 0.35);
+        background: transparent;
+        color: var(--text);
+        border: 1px solid rgba(245, 158, 11, 0.5);
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
       }
       .btn:hover {
         transform: translateY(-1px);
@@ -159,11 +158,11 @@
       }
       .foot {
         margin-top: 18px;
-        color: #475467;
+        color: var(--text-2);
         font-size: 14px;
       }
       .foot code {
-        background: #eaecf0;
+        background: rgba(255, 255, 255, 0.08);
         padding: 2px 6px;
         border-radius: 6px;
       }
@@ -188,7 +187,11 @@
     <div class="page">
       <header class="topbar">
         <a class="brand" href="./">
-          <div class="logo">S</div>
+          <img
+            class="logo"
+            src="./assets/branding/apple-touch-icon.png"
+            alt="SPHINCS logo"
+          />
           <span>SPHINCS</span>
         </a>
         <nav class="nav">

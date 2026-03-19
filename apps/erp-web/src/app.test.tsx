@@ -18,7 +18,7 @@ describe("ERP RootApp", () => {
 
   it("renders login when no session exists", () => {
     render(<RootApp />);
-    expect(screen.getByRole("heading", { name: "ERP Login" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Sign in once for ERP + CRM" })).toBeInTheDocument();
   });
 
   it("logs in and shows ERP shell", async () => {
@@ -47,7 +47,7 @@ describe("ERP RootApp", () => {
 
   it("blocks non-erp roles", async () => {
     localStorage.setItem(
-      "sphincs.erp.session",
+      "sphincs.session",
       JSON.stringify({
         accessToken: "a",
         refreshToken: "r",
