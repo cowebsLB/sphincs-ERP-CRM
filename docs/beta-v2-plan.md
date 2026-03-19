@@ -1,7 +1,11 @@
 # Beta V2 Plan
 
 Date: 2026-03-19  
-Status: Draft Plan (Execution Not Started)
+Status: Draft Plan (Execution Guidance)
+
+Execution checklist:
+
+- [Beta V2 Checklist](./beta-v2-checklist.md)
 
 ## 1) Purpose
 
@@ -115,5 +119,6 @@ Beta V2 is considered complete when:
 
 ## 9) Next Step
 
-Convert this plan into a ticketed implementation board with owners,
-estimates, and milestone target dates.
+Use the execution checklist as the working Beta V2 source of truth:
+
+- [Beta V2 Checklist](./beta-v2-checklist.md)

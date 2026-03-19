@@ -40,6 +40,8 @@ Primary docs entry:
 For Beta V1 test execution:
 
 - [Beta V1 Checklist](./docs/beta-v1-checklist.md)
+- [Beta V2 Plan](./docs/beta-v2-plan.md)
+- [Beta V2 Checklist](./docs/beta-v2-checklist.md)
 - [Beta Tester Access List](./docs/beta-tester-access-list.md)
 - [Beta Tester Instructions](./docs/beta-tester-instructions.md)
 - [Testing Strategy](./docs/testing.md)
@@ -61,4 +63,5 @@ For Beta V1 test execution:
 - [Versioning Strategy](./docs/versioning.md)
 - [Changelog](./CHANGELOG.md)
 - [Milestones And Tickets](./docs/milestones.md)
+- [Beta V2 Checklist](./docs/beta-v2-checklist.md)
 - [Implementation Worklog (2026-03-19)](./docs/implementation-worklog-2026-03-19.md)

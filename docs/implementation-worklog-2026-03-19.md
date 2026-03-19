@@ -397,6 +397,38 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+### 17) Beta V2 execution checklist established
+
+Problem:
+
+- `docs/beta-v2-plan.md` defined direction, but not an execution-grade finish line
+- there was no concrete Beta V2 checklist tying ERP UX rebuilds, access/session work, QA, and release operations into one completion gate
+
+Implemented:
+
+- added:
+  - `docs/beta-v2-checklist.md`
+- checklist now defines:
+  - access and identity tasks
+  - ERP UX rebuild tasks for items, suppliers, and purchase orders
+  - CRM consistency tasks
+  - data/safety requirements
+  - backend/data-shape requirements
+  - quality/observability tasks
+  - beta operations and release discipline
+  - hard-stop completion criteria for `Beta V2.0.0`
+- updated `docs/beta-v2-plan.md` so it now points to the execution checklist
+- updated docs navigation:
+  - `docs/index.md`
+  - `index.md`
+
+Files:
+
+- `docs/beta-v2-checklist.md`
+- `docs/beta-v2-plan.md`
+- `docs/index.md`
+- `index.md`
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

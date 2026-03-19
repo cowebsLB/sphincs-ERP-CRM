@@ -23,6 +23,8 @@ This is the canonical entry point for all project documentation.
 - [Hosting Overview](./hosting.md)
 - [Changelog](../CHANGELOG.md)
 - [Beta V1 Checklist](./beta-v1-checklist.md)
+- [Beta V2 Plan](./beta-v2-plan.md)
+- [Beta V2 Checklist](./beta-v2-checklist.md)
 - [Beta Tester Access List](./beta-tester-access-list.md)
 - [Beta Tester Instructions](./beta-tester-instructions.md)
 - [Backend Final Sweep](./backend-final-sweep.md)
