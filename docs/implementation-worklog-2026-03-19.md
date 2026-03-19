@@ -107,6 +107,17 @@ Environment configuration added:
 - `GITHUB_ISSUES_REPO`
 - optional `GITHUB_ISSUES_LABELS`
 
+### 6) Beta access ops closeout (checklist items 1 and 2)
+
+Completed:
+
+- finalized tester access list for Beta V1 wave 1:
+  - `docs/beta-tester-access-list.md`
+- finalized tester instruction note for onboarding and reporting:
+  - `docs/beta-tester-instructions.md`
+- updated checklist status in:
+  - `docs/beta-v1-checklist.md`
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

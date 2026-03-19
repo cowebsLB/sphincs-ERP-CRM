@@ -21,6 +21,8 @@ This is the canonical entry point for all project documentation.
 - [Deployment Guide](./deployment.md)
 - [Hosting Overview](./hosting.md)
 - [Beta V1 Checklist](./beta-v1-checklist.md)
+- [Beta Tester Access List](./beta-tester-access-list.md)
+- [Beta Tester Instructions](./beta-tester-instructions.md)
 - [Backend Final Sweep](./backend-final-sweep.md)
 - [Testing Strategy](./testing.md)
 - [Implementation Worklog (2026-03-16)](./implementation-worklog-2026-03-16.md)

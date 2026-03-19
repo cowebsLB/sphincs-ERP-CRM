@@ -125,8 +125,8 @@ Frontend:
 - [x] Seeded test users exist (`admin@sphincs.local`).
 - [x] Beta URL available and shareable.
 - [x] Self-service beta tester signup flow enabled.
-- [ ] Tester access list finalized (friends/testers list).
-- [ ] Short tester instruction note finalized.
+- [x] Tester access list finalized (friends/testers list).
+- [x] Short tester instruction note finalized.
 
 ## 8) Fail Gracefully
 

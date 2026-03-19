@@ -36,6 +36,8 @@ Primary docs entry:
 For Beta V1 test execution:
 
 - [Beta V1 Checklist](./docs/beta-v1-checklist.md)
+- [Beta Tester Access List](./docs/beta-tester-access-list.md)
+- [Beta Tester Instructions](./docs/beta-tester-instructions.md)
 - [Testing Strategy](./docs/testing.md)
 
 ## Tech Stack
