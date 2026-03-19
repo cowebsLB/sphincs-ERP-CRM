@@ -3,78 +3,218 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SPHINCS ERP + CRM</title>
+    <title>SPHINCS Beta V1</title>
     <style>
       :root {
         color-scheme: light;
-        --bg: #f6f8fb;
-        --card: #ffffff;
-        --text: #14213d;
-        --muted: #4b5563;
-        --accent: #0f62fe;
-        --border: #dbe2ea;
+        --ink: #101828;
+        --muted: #344054;
+        --surface: #fefefe;
+        --line: #d0d5dd;
+        --sunset: #f97316;
+        --gold: #facc15;
+        --lagoon: #0891b2;
+        --night: #0b1022;
+        --night-2: #121a34;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
-        color: var(--text);
+        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(250, 204, 21, 0.28), transparent 40%),
+          radial-gradient(circle at 85% 12%, rgba(8, 145, 178, 0.26), transparent 42%),
+          linear-gradient(135deg, var(--night) 0%, var(--night-2) 56%, #1f2937 100%);
       }
-      .container {
-        max-width: 880px;
-        margin: 48px auto;
-        padding: 0 20px;
+      .page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
-      .panel {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 24px;
+      .topbar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(11, 16, 34, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 5;
       }
-      h1 { margin-top: 0; }
-      p { color: var(--muted); line-height: 1.5; }
-      .links {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      .brand {
+        display: flex;
+        align-items: center;
         gap: 12px;
-        margin-top: 20px;
-      }
-      a {
-        display: block;
+        color: #f9fafb;
         text-decoration: none;
-        color: var(--accent);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 14px;
-        background: #f9fbff;
-        font-weight: 600;
       }
-      a:hover { background: #edf3ff; }
-      code {
-        background: #eef2f7;
-        border-radius: 6px;
+      .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: #0b1022;
+        background: linear-gradient(135deg, var(--gold), var(--sunset));
+        box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+      }
+      .brand span {
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .nav {
+        display: flex;
+        gap: 12px;
+      }
+      .nav a {
+        color: #e5e7eb;
+        text-decoration: none;
+        font-size: 14px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .nav a:hover {
+        background: rgba(255, 255, 255, 0.09);
+      }
+      .hero-wrap {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        padding: 40px 20px 56px;
+      }
+      .hero {
+        width: min(980px, 100%);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 24px;
+        padding: 44px 30px 34px;
+        background:
+          linear-gradient(170deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 247, 250, 0.94) 100%);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+        text-align: center;
+      }
+      .beta-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #f59e0b;
+        border-radius: 999px;
+        padding: 6px 12px;
+        color: #b45309;
+        font-weight: 700;
+        background: #fffbeb;
+        margin-bottom: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(46px, 10vw, 112px);
+        line-height: 0.94;
+        letter-spacing: 0.06em;
+        color: #0f172a;
+      }
+      .subtitle {
+        margin: 18px auto 0;
+        max-width: 720px;
+        color: var(--muted);
+        font-size: clamp(16px, 2.5vw, 22px);
+      }
+      .cta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin: 26px auto 0;
+        max-width: 680px;
+      }
+      .btn {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 56px;
+        text-decoration: none;
+        border-radius: 14px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+      }
+      .btn-erp {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: #f8fafc;
+        box-shadow: 0 12px 26px rgba(2, 132, 199, 0.35);
+      }
+      .btn-crm {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #fff7ed;
+        box-shadow: 0 12px 26px rgba(234, 88, 12, 0.35);
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.03);
+      }
+      .foot {
+        margin-top: 18px;
+        color: #475467;
+        font-size: 14px;
+      }
+      .foot code {
+        background: #eaecf0;
         padding: 2px 6px;
+        border-radius: 6px;
+      }
+      @media (max-width: 760px) {
+        .topbar {
+          padding: 12px 14px;
+        }
+        .nav {
+          display: none;
+        }
+        .hero {
+          padding: 30px 18px 24px;
+          border-radius: 18px;
+        }
+        .cta {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="panel">
-        <h1>SPHINCS ERP + CRM</h1>
-        <p>
-          GitHub Pages deployment entry for the SPHINCS frontend apps.
-          Use the links below to open each app.
-        </p>
-        <div class="links">
-          <a href="./erp/">Open ERP App</a>
-          <a href="./crm/">Open CRM App</a>
+    <div class="page">
+      <header class="topbar">
+        <a class="brand" href="./">
+          <div class="logo">S</div>
+          <span>SPHINCS</span>
+        </a>
+        <nav class="nav">
+          <a href="./erp/">ERP</a>
+          <a href="./crm/">CRM</a>
+          <a href="./#beta">Beta V1</a>
+        </nav>
+      </header>
+
+      <main class="hero-wrap">
+        <div class="hero" id="beta">
+          <div class="beta-tag">Public Test Build</div>
+          <h1>BETA V1</h1>
+          <p class="subtitle">
+            SPHINCS ERP + CRM testing environment.
+            Choose your module and jump straight into the beta.
+          </p>
+          <div class="cta">
+            <a class="btn btn-erp" href="./erp/">Open ERP</a>
+            <a class="btn btn-crm" href="./crm/">Open CRM</a>
+          </div>
+          <p class="foot">
+            Requires a reachable backend API at <code>VITE_API_BASE_URL</code>.
+          </p>
         </div>
-        <p style="margin-top: 20px;">
-          Note: both apps require a reachable backend API at
-          <code>VITE_API_BASE_URL</code>.
-        </p>
-      </div>
+      </main>
     </div>
   </body>
 </html>
