@@ -165,6 +165,27 @@ Validation:
 
 - `pnpm --filter @sphincs/core-api test` passed
 
+### 9) Frontend role-denied recovery UX fix
+
+Issue observed:
+
+- when a user role was removed while session tokens still existed, ERP/CRM could show
+  `Your account does not have ... access.` with no visible escape path
+
+Fix implemented:
+
+- added `Switch account` action to role-denied states in both apps:
+  - `apps/crm-web/src/app.tsx`
+  - `apps/erp-web/src/app.tsx`
+- action behavior:
+  - clears local session state/storage
+  - navigates user back to `/login`
+
+Validation:
+
+- `pnpm --filter @sphincs/crm-web test` passed
+- `pnpm --filter @sphincs/erp-web test` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
