@@ -245,6 +245,21 @@ Validation:
 - `pnpm --filter @sphincs/erp-web test` passed
 - `pnpm --filter @sphincs/crm-web test` passed
 
+### 12) Beta V2 planning document draft
+
+Added planning document:
+
+- `docs/beta-v2-plan.md`
+
+Contents include:
+
+- V2 purpose/objectives
+- scoped work themes
+- deliverables and suggested milestones
+- non-goals
+- risks/mitigations
+- exit criteria
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
