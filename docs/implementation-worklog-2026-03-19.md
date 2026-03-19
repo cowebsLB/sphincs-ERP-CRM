@@ -260,6 +260,48 @@ Contents include:
 - risks/mitigations
 - exit criteria
 
+### 13) Beta V1 issue hotfix: create-flow 500s in CRM/ERP forms
+
+Issue observed from live beta reports:
+
+- CRM create flows (`contacts/leads/opportunities`) and ERP purchase-order create could return `500`
+- root cause was form + payload mismatch:
+  - shared frontend form treated all fields as required (including optional `*_id` and `status`)
+  - users entered non-UUID placeholders in ID fields
+  - empty/invalid enum strings reached Prisma and exploded as server errors
+
+Fix implemented:
+
+1. Frontend optional field support in shared form renderer:
+   - `packages/ui-core/src/resource-manager.tsx`
+   - `createFields` / `editFields` now support `required?: boolean`
+   - validation skips fields explicitly marked optional
+
+2. CRM and ERP form field config updates:
+   - `apps/crm-web/src/app.tsx`
+     - `contact_id`, `lead_id`, and `status` set optional where appropriate
+   - `apps/erp-web/src/app.tsx`
+     - `supplier_id` and `status` in purchase orders set optional
+
+3. Backend guardrails to prevent 500 on bad create payloads:
+   - `apps/core-api/src/crm/leads/leads.service.ts`
+   - `apps/core-api/src/crm/opportunities/opportunities.service.ts`
+   - `apps/core-api/src/erp/purchasing/purchasing.service.ts`
+   - added normalization + validation for:
+     - optional UUID fields (`*_id`)
+     - enum status values
+   - invalid values now return explicit `400 Bad Request` instead of unhandled `500`
+   - empty status now falls back to safe defaults:
+     - lead: `NEW`
+     - opportunity: `OPEN`
+     - purchase order: `DRAFT`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

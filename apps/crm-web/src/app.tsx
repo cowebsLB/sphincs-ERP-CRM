@@ -552,8 +552,8 @@ function CRMApp({
                 endpoint="/crm/leads"
                 title="Leads"
                 fields={[
-                  { key: "contact_id", label: "Contact ID" },
-                  { key: "status", label: "Status (NEW/QUALIFIED/...)" }
+                  { key: "contact_id", label: "Contact ID", required: false },
+                  { key: "status", label: "Status (NEW/QUALIFIED/...)", required: false }
                 ]}
                 notify={notify}
               />
@@ -568,8 +568,8 @@ function CRMApp({
                 endpoint="/crm/opportunities"
                 title="Opportunities"
                 fields={[
-                  { key: "lead_id", label: "Lead ID" },
-                  { key: "status", label: "Status (OPEN/WON/LOST)" }
+                  { key: "lead_id", label: "Lead ID", required: false },
+                  { key: "status", label: "Status (OPEN/WON/LOST)", required: false }
                 ]}
                 notify={notify}
               />

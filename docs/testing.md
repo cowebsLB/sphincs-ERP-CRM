@@ -5,6 +5,7 @@
   - Status transitions
   - Soft-delete + restore behavior
   - Audit writer and request logging
+  - Input normalization/validation for optional UUID and enum fields in create/update services
   - Auth hardening:
     - login rate-limiter behavior
     - refresh-token reuse detection and revocation
@@ -58,3 +59,14 @@ Purpose:
 
 - catches significant auth-path performance regressions early in CI
 - keeps login latency visible as part of deployment quality gates
+
+## Beta V1 Hotfix Regression Checks (2026-03-19)
+
+Added/confirmed checks after create-flow 500 reports:
+
+- `pnpm --filter @sphincs/core-api test`
+  - verifies lead and purchase-order service behavior remains green
+- manual payload regression expectations:
+  - empty status in create payload defaults correctly (no 500)
+  - invalid `*_id` UUID input returns `400` instead of `500`
+  - invalid enum status returns `400` instead of `500`

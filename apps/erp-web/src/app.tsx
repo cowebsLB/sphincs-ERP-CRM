@@ -570,8 +570,8 @@ function ERPApp({
                 endpoint="/erp/purchase-orders"
                 title="Purchase Orders"
                 fields={[
-                  { key: "supplier_id", label: "Supplier ID" },
-                  { key: "status", label: "Status (DRAFT/SENT/...)" }
+                  { key: "supplier_id", label: "Supplier ID", required: false },
+                  { key: "status", label: "Status (DRAFT/SENT/...)", required: false }
                 ]}
                 notify={notify}
               />

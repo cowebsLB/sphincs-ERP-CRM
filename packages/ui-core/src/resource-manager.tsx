@@ -21,8 +21,8 @@ export function ResourceManager<T extends { id: string; deleted_at?: string | nu
   includeDeleted: boolean;
   onToggleIncludeDeleted: (next: boolean) => void;
   columns: Array<ColumnDef<T>>;
-  createFields: Array<{ key: string; label: string }>;
-  editFields: Array<{ key: string; label: string }>;
+  createFields: Array<{ key: string; label: string; required?: boolean }>;
+  editFields: Array<{ key: string; label: string; required?: boolean }>;
   onCreate: (payload: Record<string, string>) => Promise<void>;
   onUpdate: (id: string, payload: Record<string, string>) => Promise<void>;
   onSoftDelete: (id: string) => Promise<void>;
@@ -34,8 +34,14 @@ export function ResourceManager<T extends { id: string; deleted_at?: string | nu
   const [editData, setEditData] = React.useState<Record<string, string>>({});
   const [error, setError] = React.useState<string | null>(null);
 
-  function validate(fields: Array<{ key: string; label: string }>, data: Record<string, string>) {
+  function validate(
+    fields: Array<{ key: string; label: string; required?: boolean }>,
+    data: Record<string, string>
+  ) {
     for (const field of fields) {
+      if (field.required === false) {
+        continue;
+      }
       if (!String(data[field.key] ?? "").trim()) {
         return `${field.label} is required`;
       }
