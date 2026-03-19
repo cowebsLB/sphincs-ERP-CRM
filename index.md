@@ -11,6 +11,10 @@ SPHINCS ERP+POS is a monorepo that delivers:
 
 The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flows, and deployment-ready documentation.
 
+Current product version:
+
+- `Beta V1.6.0`
+
 ## Features
 
 - JWT auth with refresh-token rotation and lockout controls
@@ -39,6 +43,8 @@ For Beta V1 test execution:
 - [Beta Tester Access List](./docs/beta-tester-access-list.md)
 - [Beta Tester Instructions](./docs/beta-tester-instructions.md)
 - [Testing Strategy](./docs/testing.md)
+- [Versioning Strategy](./docs/versioning.md)
+- [Changelog](./CHANGELOG.md)
 
 ## Tech Stack
 
@@ -52,5 +58,7 @@ For Beta V1 test execution:
 - [Architecture](./docs/architecture.md)
 - [API Snapshot (Beta V1)](./docs/api-snapshot-beta-v1.md)
 - [Deployment Guide](./docs/deployment.md)
+- [Versioning Strategy](./docs/versioning.md)
+- [Changelog](./CHANGELOG.md)
 - [Milestones And Tickets](./docs/milestones.md)
 - [Implementation Worklog (2026-03-19)](./docs/implementation-worklog-2026-03-19.md)

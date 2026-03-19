@@ -19,7 +19,9 @@ This is the canonical entry point for all project documentation.
 
 - [Setup Guide](./setup.md)
 - [Deployment Guide](./deployment.md)
+- [Versioning Strategy](./versioning.md)
 - [Hosting Overview](./hosting.md)
+- [Changelog](../CHANGELOG.md)
 - [Beta V1 Checklist](./beta-v1-checklist.md)
 - [Beta Tester Access List](./beta-tester-access-list.md)
 - [Beta Tester Instructions](./beta-tester-instructions.md)

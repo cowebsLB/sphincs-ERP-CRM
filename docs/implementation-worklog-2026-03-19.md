@@ -355,6 +355,48 @@ Validation:
 
 - `pnpm --filter @sphincs/crm-web build` passed
 
+### 16) Product changelog and beta versioning baseline
+
+Problem:
+
+- the repo had package versions and `Beta V1` references, but no formal product release line
+- there was no single place to answer:
+  - what version are we on now
+  - what changed in this beta snapshot
+  - how should future updates be versioned until `Beta V2.0.0`
+
+Implemented:
+
+- added root changelog:
+  - `CHANGELOG.md`
+- added versioning policy:
+  - `docs/versioning.md`
+- established current product release as:
+  - `Beta V1.6.0`
+- documented release progression:
+  - `Beta V1.0.0` baseline
+  - `Beta V1.5.0` usability/platform pass
+  - `Beta V1.6.0` relation-picker UX pass
+- updated docs navigation to include versioning and changelog references
+- updated runtime/system metadata fallback and frontend bug-report metadata to use:
+  - `Beta V1.6.0`
+
+Files:
+
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `docs/index.md`
+- `index.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

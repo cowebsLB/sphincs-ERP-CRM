@@ -8,6 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
+const APP_RELEASE_VERSION = "Beta V1.6.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -760,7 +761,7 @@ function ERPApp({
             sourceApp: "ERP",
             route: window.location.hash.replace(/^#/, "") || "/",
             pageUrl: window.location.href,
-            appVersion: "beta-v1",
+            appVersion: APP_RELEASE_VERSION,
             userAgent: navigator.userAgent
           })
         }
