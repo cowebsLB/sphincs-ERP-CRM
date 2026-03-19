@@ -12,6 +12,7 @@ export function DataTable<T extends { id: string }>({
   searchText,
   onSearchTextChange,
   renderActions,
+  onRowClick,
   pageSize = 10
 }: {
   rows: T[];
@@ -19,6 +20,7 @@ export function DataTable<T extends { id: string }>({
   searchText: string;
   onSearchTextChange: (value: string) => void;
   renderActions?: (row: T) => React.ReactNode;
+  onRowClick?: (row: T) => void;
   pageSize?: number;
 }) {
   const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
@@ -88,11 +90,15 @@ export function DataTable<T extends { id: string }>({
         </thead>
         <tbody>
           {paged.map((row) => (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              className={onRowClick ? "ui-table-row-clickable" : undefined}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+            >
               {columns.map((column) => (
                 <td key={`${row.id}-${String(column.key)}`}>{String(row[column.key] ?? "")}</td>
               ))}
-              {renderActions && <td>{renderActions(row)}</td>}
+              {renderActions && <td onClick={(e) => e.stopPropagation()}>{renderActions(row)}</td>}
             </tr>
           ))}
         </tbody>

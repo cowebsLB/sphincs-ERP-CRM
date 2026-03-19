@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.7.2";
+const APP_RELEASE_VERSION = "Beta V1.7.3";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -85,6 +85,11 @@ type ItemFormState = {
   brand: string;
   description: string;
   is_service: boolean;
+};
+
+type ItemSkuStatus = {
+  state: "idle" | "available" | "duplicate";
+  message: string;
 };
 
 function SystemStatusCard() {
@@ -438,6 +443,45 @@ function buildItemPayload(form: ItemFormState) {
   };
 }
 
+function slugifySkuPart(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 20);
+}
+
+function generateSkuFromName(name: string): string {
+  const base = slugifySkuPart(name);
+  return base ? `ITM-${base}` : "ITM-ITEM";
+}
+
+function formatItemValue(value: unknown, fallback = "Not set") {
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : fallback;
+  }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  const normalized = String(value).trim();
+  return normalized ? normalized : fallback;
+}
+
+function formatItemDate(value: unknown) {
+  if (!value) {
+    return "Not available";
+  }
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+  return parsed.toLocaleString();
+}
+
 function ItemsPage({
   session,
   setSession,
@@ -451,10 +495,13 @@ function ItemsPage({
   const [loading, setLoading] = React.useState(false);
   const [includeDeleted, setIncludeDeleted] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [previewItem, setPreviewItem] = React.useState<ItemRecord | null>(null);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ItemRecord | null>(null);
   const [createForm, setCreateForm] = React.useState<ItemFormState>(createDefaultItemForm);
   const [editForm, setEditForm] = React.useState<ItemFormState>(createDefaultItemForm);
+  const [createSkuManual, setCreateSkuManual] = React.useState(false);
+  const [editSkuManual, setEditSkuManual] = React.useState(false);
   const [createSections, setCreateSections] = React.useState({
     pricing: false,
     inventory: false,
@@ -467,6 +514,42 @@ function ItemsPage({
     classification: false,
     advanced: false
   });
+
+  const createSkuStatus = React.useMemo<ItemSkuStatus>(() => {
+    const normalizedSku = createForm.sku.trim().toUpperCase();
+    if (!normalizedSku) {
+      return {
+        state: "idle",
+        message: "SKU will be auto-generated from the item name, and you can still edit it."
+      };
+    }
+
+    const exists = rows.some((row) => String(row.sku ?? "").trim().toUpperCase() === normalizedSku);
+    if (exists) {
+      return { state: "duplicate", message: "Already exists for one of your items." };
+    }
+
+    return { state: "available", message: "Available" };
+  }, [createForm.sku, rows]);
+
+  const editSkuStatus = React.useMemo<ItemSkuStatus>(() => {
+    const normalizedSku = editForm.sku.trim().toUpperCase();
+    if (!editing || !normalizedSku) {
+      return {
+        state: "idle",
+        message: "SKU stays editable here if you need to correct or improve it."
+      };
+    }
+
+    const exists = rows.some(
+      (row) => row.id !== editing.id && String(row.sku ?? "").trim().toUpperCase() === normalizedSku
+    );
+    if (exists) {
+      return { state: "duplicate", message: "Already exists for one of your items." };
+    }
+
+    return { state: "available", message: "Available" };
+  }, [editForm.sku, editing, rows]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -489,6 +572,11 @@ function ItemsPage({
     const setForm = target === "create" ? setCreateForm : setEditForm;
     setForm((prev) => {
       const next = { ...prev, ...patch };
+      const skuManual = target === "create" ? createSkuManual : editSkuManual;
+
+      if (patch.name !== undefined && !skuManual) {
+        next.sku = generateSkuFromName(patch.name);
+      }
       if (patch.is_service) {
         next.track_inventory = false;
         next.quantity_on_hand = "0";
@@ -505,14 +593,30 @@ function ItemsPage({
   }
 
   function openEdit(item: ItemRecord) {
+    setPreviewItem(null);
     setEditing(item);
     setEditForm(toItemFormState(item));
+    setEditSkuManual(true);
     setEditSections({
       pricing: true,
       inventory: false,
       classification: false,
       advanced: false
     });
+  }
+
+  function openCreate() {
+    setPreviewItem(null);
+    setEditing(null);
+    setCreateForm(createDefaultItemForm());
+    setCreateSkuManual(false);
+    setCreateSections({
+      pricing: false,
+      inventory: false,
+      classification: false,
+      advanced: false
+    });
+    setCreateOpen(true);
   }
 
   async function createItem(e: React.FormEvent) {
@@ -525,6 +629,7 @@ function ItemsPage({
       notify("success", "Items: record created");
       setCreateOpen(false);
       setCreateForm(createDefaultItemForm());
+      setCreateSkuManual(false);
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Create failed");
@@ -544,6 +649,7 @@ function ItemsPage({
       notify("success", "Items: record updated");
       setEditing(null);
       setEditForm(createDefaultItemForm());
+      setEditSkuManual(false);
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
@@ -587,6 +693,7 @@ function ItemsPage({
     sections: { pricing: boolean; inventory: boolean; classification: boolean; advanced: boolean }
   ) {
     const inventoryVisible = form.track_inventory && !form.is_service;
+    const skuStatus = target === "create" ? createSkuStatus : editSkuStatus;
 
     return (
       <div className="item-modal-layout">
@@ -611,10 +718,21 @@ function ItemsPage({
               <input
                 className="ui-input"
                 value={form.sku}
-                onChange={(e) => updateItemForm(target, { sku: e.target.value.toUpperCase() })}
+                onChange={(e) => {
+                  if (target === "create") {
+                    setCreateSkuManual(true);
+                  } else {
+                    setEditSkuManual(true);
+                  }
+                  updateItemForm(target, { sku: e.target.value.toUpperCase() });
+                }}
                 placeholder="SKU"
                 required
               />
+              <small className="item-form-hint">SKU is auto-generated from the item name, but you can edit it anytime.</small>
+              {skuStatus.state !== "idle" && (
+                <small className={`item-form-status item-form-status-${skuStatus.state}`}>{skuStatus.message}</small>
+              )}
             </label>
             <label className="item-form-field">
               <span>Status</span>
@@ -845,7 +963,7 @@ function ItemsPage({
             />
             Include deleted
           </label>
-          <button className="ui-btn ui-btn-primary" type="button" onClick={() => setCreateOpen(true)}>
+          <button className="ui-btn ui-btn-primary" type="button" onClick={openCreate}>
             New item
           </button>
         </div>
@@ -866,6 +984,7 @@ function ItemsPage({
           ]}
           searchText={search}
           onSearchTextChange={setSearch}
+          onRowClick={(row) => setPreviewItem(row)}
           renderActions={(row) => (
             <>
               <button className="ui-btn ui-btn-secondary" type="button" onClick={() => openEdit(row)}>
@@ -904,6 +1023,147 @@ function ItemsPage({
             </>
           )}
         />
+      )}
+
+      {previewItem && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card item-preview-card">
+            <div className="item-modal-topbar">
+              <div>
+                <h3>{formatItemValue(previewItem.name, "Unnamed item")}</h3>
+                <p className="ui-muted supplier-modal-copy">Saved item snapshot for quick review before you edit.</p>
+              </div>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPreviewItem(null)}>
+                Close
+              </button>
+            </div>
+
+            <div className="item-preview-grid">
+              <section className="item-preview-section">
+                <h4>Essentials</h4>
+                <dl className="item-preview-list">
+                  <div>
+                    <dt>SKU</dt>
+                    <dd>{formatItemValue(previewItem.sku)}</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{formatItemValue(previewItem.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>Selling Price</dt>
+                    <dd>{formatItemValue(previewItem.selling_price)}</dd>
+                  </div>
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{formatItemValue(previewItem.category_id)}</dd>
+                  </div>
+                  <div>
+                    <dt>Track Inventory</dt>
+                    <dd>{formatItemValue(previewItem.track_inventory)}</dd>
+                  </div>
+                  <div>
+                    <dt>Quantity On Hand</dt>
+                    <dd>{formatItemValue(previewItem.quantity_on_hand)}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Pricing</h4>
+                <dl className="item-preview-list">
+                  <div>
+                    <dt>Cost Price</dt>
+                    <dd>{formatItemValue(previewItem.cost_price)}</dd>
+                  </div>
+                  <div>
+                    <dt>Currency</dt>
+                    <dd>{formatItemValue(previewItem.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Tax Rate</dt>
+                    <dd>{formatItemValue(previewItem.tax_rate)}</dd>
+                  </div>
+                  <div>
+                    <dt>Discountable</dt>
+                    <dd>{formatItemValue(previewItem.discountable)}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Inventory</h4>
+                <dl className="item-preview-list">
+                  <div>
+                    <dt>Reorder Level</dt>
+                    <dd>{formatItemValue(previewItem.reorder_level)}</dd>
+                  </div>
+                  <div>
+                    <dt>Max Stock Level</dt>
+                    <dd>{formatItemValue(previewItem.max_stock_level)}</dd>
+                  </div>
+                  <div>
+                    <dt>Unit Of Measure</dt>
+                    <dd>{formatItemValue(previewItem.unit_of_measure)}</dd>
+                  </div>
+                  <div>
+                    <dt>Barcode</dt>
+                    <dd>{formatItemValue(previewItem.barcode)}</dd>
+                  </div>
+                  <div>
+                    <dt>Is Service</dt>
+                    <dd>{formatItemValue(previewItem.is_service)}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Classification</h4>
+                <dl className="item-preview-list">
+                  <div>
+                    <dt>Tags</dt>
+                    <dd>{formatItemValue(previewItem.tags)}</dd>
+                  </div>
+                  <div>
+                    <dt>Brand</dt>
+                    <dd>{formatItemValue(previewItem.brand)}</dd>
+                  </div>
+                  <div>
+                    <dt>Description</dt>
+                    <dd>{formatItemValue(previewItem.description)}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Record Info</h4>
+                <dl className="item-preview-list">
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{formatItemDate(previewItem.created_at)}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{formatItemDate(previewItem.updated_at)}</dd>
+                  </div>
+                  <div>
+                    <dt>Deleted</dt>
+                    <dd>{formatItemDate(previewItem.deleted_at)}</dd>
+                  </div>
+                </dl>
+              </section>
+            </div>
+
+            <div className="purchase-order-actions">
+              <button className="ui-btn ui-btn-primary" type="button" onClick={() => openEdit(previewItem)}>
+                Edit item
+              </button>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPreviewItem(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {createOpen && (

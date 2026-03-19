@@ -7,7 +7,18 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.7.2` - current active beta snapshot as of 2026-03-19
+- `Beta V1.7.3` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.7.3 - 2026-03-19
+
+### Added
+
+- ERP items now support click-to-preview so saved item details can be reviewed in a read-only modal before editing.
+
+### Changed
+
+- Item rows now feel interactive and open a structured saved-state preview instead of acting like static table output.
+- The item SKU field is now hybrid by default: it auto-generates from the item name, stays editable, and shows live availability feedback.
 
 ## Beta V1.7.2 - 2026-03-19
 

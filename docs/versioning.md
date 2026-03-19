@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.7.2`
+- `Beta V1.7.3`
 
 Rationale:
 
@@ -85,6 +85,10 @@ Rationale:
   - guard coverage added for expired-token handling
 - `Beta V1.7.2` marks the modal overflow UX fix:
   - long forms and dialogs now scroll inside the viewport correctly
+- `Beta V1.7.3` marks the item usability pass:
+  - hybrid SKU generation with editable override
+  - live SKU availability feedback
+  - saved-state item preview on row click
 
 ## Workflow For Future Updates
 

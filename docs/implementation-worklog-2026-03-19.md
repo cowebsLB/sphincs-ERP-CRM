@@ -602,3 +602,45 @@ Validation:
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
+
+### 21) ERP item SKU guidance and saved-state preview polish
+
+Problem observed:
+
+- the rebuilt ERP items flow still made SKU behavior feel invisible even though auto-generation logic was already being introduced
+- users also had no quick way to inspect a saved item without going straight into edit mode
+
+Implemented:
+
+- completed the hybrid SKU UX in:
+  - `apps/erp-web/src/app.tsx`
+- SKU now:
+  - auto-generates from the item name by default
+  - remains fully editable
+  - shows helper copy explaining the behavior
+  - shows live duplicate/available feedback against the signed-in user's current items
+- added saved-state item preview:
+  - clicking an item row now opens a read-only preview modal
+  - preview groups item details into essentials, pricing, inventory, classification, and record info
+  - preview includes a direct `Edit item` action for a smooth handoff into edit mode
+- updated shared table styling in:
+  - `packages/ui-core/src/ui.css`
+  - `packages/ui-core/src/data-table.tsx`
+- bumped product release to:
+  - `Beta V1.7.3`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `packages/ui-core/src/data-table.tsx`
+- `packages/ui-core/src/ui.css`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed

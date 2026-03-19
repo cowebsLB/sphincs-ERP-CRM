@@ -398,6 +398,14 @@ body {
   vertical-align: top;
 }
 
+.ui-table-row-clickable {
+  cursor: pointer;
+}
+
+.ui-table-row-clickable:hover td {
+  background: rgba(245, 158, 11, 0.08);
+}
+
 .ui-th-btn {
   border: 0;
   background: transparent;
@@ -479,6 +487,73 @@ body {
 
 .ui-modal-card h3 {
   margin: 0;
+}
+
+.item-form-hint,
+.item-form-status {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.item-form-hint {
+  color: var(--muted);
+}
+
+.item-form-status-available {
+  color: #6ee7b7;
+}
+
+.item-form-status-duplicate {
+  color: #fca5a5;
+}
+
+.item-preview-card {
+  width: min(920px, 100%);
+}
+
+.item-preview-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.item-preview-section {
+  background: #0f141c;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.item-preview-section h4 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.item-preview-list {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.item-preview-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.item-preview-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.item-preview-list dd {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .auth-page {
