@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.7.1` - current active beta snapshot as of 2026-03-19
+- `Beta V1.7.2` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.7.2 - 2026-03-19
+
+### Fixed
+
+- Long modals and popups now scroll correctly inside the viewport.
+- The ERP item create/edit modal no longer traps lower sections and save actions off-screen.
+- Shared modal styling now supports overflow safely for other long dialogs too.
 
 ## Beta V1.7.1 - 2026-03-19
 

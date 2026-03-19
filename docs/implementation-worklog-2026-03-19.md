@@ -561,6 +561,44 @@ Validation:
 
 - `pnpm --filter @sphincs/core-api test` passed
 
+### 20) Modal overflow fix for long ERP/CRM dialogs
+
+Problem observed:
+
+- long modals, especially the ERP item create/edit dialog, could extend beyond the viewport
+- lower sections and action buttons became unreachable because the modal container itself was not scrollable
+
+Implemented:
+
+- updated shared modal CSS in:
+  - `packages/ui-core/src/ui.css`
+- added viewport-safe modal behavior:
+  - modal backdrop can scroll vertically
+  - modal card now has max height
+  - modal card now scrolls internally when content exceeds viewport height
+- this fixes:
+  - ERP item create/edit modal
+  - bug report dialogs
+  - supplier/lead/contact picker dialogs
+  - other long shared modals using the same base classes
+- bumped product release to:
+  - `Beta V1.7.2`
+
+Files:
+
+- `packages/ui-core/src/ui.css`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

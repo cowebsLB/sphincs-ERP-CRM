@@ -185,6 +185,7 @@ body {
 
 .item-modal-card {
   width: min(920px, 100%);
+  max-height: calc(100vh - 32px);
 }
 
 .item-modal-topbar {
@@ -460,10 +461,12 @@ body {
   place-items: center;
   padding: 16px;
   z-index: 1000;
+  overflow-y: auto;
 }
 
 .ui-modal-card {
   width: min(720px, 100%);
+  max-height: calc(100vh - 32px);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -471,6 +474,7 @@ body {
   padding: 16px;
   display: grid;
   gap: 10px;
+  overflow-y: auto;
 }
 
 .ui-modal-card h3 {

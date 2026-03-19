@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.7.1`
+- `Beta V1.7.2`
 
 Rationale:
 
@@ -83,6 +83,8 @@ Rationale:
 - `Beta V1.7.1` marks the production auth guard fix:
   - expired JWTs now return `401` instead of `500`
   - guard coverage added for expired-token handling
+- `Beta V1.7.2` marks the modal overflow UX fix:
+  - long forms and dialogs now scroll inside the viewport correctly
 
 ## Workflow For Future Updates
 
