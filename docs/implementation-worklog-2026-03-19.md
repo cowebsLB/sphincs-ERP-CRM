@@ -143,6 +143,28 @@ Auth hardening checks:
 - rate limiter returns `429`
 - `Retry-After` header present (`900`)
 
+### 8) User hard-delete FK constraint fix
+
+Issue observed:
+
+- deleting a user row failed due to FK references from `refresh_tokens`
+- `user_roles` relation would also block hard delete in many cases
+
+Fix implemented:
+
+- updated Prisma relations to cascade on user deletion:
+  - `RefreshToken.user` -> `onDelete: Cascade`
+  - `UserRole.user` -> `onDelete: Cascade`
+- added migration:
+  - `apps/core-api/prisma/migrations/20260319_user_delete_cascade/migration.sql`
+  - updates:
+    - `refresh_tokens_user_id_fkey` -> `ON DELETE CASCADE`
+    - `user_roles_user_id_fkey` -> `ON DELETE CASCADE`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
