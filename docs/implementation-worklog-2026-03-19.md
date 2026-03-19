@@ -521,6 +521,46 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+### 19) Production auth guard hotfix for expired JWT handling
+
+Problem observed in Render logs:
+
+- protected ERP routes such as `/api/v1/erp/items` and `/api/v1/erp/suppliers` were returning `500`
+- root cause was not the route logic itself
+- expired access tokens were throwing raw `TokenExpiredError` inside `RolesGuard`
+- the global exception filter treated that uncaught JWT error as an unhandled server exception
+
+Impact:
+
+- expired tokens produced `500` instead of `401`
+- this prevented the frontend from relying on normal unauthorized/refresh handling behavior
+
+Implemented:
+
+- updated:
+  - `apps/core-api/src/common/guards/roles.guard.ts`
+- JWT verification is now wrapped and translated into:
+  - `UnauthorizedException("Invalid or expired bearer token")`
+- added guard unit coverage:
+  - `apps/core-api/src/common/guards/roles.guard.spec.ts`
+- bumped product release to:
+  - `Beta V1.7.1`
+
+Files:
+
+- `apps/core-api/src/common/guards/roles.guard.ts`
+- `apps/core-api/src/common/guards/roles.guard.spec.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

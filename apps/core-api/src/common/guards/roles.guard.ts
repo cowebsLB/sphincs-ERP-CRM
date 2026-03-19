@@ -30,7 +30,17 @@ export class RolesGuard implements CanActivate {
     }
 
     const token = authHeader.slice("Bearer ".length);
-    const decoded = jwt.verify(token, this.secret) as { sub: string; email?: string; organizationId?: string; branchId?: string | null };
+    let decoded: { sub: string; email?: string; organizationId?: string; branchId?: string | null };
+    try {
+      decoded = jwt.verify(token, this.secret) as {
+        sub: string;
+        email?: string;
+        organizationId?: string;
+        branchId?: string | null;
+      };
+    } catch {
+      throw new UnauthorizedException("Invalid or expired bearer token");
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: decoded.sub }
     });

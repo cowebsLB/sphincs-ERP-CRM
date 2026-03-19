@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.7.0` - current active beta snapshot as of 2026-03-19
+- `Beta V1.7.1` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.7.1 - 2026-03-19
+
+### Fixed
+
+- Expired access tokens on protected ERP/CRM routes now return proper `401 Unauthorized` responses instead of bubbling into `500` server errors.
+- Roles guard now translates JWT verification failures into API-safe auth errors so the frontend refresh/login recovery flow can work correctly.
+- Added guard test coverage for expired-token behavior.
 
 ## Beta V1.7.0 - 2026-03-19
 

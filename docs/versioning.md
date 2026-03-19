@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.7.0`
+- `Beta V1.7.1`
 
 Rationale:
 
@@ -80,6 +80,9 @@ Rationale:
   - expanded ERP item data model
   - progressive item create/edit modal
   - inventory/service-aware item form behavior
+- `Beta V1.7.1` marks the production auth guard fix:
+  - expired JWTs now return `401` instead of `500`
+  - guard coverage added for expired-token handling
 
 ## Workflow For Future Updates
 
