@@ -297,7 +297,21 @@ function ERPApp({
   }, []);
 
   if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
-    return <p>Your account does not have ERP access.</p>;
+    return (
+      <main style={{ padding: "24px" }}>
+        <p>Your account does not have ERP access.</p>
+        <button
+          className="ui-btn ui-btn-secondary"
+          type="button"
+          onClick={() => {
+            setSession(null);
+            navigate("/login");
+          }}
+        >
+          Switch account
+        </button>
+      </main>
+    );
   }
 
   async function submitBugReport(e: React.FormEvent) {

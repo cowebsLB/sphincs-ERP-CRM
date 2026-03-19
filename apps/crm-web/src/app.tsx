@@ -297,7 +297,21 @@ function CRMApp({
   }, []);
 
   if (!hasRole(session, "Admin", "CRM Manager", "Staff")) {
-    return <p>Your account does not have CRM access.</p>;
+    return (
+      <main style={{ padding: "24px" }}>
+        <p>Your account does not have CRM access.</p>
+        <button
+          className="ui-btn ui-btn-secondary"
+          type="button"
+          onClick={() => {
+            setSession(null);
+            navigate("/login");
+          }}
+        >
+          Switch account
+        </button>
+      </main>
+    );
   }
 
   async function submitBugReport(e: React.FormEvent) {
