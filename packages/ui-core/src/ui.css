@@ -71,6 +71,27 @@ body {
   align-items: center;
 }
 
+.app-topnav {
+  display: flex;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.app-topnav a {
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 13px;
+}
+
+.app-topnav a:hover {
+  color: var(--text);
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.1);
+}
+
 .ui-status-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -283,6 +304,34 @@ body {
   line-height: 1.1;
 }
 
+.auth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.auth-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-nav a {
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.auth-nav a:hover {
+  color: var(--text);
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.1);
+}
+
 .auth-eyebrow {
   margin: 0;
   color: var(--primary);
@@ -311,4 +360,10 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+@media (max-width: 820px) {
+  .app-topnav {
+    display: none;
+  }
 }

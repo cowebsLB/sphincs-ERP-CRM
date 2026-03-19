@@ -217,6 +217,34 @@ Validation:
 - `pnpm --filter @sphincs/erp-web test` passed
 - `pnpm --filter @sphincs/crm-web test` passed
 
+### 11) Navigation + login backflow polish
+
+Requested updates completed:
+
+1. Removed home-page backend note text:
+   - removed `Requires a reachable backend API at VITE_API_BASE_URL.` from landing hero
+   - file:
+     - `apps/web-home/index.html`
+
+2. Added header navigation in ERP and CRM UIs:
+   - topbar nav links added:
+     - Home
+     - ERP
+     - CRM
+   - auth/login cards also include compact nav links
+   - files:
+     - `apps/erp-web/src/app.tsx`
+     - `apps/crm-web/src/app.tsx`
+     - `packages/ui-core/src/ui.css`
+
+3. Added explicit back-to-home action on login:
+   - `Back to home` button/link added in ERP and CRM login views
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

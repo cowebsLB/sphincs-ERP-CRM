@@ -158,6 +158,14 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   return (
     <main className="auth-page">
       <section className="auth-card">
+        <header className="auth-header">
+          <strong>SPHINCS</strong>
+          <nav className="auth-nav">
+            <a href="../">Home</a>
+            <a href="../erp/">ERP</a>
+            <a href="../crm/">CRM</a>
+          </nav>
+        </header>
         <p className="auth-eyebrow">SPHINCS Platform</p>
         <h1>{mode === "signup" ? "Create your account" : "Sign in once for ERP + CRM"}</h1>
         <p className="ui-muted">One session works across both modules in this beta.</p>
@@ -189,9 +197,12 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         </form>
         {error && <p className="ui-error">{error}</p>}
         <p className="auth-switch">
-        {mode === "signup" ? "Already have an account?" : "New tester?"}{" "}
-        <button
-          className="ui-btn ui-btn-secondary"
+          <a className="ui-btn ui-btn-secondary" href="../">
+            Back to home
+          </a>
+          {mode === "signup" ? "Already have an account?" : "New tester?"}{" "}
+          <button
+            className="ui-btn ui-btn-secondary"
           type="button"
           onClick={() => {
             setMode(mode === "signup" ? "login" : "signup");
@@ -399,7 +410,12 @@ function CRMApp({
       <section className="app-main">
         <header className="app-topbar">
           <strong>CRM Operations</strong>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <nav className="app-topnav">
+              <a href="../">Home</a>
+              <a href="../erp/">ERP</a>
+              <a href="../crm/">CRM</a>
+            </nav>
             <button
               className="ui-btn ui-btn-secondary"
               type="button"
