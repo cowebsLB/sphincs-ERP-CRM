@@ -97,7 +97,7 @@ model RefreshToken {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @updatedAt @db.Timestamptz(6)
 
-  user User @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_refresh_tokens_user")
   @@index([expires_at], map: "idx_refresh_tokens_expires_at")
@@ -131,7 +131,7 @@ model UserRole {
   created_by String?  @db.Uuid
   updated_by String?  @db.Uuid
 
-  user User @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   role Role @relation(fields: [role_id], references: [id])
 
   @@unique([user_id, role_id], map: "uq_user_roles_user_role")
