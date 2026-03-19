@@ -329,6 +329,32 @@ Validation:
 
 - `pnpm --filter @sphincs/erp-web build` passed
 
+### 15) CRM relation pickers for leads and opportunities
+
+Problem:
+
+- lead create/edit used raw `contact_id`
+- opportunity create/edit used raw `lead_id`
+- testers had to work with internal UUIDs instead of readable names
+
+Implemented:
+
+- replaced CRM lead relation entry with a contact picker flow
+- replaced CRM opportunity relation entry with a lead picker flow
+- both screens now use dedicated relation-aware pages with:
+  - styled dropdowns
+  - browse modals/popups
+  - readable labels in tables instead of raw UUIDs
+- lead labels in opportunities are enriched from visible lead/contact data so users can identify the right relationship quickly
+
+Files:
+
+- `apps/crm-web/src/app.tsx`
+
+Validation:
+
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.
