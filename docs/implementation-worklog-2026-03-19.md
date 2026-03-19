@@ -644,3 +644,62 @@ Validation:
 
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
+
+### 22) Beta V2 supplier profile rebuild
+
+Problem observed:
+
+- suppliers were still stored and edited as a thin contact stub with only `name`, `email`, and `phone`
+- that shape was too weak for connected ERP behavior because purchase orders and future vendor-linked flows need richer supplier identity, financial, address, and contact-person context
+- the frontend was still using the old generic resource manager flow, which made supplier records feel isolated instead of operational
+
+Implemented:
+
+- expanded the supplier backend model in:
+  - `apps/core-api/prisma/schema.prisma`
+- added supplier Beta V2 migration:
+  - `apps/core-api/prisma/migrations/20260319_supplier_v2_fields/migration.sql`
+- supplier records now support:
+  - identity fields such as `supplier_code` and `status`
+  - address fields
+  - financial fields including `payment_terms`, `currency`, `tax_id`, `vat_number`, `credit_limit`, and `balance`
+  - contact-person fields
+  - internal fields such as `notes`, `rating`, and `preferred_supplier`
+- rebuilt supplier service validation and normalization in:
+  - `apps/core-api/src/erp/suppliers/suppliers.service.ts`
+- added supplier unit coverage in:
+  - `apps/core-api/src/erp/suppliers/suppliers.service.spec.ts`
+- replaced the old generic ERP suppliers page with a structured supplier profile flow in:
+  - `apps/erp-web/src/app.tsx`
+- the new supplier UI now includes:
+  - essential fields first
+  - grouped `Address`, `Financial`, `Contact Person`, and `Advanced / Internal` sections
+  - read-only balance presentation
+  - saved-state preview on row click
+  - edit flow connected directly from preview
+- enriched purchase-order supplier picker metadata so purchasing sees better supplier context
+- updated Beta V2 checklist progress and schema docs
+- bumped product release to:
+  - `Beta V1.8.0`
+
+Files:
+
+- `apps/core-api/prisma/schema.prisma`
+- `apps/core-api/prisma/migrations/20260319_supplier_v2_fields/migration.sql`
+- `apps/core-api/src/erp/suppliers/suppliers.service.ts`
+- `apps/core-api/src/erp/suppliers/suppliers.service.spec.ts`
+- `apps/erp-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+- `docs/database-schema.md`
+- `docs/beta-v2-checklist.md`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/erp-web build` passed

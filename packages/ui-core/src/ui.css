@@ -556,6 +556,36 @@ body {
   word-break: break-word;
 }
 
+.supplier-readonly-panel {
+  margin-top: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.supplier-readonly-panel strong {
+  font-size: 14px;
+}
+
+.supplier-readonly-panel p {
+  margin: 0;
+}
+
+.supplier-readonly-value {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.supplier-internal-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .auth-page {
   min-height: 100vh;
   display: grid;

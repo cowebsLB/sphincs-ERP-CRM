@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.7.3";
+const APP_RELEASE_VERSION = "Beta V1.8.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -35,8 +35,29 @@ type ItemRecord = RecordData & {
 };
 type SupplierRecord = RecordData & {
   name?: string | null;
+  supplier_code?: string | null;
+  status?: string | null;
   email?: string | null;
   phone?: string | null;
+  mobile?: string | null;
+  website?: string | null;
+  country?: string | null;
+  city?: string | null;
+  address_line_1?: string | null;
+  address_line_2?: string | null;
+  postal_code?: string | null;
+  payment_terms?: string | null;
+  currency?: string | null;
+  tax_id?: string | null;
+  vat_number?: string | null;
+  credit_limit?: string | number | null;
+  balance?: string | number | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  notes?: string | null;
+  rating?: number | null;
+  preferred_supplier?: boolean | null;
 };
 type PurchaseOrderRecord = RecordData & {
   supplier_id?: string | null;
@@ -85,6 +106,32 @@ type ItemFormState = {
   brand: string;
   description: string;
   is_service: boolean;
+};
+
+type SupplierFormState = {
+  name: string;
+  supplier_code: string;
+  status: string;
+  phone: string;
+  email: string;
+  country: string;
+  city: string;
+  address_line_1: string;
+  address_line_2: string;
+  postal_code: string;
+  payment_terms: string;
+  currency: string;
+  tax_id: string;
+  vat_number: string;
+  credit_limit: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  notes: string;
+  rating: string;
+  preferred_supplier: boolean;
+  website: string;
+  mobile: string;
 };
 
 type ItemSkuStatus = {
@@ -391,6 +438,34 @@ function createDefaultItemForm(): ItemFormState {
   };
 }
 
+function createDefaultSupplierForm(): SupplierFormState {
+  return {
+    name: "",
+    supplier_code: "",
+    status: "ACTIVE",
+    phone: "",
+    email: "",
+    country: "",
+    city: "",
+    address_line_1: "",
+    address_line_2: "",
+    postal_code: "",
+    payment_terms: "Net 30",
+    currency: "USD",
+    tax_id: "",
+    vat_number: "",
+    credit_limit: "0",
+    contact_name: "",
+    contact_email: "",
+    contact_phone: "",
+    notes: "",
+    rating: "",
+    preferred_supplier: false,
+    website: "",
+    mobile: ""
+  };
+}
+
 function toItemFormState(item?: ItemRecord | null): ItemFormState {
   if (!item) {
     return createDefaultItemForm();
@@ -419,6 +494,38 @@ function toItemFormState(item?: ItemRecord | null): ItemFormState {
   };
 }
 
+function toSupplierFormState(supplier?: SupplierRecord | null): SupplierFormState {
+  if (!supplier) {
+    return createDefaultSupplierForm();
+  }
+
+  return {
+    name: String(supplier.name ?? ""),
+    supplier_code: String(supplier.supplier_code ?? ""),
+    status: String(supplier.status ?? "ACTIVE"),
+    phone: String(supplier.phone ?? ""),
+    email: String(supplier.email ?? ""),
+    country: String(supplier.country ?? ""),
+    city: String(supplier.city ?? ""),
+    address_line_1: String(supplier.address_line_1 ?? ""),
+    address_line_2: String(supplier.address_line_2 ?? ""),
+    postal_code: String(supplier.postal_code ?? ""),
+    payment_terms: String(supplier.payment_terms ?? "Net 30"),
+    currency: String(supplier.currency ?? "USD"),
+    tax_id: String(supplier.tax_id ?? ""),
+    vat_number: String(supplier.vat_number ?? ""),
+    credit_limit: String(supplier.credit_limit ?? "0"),
+    contact_name: String(supplier.contact_name ?? ""),
+    contact_email: String(supplier.contact_email ?? ""),
+    contact_phone: String(supplier.contact_phone ?? ""),
+    notes: String(supplier.notes ?? ""),
+    rating: supplier.rating === null || supplier.rating === undefined ? "" : String(supplier.rating),
+    preferred_supplier: Boolean(supplier.preferred_supplier ?? false),
+    website: String(supplier.website ?? ""),
+    mobile: String(supplier.mobile ?? "")
+  };
+}
+
 function buildItemPayload(form: ItemFormState) {
   return {
     name: form.name,
@@ -440,6 +547,34 @@ function buildItemPayload(form: ItemFormState) {
     brand: form.brand || undefined,
     description: form.description || undefined,
     is_service: form.is_service
+  };
+}
+
+function buildSupplierPayload(form: SupplierFormState) {
+  return {
+    name: form.name,
+    supplier_code: form.supplier_code || undefined,
+    status: form.status,
+    phone: form.phone || undefined,
+    email: form.email || undefined,
+    country: form.country || undefined,
+    city: form.city || undefined,
+    address_line_1: form.address_line_1 || undefined,
+    address_line_2: form.address_line_2 || undefined,
+    postal_code: form.postal_code || undefined,
+    payment_terms: form.payment_terms || undefined,
+    currency: form.currency || undefined,
+    tax_id: form.tax_id || undefined,
+    vat_number: form.vat_number || undefined,
+    credit_limit: form.credit_limit || undefined,
+    contact_name: form.contact_name || undefined,
+    contact_email: form.contact_email || undefined,
+    contact_phone: form.contact_phone || undefined,
+    notes: form.notes || undefined,
+    rating: form.rating || undefined,
+    preferred_supplier: form.preferred_supplier,
+    website: form.website || undefined,
+    mobile: form.mobile || undefined
   };
 }
 
@@ -1219,6 +1354,588 @@ function ItemsPage({
   );
 }
 
+function SuppliersPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [rows, setRows] = React.useState<SupplierRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [previewSupplier, setPreviewSupplier] = React.useState<SupplierRecord | null>(null);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<SupplierRecord | null>(null);
+  const [createForm, setCreateForm] = React.useState<SupplierFormState>(createDefaultSupplierForm);
+  const [editForm, setEditForm] = React.useState<SupplierFormState>(createDefaultSupplierForm);
+  const [createSections, setCreateSections] = React.useState({
+    address: false,
+    financial: false,
+    contact: false,
+    advanced: false
+  });
+  const [editSections, setEditSections] = React.useState({
+    address: true,
+    financial: true,
+    contact: false,
+    advanced: false
+  });
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const data = await withAuth<SupplierRecord[]>(session, setSession, `/erp/suppliers${query}`);
+      setRows(data);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load suppliers");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function updateSupplierForm(target: "create" | "edit", patch: Partial<SupplierFormState>) {
+    const setForm = target === "create" ? setCreateForm : setEditForm;
+    setForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function toggleSupplierSection(
+    target: "create" | "edit",
+    section: "address" | "financial" | "contact" | "advanced"
+  ) {
+    const setSections = target === "create" ? setCreateSections : setEditSections;
+    setSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  }
+
+  function openCreate() {
+    setPreviewSupplier(null);
+    setEditing(null);
+    setCreateForm(createDefaultSupplierForm());
+    setCreateSections({
+      address: false,
+      financial: false,
+      contact: false,
+      advanced: false
+    });
+    setCreateOpen(true);
+  }
+
+  function openEdit(supplier: SupplierRecord) {
+    setPreviewSupplier(null);
+    setEditing(supplier);
+    setEditForm(toSupplierFormState(supplier));
+    setEditSections({
+      address: true,
+      financial: true,
+      contact: false,
+      advanced: false
+    });
+  }
+
+  async function createSupplier(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await withAuth(session, setSession, "/erp/suppliers", {
+        method: "POST",
+        body: JSON.stringify(buildSupplierPayload(createForm))
+      });
+      notify("success", "Suppliers: record created");
+      setCreateOpen(false);
+      setCreateForm(createDefaultSupplierForm());
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
+  }
+
+  async function updateSupplier(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/erp/suppliers/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(buildSupplierPayload(editForm))
+      });
+      notify("success", "Suppliers: record updated");
+      setEditing(null);
+      setEditForm(createDefaultSupplierForm());
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchSupplier(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/erp/suppliers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", "Suppliers: record updated");
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  function renderSupplierSectionToggle(
+    target: "create" | "edit",
+    section: "address" | "financial" | "contact" | "advanced",
+    label: string,
+    open: boolean
+  ) {
+    return (
+      <button className="item-section-toggle" type="button" onClick={() => toggleSupplierSection(target, section)}>
+        <strong>{label}</strong>
+        <span>{open ? "Hide" : "Show"}</span>
+      </button>
+    );
+  }
+
+  function renderSupplierForm(
+    target: "create" | "edit",
+    form: SupplierFormState,
+    sections: { address: boolean; financial: boolean; contact: boolean; advanced: boolean },
+    balanceValue?: SupplierRecord["balance"]
+  ) {
+    return (
+      <div className="item-modal-layout">
+        <section className="item-form-block">
+          <div className="item-form-header">
+            <h3>Essentials</h3>
+            <p className="ui-muted">Create the supplier profile first. The deeper business details can open only when needed.</p>
+          </div>
+          <div className="item-form-grid">
+            <label className="item-form-field">
+              <span>Name</span>
+              <input
+                className="ui-input"
+                value={form.name}
+                onChange={(e) => updateSupplierForm(target, { name: e.target.value })}
+                placeholder="Supplier name"
+                required
+              />
+            </label>
+            <label className="item-form-field">
+              <span>Supplier Code</span>
+              <input
+                className="ui-input"
+                value={form.supplier_code}
+                onChange={(e) => updateSupplierForm(target, { supplier_code: e.target.value.toUpperCase() })}
+                placeholder="SUP-001"
+              />
+            </label>
+            <label className="item-form-field">
+              <span>Status</span>
+              <select
+                className="ui-input"
+                value={form.status}
+                onChange={(e) => updateSupplierForm(target, { status: e.target.value })}
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+                <option value="BLACKLISTED">BLACKLISTED</option>
+              </select>
+            </label>
+            <label className="item-form-field">
+              <span>Phone</span>
+              <input
+                className="ui-input"
+                value={form.phone}
+                onChange={(e) => updateSupplierForm(target, { phone: e.target.value })}
+                placeholder="+961 ..."
+              />
+            </label>
+            <label className="item-form-field">
+              <span>Email</span>
+              <input
+                className="ui-input"
+                type="email"
+                value={form.email}
+                onChange={(e) => updateSupplierForm(target, { email: e.target.value })}
+                placeholder="supplier@example.com"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="item-form-block">
+          {renderSupplierSectionToggle(target, "address", "Address", sections.address)}
+          {sections.address && (
+            <div className="item-form-grid">
+              <label className="item-form-field">
+                <span>Country</span>
+                <input className="ui-input" value={form.country} onChange={(e) => updateSupplierForm(target, { country: e.target.value })} />
+              </label>
+              <label className="item-form-field">
+                <span>City</span>
+                <input className="ui-input" value={form.city} onChange={(e) => updateSupplierForm(target, { city: e.target.value })} />
+              </label>
+              <label className="item-form-field item-form-field-wide">
+                <span>Address Line 1</span>
+                <input className="ui-input" value={form.address_line_1} onChange={(e) => updateSupplierForm(target, { address_line_1: e.target.value })} />
+              </label>
+              <label className="item-form-field item-form-field-wide">
+                <span>Address Line 2</span>
+                <input className="ui-input" value={form.address_line_2} onChange={(e) => updateSupplierForm(target, { address_line_2: e.target.value })} />
+              </label>
+              <label className="item-form-field">
+                <span>Postal Code</span>
+                <input className="ui-input" value={form.postal_code} onChange={(e) => updateSupplierForm(target, { postal_code: e.target.value })} />
+              </label>
+            </div>
+          )}
+        </section>
+
+        <section className="item-form-block">
+          {renderSupplierSectionToggle(target, "financial", "Financial", sections.financial)}
+          {sections.financial && (
+            <>
+              <div className="item-form-grid">
+                <label className="item-form-field">
+                  <span>Payment Terms</span>
+                  <select
+                    className="ui-input"
+                    value={form.payment_terms}
+                    onChange={(e) => updateSupplierForm(target, { payment_terms: e.target.value })}
+                  >
+                    <option value="Net 7">Net 7</option>
+                    <option value="Net 15">Net 15</option>
+                    <option value="Net 30">Net 30</option>
+                    <option value="Due on receipt">Due on receipt</option>
+                    <option value="Custom">Custom</option>
+                  </select>
+                </label>
+                <label className="item-form-field">
+                  <span>Currency</span>
+                  <input
+                    className="ui-input"
+                    value={form.currency}
+                    onChange={(e) => updateSupplierForm(target, { currency: e.target.value.toUpperCase() })}
+                  />
+                </label>
+                <label className="item-form-field">
+                  <span>Tax ID</span>
+                  <input className="ui-input" value={form.tax_id} onChange={(e) => updateSupplierForm(target, { tax_id: e.target.value })} />
+                </label>
+                <label className="item-form-field">
+                  <span>VAT Number</span>
+                  <input className="ui-input" value={form.vat_number} onChange={(e) => updateSupplierForm(target, { vat_number: e.target.value })} />
+                </label>
+                <label className="item-form-field">
+                  <span>Credit Limit</span>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.credit_limit}
+                    onChange={(e) => updateSupplierForm(target, { credit_limit: e.target.value })}
+                  />
+                </label>
+              </div>
+              <div className="supplier-readonly-panel">
+                <strong>Internal financial snapshot</strong>
+                <p className="ui-muted">Balance is read-only here so accounting values stay connected to system activity rather than manual edits.</p>
+                <span className="supplier-readonly-value">{formatItemValue(balanceValue ?? 0, "0")}</span>
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="item-form-block">
+          {renderSupplierSectionToggle(target, "contact", "Contact Person", sections.contact)}
+          {sections.contact && (
+            <div className="item-form-grid">
+              <label className="item-form-field">
+                <span>Contact Name</span>
+                <input className="ui-input" value={form.contact_name} onChange={(e) => updateSupplierForm(target, { contact_name: e.target.value })} />
+              </label>
+              <label className="item-form-field">
+                <span>Contact Email</span>
+                <input
+                  className="ui-input"
+                  type="email"
+                  value={form.contact_email}
+                  onChange={(e) => updateSupplierForm(target, { contact_email: e.target.value })}
+                />
+              </label>
+              <label className="item-form-field">
+                <span>Contact Phone</span>
+                <input className="ui-input" value={form.contact_phone} onChange={(e) => updateSupplierForm(target, { contact_phone: e.target.value })} />
+              </label>
+            </div>
+          )}
+        </section>
+
+        <section className="item-form-block">
+          {renderSupplierSectionToggle(target, "advanced", "Advanced / Internal", sections.advanced)}
+          {sections.advanced && (
+            <>
+              <p className="supplier-internal-note">Use this section for internal notes and preference flags, not primary supplier onboarding.</p>
+              <div className="item-form-grid">
+                <label className="item-form-field item-form-field-wide">
+                  <span>Notes</span>
+                  <textarea className="ui-input item-textarea" value={form.notes} onChange={(e) => updateSupplierForm(target, { notes: e.target.value })} />
+                </label>
+                <label className="item-form-field">
+                  <span>Rating</span>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="1"
+                    value={form.rating}
+                    onChange={(e) => updateSupplierForm(target, { rating: e.target.value })}
+                  />
+                </label>
+                <label className="item-form-field">
+                  <span>Website</span>
+                  <input className="ui-input" value={form.website} onChange={(e) => updateSupplierForm(target, { website: e.target.value })} />
+                </label>
+                <label className="item-form-field">
+                  <span>Mobile</span>
+                  <input className="ui-input" value={form.mobile} onChange={(e) => updateSupplierForm(target, { mobile: e.target.value })} />
+                </label>
+                <label className="item-form-inline">
+                  <input
+                    type="checkbox"
+                    checked={form.preferred_supplier}
+                    onChange={(e) => updateSupplierForm(target, { preferred_supplier: e.target.checked })}
+                  />
+                  <span>Preferred supplier</span>
+                </label>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <section className="ui-card">
+      <div className="items-header">
+        <div>
+          <h2 className="ui-title">Suppliers</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Supplier profiles feed purchase orders and future vendor relationships, so the record needs clean essentials up front and connected business details underneath.
+          </p>
+        </div>
+        <div className="items-header-actions">
+          <label className="ui-checkline">
+            <input type="checkbox" checked={includeDeleted} onChange={(e) => setIncludeDeleted(e.target.checked)} />
+            Include deleted
+          </label>
+          <button className="ui-btn ui-btn-primary" type="button" onClick={openCreate}>
+            New supplier
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : (
+        <DataTable<SupplierRecord>
+          rows={rows}
+          columns={[
+            { key: "name", label: "Name", sortable: true },
+            { key: "supplier_code", label: "Code", sortable: true },
+            { key: "status", label: "Status", sortable: true },
+            { key: "phone", label: "Phone", sortable: true },
+            { key: "email", label: "Email", sortable: true },
+            { key: "contact_name", label: "Contact", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          onRowClick={(row) => setPreviewSupplier(row)}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => openEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => patchSupplier(row.id, { deleted_at: new Date().toISOString() })}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() =>
+                    withAuth(session, setSession, `/erp/suppliers/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Suppliers: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      })
+                  }
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+
+      {previewSupplier && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card item-preview-card">
+            <div className="item-modal-topbar">
+              <div>
+                <h3>{formatItemValue(previewSupplier.name, "Unnamed supplier")}</h3>
+                <p className="ui-muted supplier-modal-copy">Saved supplier profile connected to purchasing and vendor operations.</p>
+              </div>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPreviewSupplier(null)}>
+                Close
+              </button>
+            </div>
+
+            <div className="item-preview-grid">
+              <section className="item-preview-section">
+                <h4>Essentials</h4>
+                <dl className="item-preview-list">
+                  <div><dt>Code</dt><dd>{formatItemValue(previewSupplier.supplier_code)}</dd></div>
+                  <div><dt>Status</dt><dd>{formatItemValue(previewSupplier.status)}</dd></div>
+                  <div><dt>Phone</dt><dd>{formatItemValue(previewSupplier.phone)}</dd></div>
+                  <div><dt>Email</dt><dd>{formatItemValue(previewSupplier.email)}</dd></div>
+                  <div><dt>Preferred</dt><dd>{formatItemValue(previewSupplier.preferred_supplier)}</dd></div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Address</h4>
+                <dl className="item-preview-list">
+                  <div><dt>Country</dt><dd>{formatItemValue(previewSupplier.country)}</dd></div>
+                  <div><dt>City</dt><dd>{formatItemValue(previewSupplier.city)}</dd></div>
+                  <div><dt>Address 1</dt><dd>{formatItemValue(previewSupplier.address_line_1)}</dd></div>
+                  <div><dt>Address 2</dt><dd>{formatItemValue(previewSupplier.address_line_2)}</dd></div>
+                  <div><dt>Postal Code</dt><dd>{formatItemValue(previewSupplier.postal_code)}</dd></div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Financial</h4>
+                <dl className="item-preview-list">
+                  <div><dt>Payment Terms</dt><dd>{formatItemValue(previewSupplier.payment_terms)}</dd></div>
+                  <div><dt>Currency</dt><dd>{formatItemValue(previewSupplier.currency)}</dd></div>
+                  <div><dt>Tax ID</dt><dd>{formatItemValue(previewSupplier.tax_id)}</dd></div>
+                  <div><dt>VAT Number</dt><dd>{formatItemValue(previewSupplier.vat_number)}</dd></div>
+                  <div><dt>Credit Limit</dt><dd>{formatItemValue(previewSupplier.credit_limit)}</dd></div>
+                  <div><dt>Balance</dt><dd>{formatItemValue(previewSupplier.balance, "0")}</dd></div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Contact Person</h4>
+                <dl className="item-preview-list">
+                  <div><dt>Name</dt><dd>{formatItemValue(previewSupplier.contact_name)}</dd></div>
+                  <div><dt>Email</dt><dd>{formatItemValue(previewSupplier.contact_email)}</dd></div>
+                  <div><dt>Phone</dt><dd>{formatItemValue(previewSupplier.contact_phone)}</dd></div>
+                  <div><dt>Website</dt><dd>{formatItemValue(previewSupplier.website)}</dd></div>
+                  <div><dt>Mobile</dt><dd>{formatItemValue(previewSupplier.mobile)}</dd></div>
+                </dl>
+              </section>
+
+              <section className="item-preview-section">
+                <h4>Internal</h4>
+                <dl className="item-preview-list">
+                  <div><dt>Rating</dt><dd>{formatItemValue(previewSupplier.rating)}</dd></div>
+                  <div><dt>Notes</dt><dd>{formatItemValue(previewSupplier.notes)}</dd></div>
+                  <div><dt>Created</dt><dd>{formatItemDate(previewSupplier.created_at)}</dd></div>
+                  <div><dt>Updated</dt><dd>{formatItemDate(previewSupplier.updated_at)}</dd></div>
+                  <div><dt>Deleted</dt><dd>{formatItemDate(previewSupplier.deleted_at)}</dd></div>
+                </dl>
+              </section>
+            </div>
+
+            <div className="purchase-order-actions">
+              <button className="ui-btn ui-btn-primary" type="button" onClick={() => openEdit(previewSupplier)}>
+                Edit supplier
+              </button>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPreviewSupplier(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {createOpen && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <form className="ui-modal-card item-modal-card" onSubmit={createSupplier}>
+            <div className="item-modal-topbar">
+              <div>
+                <h3>Create Supplier</h3>
+                <p className="ui-muted supplier-modal-copy">Start with the business identity, then open the rest of the supplier profile only when needed.</p>
+              </div>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setCreateOpen(false)}>
+                Close
+              </button>
+            </div>
+            {renderSupplierForm("create", createForm, createSections)}
+            <div className="purchase-order-actions">
+              <button className="ui-btn ui-btn-primary" type="submit">
+                Save supplier
+              </button>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {editing && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <form className="ui-modal-card item-modal-card" onSubmit={updateSupplier}>
+            <div className="item-modal-topbar">
+              <div>
+                <h3>Edit Supplier</h3>
+                <p className="ui-muted supplier-modal-copy">Keep the supplier profile connected to purchasing by managing identity, contacts, and financial context in one place.</p>
+              </div>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setEditing(null)}>
+                Close
+              </button>
+            </div>
+            {renderSupplierForm("edit", editForm, editSections, editing.balance)}
+            <div className="purchase-order-actions">
+              <button className="ui-btn ui-btn-primary" type="submit">
+                Save changes
+              </button>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function PurchaseOrdersPage({
   session,
   setSession,
@@ -1249,7 +1966,7 @@ function PurchaseOrdersPage({
       new Map(
         suppliers.map((supplier) => [
           supplier.id,
-          supplier.name?.trim() || supplier.email?.trim() || "Unnamed supplier"
+          supplier.name?.trim() || supplier.supplier_code?.trim() || supplier.email?.trim() || "Unnamed supplier"
         ])
       ),
     [suppliers]
@@ -1260,7 +1977,7 @@ function PurchaseOrdersPage({
       suppliers.map((supplier) => ({
         id: supplier.id,
         name: supplier.name?.trim() || "Unnamed supplier",
-        meta: [supplier.email, supplier.phone].filter(Boolean).join(" • ")
+        meta: [supplier.supplier_code, supplier.status, supplier.email, supplier.phone].filter(Boolean).join(" • ")
       })),
     [suppliers]
   );
@@ -1828,16 +2545,9 @@ function ERPApp({
           <Route
             path="/suppliers"
             element={
-              <ResourcePage
+              <SuppliersPage
                 session={session}
                 setSession={setSession}
-                endpoint="/erp/suppliers"
-                title="Suppliers"
-                fields={[
-                  { key: "name", label: "Name" },
-                  { key: "email", label: "Email" },
-                  { key: "phone", label: "Phone" }
-                ]}
                 notify={notify}
               />
             }

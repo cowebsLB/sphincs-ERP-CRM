@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.7.3`
+- `Beta V1.8.0`
 
 Rationale:
 
@@ -89,6 +89,10 @@ Rationale:
   - hybrid SKU generation with editable override
   - live SKU availability feedback
   - saved-state item preview on row click
+- `Beta V1.8.0` marks the supplier profile rebuild:
+  - expanded supplier backend shape for business, address, finance, and contact context
+  - structured ERP supplier create/edit experience
+  - supplier preview flow and richer purchase-order picker context
 
 ## Workflow For Future Updates
 
@@ -111,5 +115,5 @@ For every meaningful product update until `Beta V2.0.0`:
 Target release flow:
 
 - `Beta V1.7.x` for fixes on the first Beta V2 module rebuild baseline
-- `Beta V1.8.0+` for additional ERP form and workflow rebuilds ahead of Beta V2.0.0
+- `Beta V1.8.x` for supplier and purchase-flow rebuild work ahead of Beta V2.0.0
 - `Beta V2.0.0` once the next major product milestone is intentionally declared

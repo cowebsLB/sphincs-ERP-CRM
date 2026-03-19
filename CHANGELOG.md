@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.7.3` - current active beta snapshot as of 2026-03-19
+- `Beta V1.8.0` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.8.0 - 2026-03-19
+
+### Added
+
+- Beta V2 supplier profiles now support expanded identity, address, financial, contact-person, and internal fields on the backend.
+- ERP Suppliers now have a structured create/edit flow with grouped sections and saved-state preview.
+- Added supplier service tests covering defaults, financial/preferred flags, and invalid status rejection.
+
+### Changed
+
+- Supplier records are now rich business profiles that can support purchasing workflows instead of only basic contact stubs.
+- Purchase-order supplier pickers now surface richer supplier metadata such as code and status.
+- Supplier balance remains read-only in the profile flow so connected accounting values are not manually overwritten.
 
 ## Beta V1.7.3 - 2026-03-19
 

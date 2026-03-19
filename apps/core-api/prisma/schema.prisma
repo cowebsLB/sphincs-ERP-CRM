@@ -34,6 +34,12 @@ enum ItemStatus {
   ARCHIVED
 }
 
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+}
+
 model Organization {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name       String
@@ -189,22 +195,45 @@ model Item {
 }
 
 model Supplier {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String   @db.Uuid
-  branch_id       String?  @db.Uuid
-  name            String
-  email           String?
-  phone           String?
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @updatedAt @db.Timestamptz(6)
-  deleted_at      DateTime? @db.Timestamptz(6)
-  created_by      String?  @db.Uuid
-  updated_by      String?  @db.Uuid
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id    String         @db.Uuid
+  branch_id          String?        @db.Uuid
+  name               String
+  supplier_code      String?
+  status             SupplierStatus @default(ACTIVE)
+  email              String?
+  phone              String?
+  mobile             String?
+  website            String?
+  country            String?
+  city               String?
+  address_line_1     String?
+  address_line_2     String?
+  postal_code        String?
+  payment_terms      String?
+  currency           String         @default("USD")
+  tax_id             String?
+  vat_number         String?
+  credit_limit       Float          @default(0)
+  balance            Float          @default(0)
+  contact_name       String?
+  contact_email      String?
+  contact_phone      String?
+  notes              String?
+  rating             Int?
+  preferred_supplier Boolean        @default(false)
+  created_at         DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime       @updatedAt @db.Timestamptz(6)
+  deleted_at         DateTime?      @db.Timestamptz(6)
+  created_by         String?        @db.Uuid
+  updated_by         String?        @db.Uuid
 
   @@index([organization_id], map: "idx_suppliers_org")
   @@index([branch_id], map: "idx_suppliers_branch")
+  @@index([status], map: "idx_suppliers_status")
   @@index([deleted_at], map: "idx_suppliers_deleted_at")
   @@index([created_at], map: "idx_suppliers_created_at")
+  @@unique([organization_id, supplier_code], map: "uq_suppliers_org_supplier_code")
   @@index([organization_id, deleted_at, created_at], map: "idx_suppliers_org_deleted_created")
   @@map("suppliers")
 }

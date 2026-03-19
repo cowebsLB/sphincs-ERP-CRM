@@ -65,38 +65,38 @@ then it belongs in Beta V3, not Beta V2.
 
 ### Suppliers
 
-- [ ] Replace the current generic supplier form with a structured drawer flow.
-- [ ] Default visible supplier fields are:
+- [x] Replace the current generic supplier form with a structured profile flow.
+- [x] Default visible supplier fields are:
   - `name`
   - `supplier_code`
   - `status`
   - `phone`
   - `email`
-- [ ] Add `Address` section:
+- [x] Add `Address` section:
   - `country`
   - `city`
   - `address_line_1`
   - `address_line_2`
   - `postal_code`
-- [ ] Add `Financial` section:
+- [x] Add `Financial` section:
   - `payment_terms`
   - `currency`
   - `tax_id`
   - `vat_number`
   - `credit_limit`
   - `balance` (read-only)
-- [ ] Add `Contact Person` section:
+- [x] Add `Contact Person` section:
   - `contact_name`
   - `contact_email`
   - `contact_phone`
-- [ ] Add `Advanced / Internal` section:
+- [x] Add `Advanced / Internal` section:
   - `notes`
   - `rating`
   - `preferred_supplier`
   - `website`
   - `mobile`
-- [ ] Internal/admin-only fields are visually separated from primary entry fields.
-- [ ] Read-only financial values are never editable as normal inputs.
+- [x] Internal/admin-only fields are visually separated from primary entry fields.
+- [x] Read-only financial values are never editable as normal inputs.
 
 ### Purchase Orders
 
@@ -161,7 +161,7 @@ then it belongs in Beta V3, not Beta V2.
 ## 5) Backend And Data Shape
 
 - [x] Items backend supports the expanded field set required for Beta V2 UX.
-- [ ] Suppliers backend supports the expanded field set required for Beta V2 UX.
+- [x] Suppliers backend supports the expanded field set required for Beta V2 UX.
 - [ ] Purchase orders backend supports composite transaction data cleanly.
 - [ ] PO line items are modeled in a way that supports totals and workflow states.
 - [ ] Approval/receiving fields are either implemented cleanly or explicitly deferred with docs.
@@ -201,7 +201,7 @@ Beta V2 is complete only when all of these are true:
 
 - [ ] Access/session hardening is shipped and validated.
 - [x] Items UX rebuild is shipped.
-- [ ] Suppliers UX rebuild is shipped.
+- [x] Suppliers UX rebuild is shipped.
 - [ ] Purchase-order workflow screen is shipped.
 - [ ] CRM page consistency and relation flows are stable.
 - [ ] Critical e2e and smoke checks pass.
@@ -211,7 +211,7 @@ Beta V2 is complete only when all of these are true:
 
 - [x] Finalize this checklist as the Beta V2 source of truth.
 - [x] Implement `Items` rebuild first.
-- [ ] Implement `Suppliers` rebuild second.
+- [x] Implement `Suppliers` rebuild second.
 - [ ] Implement `Purchase Orders` workflow rebuild third.
 - [ ] Finish access/session hardening tasks in parallel where safe.
 - [ ] Close Beta V2 only after the hard-stop section is truly satisfied.
