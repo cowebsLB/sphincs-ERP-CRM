@@ -1,14 +1,19 @@
 # API Snapshot (Beta V1)
 
-Date: 2026-03-18
+Date: 2026-03-19
 Base URL: `/api/v1`
 
 ## Auth
 
 - `POST /auth/login` (public)
+- `POST /auth/signup` (public)
 - `POST /auth/refresh` (public)
 - `POST /auth/rate-limit/reset` (Admin)
 - `GET /auth/me` (Admin, ERP Manager, CRM Manager, Staff)
+
+## Feedback
+
+- `POST /bugs/report` (Admin, ERP Manager, CRM Manager, Staff)
 
 ## Core
 

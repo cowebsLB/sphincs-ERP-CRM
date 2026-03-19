@@ -66,6 +66,26 @@ For GitHub Pages builds, set this as a repository variable:
 3. Value example:
    - `https://sphincs-erp-crm.onrender.com/api/v1`
 
+## Bug Report Integration Environment Variables (2026-03-19)
+
+Backend bug reporting to GitHub Issues requires:
+
+- `GITHUB_ISSUES_TOKEN`
+  - GitHub token with issue creation permission on target repo
+- `GITHUB_ISSUES_REPO`
+  - repository in `owner/repo` format (example: `cowebsLB/sphincs-ERP-CRM`)
+- `GITHUB_ISSUES_LABELS` (optional)
+  - comma-separated default labels applied to all bug reports
+  - default when unset: `bug,beta-feedback`
+
+Endpoint:
+
+- `POST /api/v1/bugs/report`
+
+Security note:
+
+- token is used only server-side; frontend never receives or stores GitHub credentials.
+
 ## Notes
 
 - Frontend build base paths for Pages are injected in CI using `VITE_PUBLIC_BASE`:

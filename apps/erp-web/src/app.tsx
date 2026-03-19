@@ -15,6 +15,17 @@ type SystemInfo = {
   environment?: string;
   timestamp?: string;
 };
+type BugReportForm = {
+  title: string;
+  summary: string;
+  steps: string;
+  expected: string;
+  actual: string;
+  severity: "low" | "medium" | "high" | "critical";
+  module: string;
+  contactEmail: string;
+  screenshotUrl: string;
+};
 
 function SystemStatusCard() {
   const [healthOk, setHealthOk] = React.useState<boolean | null>(null);
@@ -267,6 +278,19 @@ function ERPApp({
 }) {
   const navigate = useNavigate();
   const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showBugDialog, setShowBugDialog] = React.useState(false);
+  const [bugBusy, setBugBusy] = React.useState(false);
+  const [bugForm, setBugForm] = React.useState<BugReportForm>({
+    title: "",
+    summary: "",
+    steps: "",
+    expected: "",
+    actual: "",
+    severity: "medium",
+    module: "general",
+    contactEmail: "",
+    screenshotUrl: ""
+  });
   const notify = React.useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 2600);
@@ -275,6 +299,58 @@ function ERPApp({
   if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
     return <p>Your account does not have ERP access.</p>;
   }
+
+  async function submitBugReport(e: React.FormEvent) {
+    e.preventDefault();
+    setBugBusy(true);
+    try {
+      const response = await withAuth<{ issueUrl: string; issueNumber: number }>(
+        session,
+        setSession,
+        "/bugs/report",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: bugForm.title,
+            summary: bugForm.summary,
+            steps: bugForm.steps
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean),
+            expected: bugForm.expected,
+            actual: bugForm.actual,
+            severity: bugForm.severity,
+            module: bugForm.module,
+            contactEmail: bugForm.contactEmail || undefined,
+            screenshotUrl: bugForm.screenshotUrl || undefined,
+            sourceApp: "ERP",
+            route: window.location.hash.replace(/^#/, "") || "/",
+            pageUrl: window.location.href,
+            appVersion: "beta-v1",
+            userAgent: navigator.userAgent
+          })
+        }
+      );
+      notify("success", `Bug submitted: issue #${response.issueNumber}`);
+      setShowBugDialog(false);
+      setBugForm({
+        title: "",
+        summary: "",
+        steps: "",
+        expected: "",
+        actual: "",
+        severity: "medium",
+        module: "general",
+        contactEmail: "",
+        screenshotUrl: ""
+      });
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Bug submission failed");
+    } finally {
+      setBugBusy(false);
+    }
+  }
+
   return (
     <main className="app-shell">
       <aside className="app-sidebar">
@@ -287,19 +363,117 @@ function ERPApp({
       <section className="app-main">
         <header className="app-topbar">
           <strong>ERP Operations</strong>
-          <button
-            className="ui-btn ui-btn-secondary"
-            type="button"
-            onClick={() => {
-              setSession(null);
-              navigate("/login");
-            }}
-          >
-            Logout
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => setShowBugDialog(true)}
+            >
+              Report Bug
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setSession(null);
+                navigate("/login");
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </header>
         <SystemStatusCard />
         {toast && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
+        {showBugDialog && (
+          <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+            <form className="ui-modal-card" onSubmit={submitBugReport}>
+              <h3>Report Bug</h3>
+              <input
+                className="ui-input"
+                placeholder="Short title"
+                value={bugForm.title}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, title: e.target.value }))}
+                required
+              />
+              <textarea
+                className="ui-input"
+                placeholder="Summary"
+                value={bugForm.summary}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, summary: e.target.value }))}
+                required
+              />
+              <textarea
+                className="ui-input"
+                placeholder="Steps to reproduce (one step per line)"
+                value={bugForm.steps}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, steps: e.target.value }))}
+                required
+              />
+              <textarea
+                className="ui-input"
+                placeholder="Expected result"
+                value={bugForm.expected}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, expected: e.target.value }))}
+                required
+              />
+              <textarea
+                className="ui-input"
+                placeholder="Actual result"
+                value={bugForm.actual}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, actual: e.target.value }))}
+                required
+              />
+              <select
+                className="ui-input"
+                value={bugForm.severity}
+                onChange={(e) =>
+                  setBugForm((prev) => ({
+                    ...prev,
+                    severity: e.target.value as BugReportForm["severity"]
+                  }))
+                }
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+              <input
+                className="ui-input"
+                placeholder="Module/Page (e.g. suppliers)"
+                value={bugForm.module}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, module: e.target.value }))}
+                required
+              />
+              <input
+                className="ui-input"
+                placeholder="Contact email (optional)"
+                value={bugForm.contactEmail}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, contactEmail: e.target.value }))}
+              />
+              <input
+                className="ui-input"
+                placeholder="Screenshot URL (optional)"
+                value={bugForm.screenshotUrl}
+                onChange={(e) => setBugForm((prev) => ({ ...prev, screenshotUrl: e.target.value }))}
+              />
+              <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                <button
+                  className="ui-btn ui-btn-secondary"
+                  type="button"
+                  onClick={() => setShowBugDialog(false)}
+                  disabled={bugBusy}
+                >
+                  Cancel
+                </button>
+                <button className="ui-btn ui-btn-primary" type="submit" disabled={bugBusy}>
+                  {bugBusy ? "Submitting..." : "Submit bug"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
         <Routes>
           <Route
             path="/items"

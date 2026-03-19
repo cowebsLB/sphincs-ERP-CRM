@@ -18,8 +18,10 @@
   - Health and system info endpoint checks
   - Backend auth + ERP smoke:
     - `POST /api/v1/auth/login`
+    - `POST /api/v1/auth/signup`
     - `GET /api/v1/auth/me`
     - `GET /api/v1/erp/items`
+    - `POST /api/v1/bugs/report`
 
 ## Frontend Test Baseline (2026-03-16)
 

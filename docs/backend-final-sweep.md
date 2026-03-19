@@ -44,6 +44,11 @@ Date: 2026-03-19
 - [x] Core API e2e smoke tests pass
 - [x] Render build script resilient to `DIRECT_URL` failure fallback
 
+## Feedback Loop
+
+- [x] `POST /api/v1/bugs/report` creates GitHub issue successfully
+- [x] ERP/CRM in-app `Report Bug` UI submits structured payload
+
 ## Security Closeout (Deferred)
 
 - [ ] Rotate Supabase DB password

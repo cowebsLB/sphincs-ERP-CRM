@@ -16,6 +16,7 @@ import { AuditModule } from "./audit/audit.module";
 import { HealthModule } from "./health/health.module";
 import { SystemModule } from "./system/system.module";
 import { LoggingModule } from "./logging/logging.module";
+import { BugsModule } from "./bugs/bugs.module";
 import { RequestLoggingMiddleware } from "./logging/request-logging.middleware";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
@@ -38,7 +39,8 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
     AuditModule,
     HealthModule,
     SystemModule,
-    LoggingModule
+    LoggingModule,
+    BugsModule
   ],
   providers: [
     {

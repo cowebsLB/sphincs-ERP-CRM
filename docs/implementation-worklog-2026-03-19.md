@@ -74,6 +74,39 @@ Validation completed:
 - `pnpm --filter @sphincs/erp-web test`
 - `pnpm --filter @sphincs/crm-web test`
 
+### 5) In-app bug reporting module with GitHub Issues delivery
+
+Implemented:
+
+- new backend endpoint: `POST /api/v1/bugs/report`
+- backend payload validation for:
+  - title
+  - summary
+  - steps
+  - expected
+  - actual
+  - severity
+  - module/route/app metadata
+  - optional contact email and screenshot URL
+- GitHub issue creation flow in backend service with structured issue body
+- automatic issue labels:
+  - defaults (`bug`, `beta-feedback`)
+  - severity labels (`severity:*`)
+  - app/module labels (`module:*`, `area:*`)
+- ERP and CRM top-nav `Report Bug` modal forms
+- auto-captured metadata from frontend:
+  - app (`ERP` / `CRM`)
+  - route
+  - page URL
+  - app version (`beta-v1`)
+  - user agent
+
+Environment configuration added:
+
+- `GITHUB_ISSUES_TOKEN`
+- `GITHUB_ISSUES_REPO`
+- optional `GITHUB_ISSUES_LABELS`
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

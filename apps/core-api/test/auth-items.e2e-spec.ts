@@ -9,6 +9,9 @@ const request = require("supertest");
 
 describe("Auth + ERP smoke (e2e)", () => {
   let app: INestApplication;
+  const originalFetch = global.fetch;
+  const originalIssuesRepo = process.env.GITHUB_ISSUES_REPO;
+  const originalIssuesToken = process.env.GITHUB_ISSUES_TOKEN;
 
   const adminUser = {
     id: "11111111-1111-1111-1111-111111111111",
@@ -157,6 +160,17 @@ describe("Auth + ERP smoke (e2e)", () => {
   beforeAll(async () => {
     process.env.JWT_ACCESS_SECRET = "e2e-access-secret";
     process.env.JWT_REFRESH_SECRET = "e2e-refresh-secret";
+    process.env.GITHUB_ISSUES_REPO = "cowebsLB/sphincs-ERP-CRM";
+    process.env.GITHUB_ISSUES_TOKEN = "test-token";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        html_url: "https://github.com/cowebsLB/sphincs-ERP-CRM/issues/999",
+        number: 999,
+        title: "[ERP] e2e bug",
+        state: "open"
+      })
+    }) as unknown as typeof fetch;
 
     adminUser.password_hash = await hashPassword("ChangeMe123!");
 
@@ -179,6 +193,9 @@ describe("Auth + ERP smoke (e2e)", () => {
     await app.close();
     process.env.JWT_ACCESS_SECRET = originalAccessSecret;
     process.env.JWT_REFRESH_SECRET = originalRefreshSecret;
+    process.env.GITHUB_ISSUES_REPO = originalIssuesRepo;
+    process.env.GITHUB_ISSUES_TOKEN = originalIssuesToken;
+    global.fetch = originalFetch;
   });
 
   it("logs in, resolves /auth/me, and reads /erp/items", async () => {
@@ -222,5 +239,35 @@ describe("Auth + ERP smoke (e2e)", () => {
     expect(response.body.refreshToken).toBeDefined();
     expect(response.body.user.email).toBe("tester@sphincs.local");
     expect(response.body.user.roles).toContain("Staff");
+  });
+
+  it("submits a bug report and returns created issue info", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+    const token = login.body.accessToken as string;
+
+    const bug = await request(app.getHttpServer())
+      .post("/api/v1/bugs/report")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Save fails in ERP",
+        summary: "Saving suppliers fails after edit",
+        sourceApp: "ERP",
+        severity: "high",
+        module: "suppliers",
+        route: "/erp/suppliers",
+        appVersion: "beta-v1",
+        userAgent: "e2e-agent",
+        steps: ["Open suppliers", "Edit supplier", "Click save"],
+        expected: "Record should be stored",
+        actual: "Request fails"
+      })
+      .expect(201);
+
+    expect(bug.body.issueNumber).toBe(999);
+    expect(bug.body.issueState).toBe("open");
+    expect(bug.body.issueUrl).toContain("/issues/999");
   });
 });

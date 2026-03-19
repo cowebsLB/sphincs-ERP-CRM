@@ -137,8 +137,8 @@ Frontend:
 
 ## 9) Feedback Loop
 
-- [ ] Single official bug-report channel finalized (Discord/WhatsApp/Notion/Form).
-- [ ] Central bug tracker list finalized.
+- [x] Single official bug-report channel finalized (in-app `Report Bug` -> GitHub Issues).
+- [x] Central bug tracker list finalized (GitHub Issues in project repo).
 - [x] Logs are detailed enough to help reproduce reported issues.
 
 ## Hard Stop Rule
