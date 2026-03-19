@@ -33,8 +33,8 @@ then it belongs in Beta V3, not Beta V2.
 
 ### Items
 
-- [ ] Replace the current generic item form with a compact drawer or modal flow.
-- [ ] Default visible item fields are:
+- [x] Replace the current generic item form with a compact drawer or modal flow.
+- [x] Default visible item fields are:
   - `name`
   - `sku`
   - `status`
@@ -42,26 +42,26 @@ then it belongs in Beta V3, not Beta V2.
   - `category`
   - `track_inventory`
   - `quantity_on_hand`
-- [ ] Add collapsed `Pricing` section:
+- [x] Add collapsed `Pricing` section:
   - `cost_price`
   - `currency`
   - `tax_rate`
   - `discountable`
-- [ ] Add collapsed `Inventory` section:
+- [x] Add collapsed `Inventory` section:
   - `reorder_level`
   - `max_stock_level`
   - `unit_of_measure`
   - `barcode`
-- [ ] Add collapsed `Classification` section:
+- [x] Add collapsed `Classification` section:
   - `tags`
   - `brand`
   - `description`
-- [ ] Add hidden `Advanced` section:
+- [x] Add hidden `Advanced` section:
   - `is_service`
-- [ ] `is_service = true` hides or disables inventory controls.
-- [ ] `track_inventory = false` hides stock controls cleanly.
-- [ ] Create mode is minimal and fast.
-- [ ] Edit mode exposes richer fields without cluttering create flow.
+- [x] `is_service = true` hides or disables inventory controls.
+- [x] `track_inventory = false` hides stock controls cleanly.
+- [x] Create mode is minimal and fast.
+- [x] Edit mode exposes richer fields without cluttering create flow.
 
 ### Suppliers
 
@@ -160,7 +160,7 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 5) Backend And Data Shape
 
-- [ ] Items backend supports the expanded field set required for Beta V2 UX.
+- [x] Items backend supports the expanded field set required for Beta V2 UX.
 - [ ] Suppliers backend supports the expanded field set required for Beta V2 UX.
 - [ ] Purchase orders backend supports composite transaction data cleanly.
 - [ ] PO line items are modeled in a way that supports totals and workflow states.
@@ -200,7 +200,7 @@ This section is complete only when these remain out of scope during Beta V2 exec
 Beta V2 is complete only when all of these are true:
 
 - [ ] Access/session hardening is shipped and validated.
-- [ ] Items UX rebuild is shipped.
+- [x] Items UX rebuild is shipped.
 - [ ] Suppliers UX rebuild is shipped.
 - [ ] Purchase-order workflow screen is shipped.
 - [ ] CRM page consistency and relation flows are stable.
@@ -209,8 +209,8 @@ Beta V2 is complete only when all of these are true:
 
 ## 10) Immediate Execution Order
 
-- [ ] Finalize this checklist as the Beta V2 source of truth.
-- [ ] Implement `Items` rebuild first.
+- [x] Finalize this checklist as the Beta V2 source of truth.
+- [x] Implement `Items` rebuild first.
 - [ ] Implement `Suppliers` rebuild second.
 - [ ] Implement `Purchase Orders` workflow rebuild third.
 - [ ] Finish access/session hardening tasks in parallel where safe.

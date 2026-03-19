@@ -429,6 +429,98 @@ Files:
 - `docs/index.md`
 - `index.md`
 
+### 18) Beta V2 start: ERP items rebuild
+
+Problem:
+
+- the ERP `Items` module was still a thin generic resource screen
+- backend item data shape only supported:
+  - `name`
+  - `sku`
+- the UX did not match the Beta V2 item architecture:
+  - essentials first
+  - progressive disclosure
+  - inventory/service-aware behavior
+
+Implemented:
+
+1. Expanded item backend schema and migration:
+   - added item status enum
+   - added pricing, inventory, classification, and advanced item fields
+   - made `sku` required
+   - added org-scoped SKU uniqueness
+   - added item expansion migration:
+     - `apps/core-api/prisma/migrations/20260319_item_v2_fields/migration.sql`
+
+2. Rebuilt item service behavior:
+   - added validation and normalization for:
+     - required strings
+     - status
+     - currency
+     - booleans
+     - numeric fields
+     - tags
+   - added service/inventory-aware normalization:
+     - services disable inventory logic
+     - non-tracked inventory suppresses stock controls
+
+3. Replaced the ERP generic item form with a dedicated item manager UI:
+   - table view remains on the page
+   - create/edit now use a progressive modal flow
+   - sections:
+     - Essentials
+     - Pricing
+     - Inventory
+     - Classification
+     - Advanced
+   - default visible fields:
+     - `name`
+     - `sku`
+     - `status`
+     - `selling_price`
+     - `category`
+     - `track_inventory`
+     - `quantity_on_hand`
+   - conditional behavior:
+     - `is_service = true` disables inventory controls
+     - `track_inventory = false` hides stock fields
+
+4. Added backend unit coverage:
+   - `apps/core-api/src/erp/items/items.service.spec.ts`
+
+5. Advanced versioning/changelog state:
+   - bumped product release to:
+     - `Beta V1.7.0`
+   - updated:
+     - `CHANGELOG.md`
+     - `docs/versioning.md`
+     - runtime version metadata
+     - bug-report version metadata
+     - docs current-version references
+
+Files:
+
+- `apps/core-api/prisma/schema.prisma`
+- `apps/core-api/prisma/migrations/20260319_item_v2_fields/migration.sql`
+- `apps/core-api/src/erp/items/items.service.ts`
+- `apps/core-api/src/erp/items/items.service.spec.ts`
+- `apps/erp-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+- `docs/database-schema.md`
+- `docs/beta-v2-checklist.md`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/crm-web/src/app.tsx`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## Outcome
 
 - Beta V1 functional scope items for signup and data privacy-by-default are now implemented and test-covered.

@@ -7,7 +7,35 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.6.0` - current active beta snapshot as of 2026-03-19
+- `Beta V1.7.0` - current active beta snapshot as of 2026-03-19
+
+## Beta V1.7.0 - 2026-03-19
+
+### Added
+
+- Beta V2 `Items` rebuild with a dedicated ERP item management screen.
+- Progressive item modal flow with `Essentials`, `Pricing`, `Inventory`, `Classification`, and `Advanced` sections.
+- Expanded item backend data shape for:
+  - status
+  - pricing
+  - inventory
+  - category
+  - tags
+  - brand
+  - barcode
+  - service behavior
+  - tax and discount behavior
+- Item service unit coverage for defaults, service-mode inventory behavior, and invalid status rejection.
+
+### Changed
+
+- ERP items now use a focused create/edit modal instead of the old generic resource form.
+- Item create/edit behavior now adapts when inventory tracking is disabled or the item is marked as a service.
+- Runtime app version metadata and bug-report version payloads now track `Beta V1.7.0`.
+
+### Fixed
+
+- Item input handling now validates and normalizes structured values instead of relying on a minimal free-form payload.
 
 ## Beta V1.6.0 - 2026-03-19
 

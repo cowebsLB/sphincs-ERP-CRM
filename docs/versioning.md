@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.6.0`
+- `Beta V1.7.0`
 
 Rationale:
 
@@ -76,6 +76,10 @@ Rationale:
   - ERP purchase-order supplier picker
   - CRM lead contact picker
   - CRM opportunity lead picker
+- `Beta V1.7.0` marks the first Beta V2 module rebuild:
+  - expanded ERP item data model
+  - progressive item create/edit modal
+  - inventory/service-aware item form behavior
 
 ## Workflow For Future Updates
 
@@ -97,6 +101,6 @@ For every meaningful product update until `Beta V2.0.0`:
 
 Target release flow:
 
-- `Beta V1.6.x` for fixes on current UX baseline
-- `Beta V1.7.0+` for expanded ERP forms, richer workflows, and staged Beta V2 prep
+- `Beta V1.7.x` for fixes on the first Beta V2 module rebuild baseline
+- `Beta V1.8.0+` for additional ERP form and workflow rebuilds ahead of Beta V2.0.0
 - `Beta V2.0.0` once the next major product milestone is intentionally declared
