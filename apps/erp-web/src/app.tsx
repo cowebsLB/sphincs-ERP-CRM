@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.10.1";
+const APP_RELEASE_VERSION = "Beta V1.10.2";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -310,8 +310,8 @@ async function withAuth<T>(
 }
 
 function LoginPage({ setSession }: { setSession: (next: SessionState | null) => void }) {
-  const [email, setEmail] = React.useState("admin@sphincs.local");
-  const [password, setPassword] = React.useState("ChangeMe123!");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [mode, setMode] = React.useState<"login" | "signup">("login");
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);

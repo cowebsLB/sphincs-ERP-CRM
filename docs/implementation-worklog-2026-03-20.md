@@ -179,3 +179,33 @@ Validation:
 - `pnpm --filter @sphincs/erp-web test` passed
 - `pnpm --filter @sphincs/crm-web test` passed
 - `pnpm --filter @sphincs/core-api test:e2e` passed
+
+### 5) Login credential prefill cleanup
+
+Problem observed:
+
+- both ERP and CRM login screens still prefilled the admin beta email and password for any visitor who opened the site
+- this looked sloppy and exposed the default admin credentials too casually on first load
+
+Implemented:
+
+- removed the default admin email and password from:
+  - `apps/erp-web/src/app.tsx`
+  - `apps/crm-web/src/app.tsx`
+- both login forms now start blank and require intentional user input
+- bumped product release to:
+  - `Beta V1.10.2`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed

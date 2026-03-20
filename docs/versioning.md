@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.10.1`
+- `Beta V1.10.2`
 
 Rationale:
 
@@ -108,6 +108,9 @@ Rationale:
   - soft-delete and restore flows now require explicit user confirmation
   - purchase-order line removal now confirms before mutating the draft
   - frontend validation blocks common invalid ERP and CRM form submissions before they fall through to API errors
+- `Beta V1.10.2` marks the login credential safety fix:
+  - ERP and CRM login screens now start with empty email/password fields
+  - beta visitors no longer see prefilled admin credentials on first load
 
 ## Workflow For Future Updates
 

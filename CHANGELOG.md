@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.10.1` - current active beta snapshot as of 2026-03-20
+- `Beta V1.10.2` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.10.2 - 2026-03-20
+
+### Fixed
+
+- ERP and CRM login forms no longer preload the admin beta credentials for every visitor.
+- Both login screens now start blank so testers must enter credentials intentionally instead of inheriting a default admin session hint.
 
 ## Beta V1.10.1 - 2026-03-20
 
