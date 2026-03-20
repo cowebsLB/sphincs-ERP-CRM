@@ -118,4 +118,29 @@ describe("PurchasingService", () => {
       })
     );
   });
+
+  it("scopes purchase-order list queries to the signed-in user data", async () => {
+    const prismaMock = {
+      purchaseOrder: {
+        findMany: jest.fn().mockResolvedValue([])
+      }
+    };
+
+    const service = new PurchasingService(prismaMock as never);
+    await service.findAll(false, {
+      id: "user-1",
+      organizationId: "org-1",
+      branchId: "branch-1"
+    });
+
+    expect(prismaMock.purchaseOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          created_by: "user-1",
+          deleted_at: null
+        })
+      })
+    );
+  });
 });

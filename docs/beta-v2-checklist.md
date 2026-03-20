@@ -154,7 +154,7 @@ then it belongs in Beta V3, not Beta V2.
 
 - [x] Destructive actions use explicit confirmation patterns.
 - [x] Soft-delete restore paths are visible and understandable.
-- [ ] Hard-delete admin flows have strong guardrails or remain restricted.
+- [x] Hard-delete admin flows have strong guardrails or remain restricted.
 - [x] Read-only and computed fields are not presented as editable inputs.
 - [x] Org/branch/audit metadata stays hidden from normal create/edit forms.
 - [x] Form validation is clear and prevents common bad-input paths before API failure.
@@ -167,7 +167,7 @@ then it belongs in Beta V3, not Beta V2.
 - [x] PO line items are modeled in a way that supports totals and workflow states.
 - [x] Approval/receiving fields are either implemented cleanly or explicitly deferred with docs.
 - [x] Validation rules match frontend conditional behavior.
-- [ ] Existing user-level data isolation remains intact after model expansion.
+- [x] Existing user-level data isolation remains intact after model expansion.
 
 ## 6) Quality And Observability
 
@@ -205,8 +205,8 @@ Beta V2 is complete only when all of these are true:
 - [x] Suppliers UX rebuild is shipped.
 - [x] Purchase-order workflow screen is shipped.
 - [x] CRM page consistency and relation flows are stable.
-- [ ] Critical e2e and smoke checks pass.
-- [ ] Release, changelog, and triage workflow are active and being used.
+- [x] Critical e2e and smoke checks pass.
+- [x] Release, changelog, and triage workflow are active and being used.
 
 ## 10) Immediate Execution Order
 
@@ -215,4 +215,19 @@ Beta V2 is complete only when all of these are true:
 - [x] Implement `Suppliers` rebuild second.
 - [x] Implement `Purchase Orders` workflow rebuild third.
 - [x] Finish access/session hardening tasks in parallel where safe.
-- [ ] Close Beta V2 only after the hard-stop section is truly satisfied.
+- [x] Close Beta V2 only after the hard-stop section is truly satisfied.
+
+## 11) Beta V2 Closeout Evidence (2026-03-20)
+
+- Automated checks passed:
+  - `pnpm --filter @sphincs/core-api test -- auth.service.spec.ts`
+  - `pnpm --filter @sphincs/core-api test:e2e`
+  - `pnpm --filter @sphincs/erp-web test`
+  - `pnpm --filter @sphincs/crm-web test`
+- Data isolation scope assertions added to:
+  - `apps/core-api/src/erp/items/items.service.spec.ts`
+  - `apps/core-api/src/erp/suppliers/suppliers.service.spec.ts`
+  - `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+- Hard-delete remains restricted:
+  - no `DELETE` endpoints exposed in `apps/core-api/src` resource controllers
+  - active deletion flow is soft-delete + restore only

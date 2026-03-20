@@ -5,7 +5,7 @@ export class SystemController {
   @Get("info")
   info() {
     return {
-      version: process.env.APP_VERSION ?? "Beta V1.11.5",
+      version: process.env.APP_VERSION ?? "Beta V1.11.6",
       environment: process.env.NODE_ENV ?? "development",
       build_hash: process.env.BUILD_HASH ?? "dev",
       timestamp: new Date().toISOString()

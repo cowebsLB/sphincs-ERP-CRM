@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.5`
+- `Beta V1.11.6`
 
 Rationale:
 
@@ -134,6 +134,10 @@ Rationale:
   - blocked-account messaging is now explicit and preserved through frontend auth-notice handling
   - shared-session behavior is now regression-tested for refresh token sync and logout cleanup in ERP and CRM
   - backend e2e now covers upgraded ERP create flows for items, suppliers, and purchase orders
+- `Beta V1.11.6` marks Beta V2 checklist closeout evidence:
+  - user-level data isolation is now backed by explicit service-level scope assertions for ERP core entities
+  - critical automated checks are recorded as the Beta V2 closeout run
+  - remaining Beta V2 hard-stop checklist gates are now explicitly closed with evidence references
 
 ## Workflow For Future Updates
 

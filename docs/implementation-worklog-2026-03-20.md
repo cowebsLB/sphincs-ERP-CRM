@@ -181,6 +181,50 @@ Validation:
 - `pnpm --filter @sphincs/erp-web test` passed
 - `pnpm --filter @sphincs/crm-web test` passed
 
+## 15) Beta V2 checklist closeout evidence pass
+
+Problem observed:
+
+- after major implementation progress, Beta V2 still had a few remaining unchecked checklist gates
+- final completion needed concrete proof for:
+  - data-isolation integrity
+  - hard-delete safety posture
+  - hard-stop verification evidence
+
+Implemented:
+
+- added service-level user-scope assertions in backend unit tests:
+  - items list query must include `organization_id` + `created_by`
+  - suppliers list query must include `organization_id` + `created_by`
+  - purchase-orders list query must include `organization_id` + `created_by`
+- confirmed hard-delete remains restricted in this beta API surface:
+  - no `DELETE` controller routes are exposed
+  - supported operational path remains soft-delete + restore
+- updated Beta V2 checklist to close remaining hard-stop items with explicit evidence section
+- added Beta V2 closeout run record in `docs/testing.md`
+- bumped product version to `Beta V1.11.6`
+
+Files:
+
+- `apps/core-api/src/erp/items/items.service.spec.ts`
+- `apps/core-api/src/erp/suppliers/suppliers.service.spec.ts`
+- `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+- `docs/beta-v2-checklist.md`
+- `docs/testing.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test -- auth.service.spec.ts` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+
 ### 6) Full system specification PDF
 
 Problem observed:

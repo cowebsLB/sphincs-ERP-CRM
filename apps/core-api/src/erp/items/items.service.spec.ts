@@ -91,4 +91,29 @@ describe("ItemsService", () => {
       )
     ).toThrow(BadRequestException);
   });
+
+  it("scopes list queries to the signed-in user data", async () => {
+    const prismaMock = {
+      item: {
+        findMany: jest.fn().mockResolvedValue([])
+      }
+    };
+    const service = new ItemsService(prismaMock as never);
+
+    await service.findAll(false, {
+      id: "user-1",
+      organizationId: "org-1",
+      branchId: "branch-1"
+    });
+
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          created_by: "user-1",
+          deleted_at: null
+        })
+      })
+    );
+  });
 });

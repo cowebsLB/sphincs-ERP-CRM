@@ -7,7 +7,19 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.5` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.6` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.6 - 2026-03-20
+
+### Added
+
+- Added service-level scope tests proving user-level data isolation for item, supplier, and purchase-order list queries.
+- Added Beta V2 closeout evidence block in the checklist with exact command/test references.
+- Added Beta V2 closeout run summary in testing docs.
+
+### Changed
+
+- Marked the remaining Beta V2 hard-stop checklist items as complete after passing critical automated checks and confirming hard-delete remains restricted to soft-delete/restore operational flows in this beta.
 
 ## Beta V1.11.5 - 2026-03-20
 

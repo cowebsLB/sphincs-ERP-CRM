@@ -135,3 +135,17 @@ Use this repeatable post-deploy smoke sequence for Beta V2:
 7. Submit one bug-report test from the UI and confirm an issue is created.
 8. Soft-delete and restore one non-critical test record and confirm both paths work.
 9. Log out, then sign back in to confirm session recovery still behaves cleanly.
+
+## Beta V2 Closeout Run (2026-03-20)
+
+Executed and passed:
+
+- `pnpm --filter @sphincs/core-api test -- auth.service.spec.ts`
+- `pnpm --filter @sphincs/core-api test:e2e`
+- `pnpm --filter @sphincs/erp-web test`
+- `pnpm --filter @sphincs/crm-web test`
+
+Additional verification:
+
+- user-level data isolation scope assertions were added for items, suppliers, and purchase orders service list queries
+- hard-delete remains restricted in beta API surface (soft-delete + restore paths are the supported operational flow)
