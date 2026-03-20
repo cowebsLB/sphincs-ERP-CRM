@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.2` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.3` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.3 - 2026-03-20
+
+### Fixed
+
+- Purchase-order soft-delete patch path no longer fails by re-validating full line-item payloads.
+- Purchase-order client validation now blocks non-integer quantity and received-quantity values before API submission.
+- API client now extracts structured backend error messages so `400` responses show readable causes instead of raw JSON blobs.
 
 ## Beta V1.11.2 - 2026-03-20
 

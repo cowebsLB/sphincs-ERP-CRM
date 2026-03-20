@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.2";
+const APP_RELEASE_VERSION = "Beta V1.11.3";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -237,6 +237,10 @@ function parseOptionalNonNegativeNumber(value: string, label: string) {
     return `${label} must be a non-negative number.`;
   }
   return null;
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
 }
 
 function SystemStatusCard() {
@@ -2700,6 +2704,9 @@ function PurchaseOrdersPage({
       if (!Number.isFinite(quantity) || quantity <= 0) {
         return `Line ${lineNumber}: quantity must be greater than 0.`;
       }
+      if (!Number.isInteger(quantity)) {
+        return `Line ${lineNumber}: quantity must be a whole number.`;
+      }
       const unitCost = Number(line.unit_cost);
       if (!Number.isFinite(unitCost) || unitCost < 0) {
         return `Line ${lineNumber}: unit cost must be a non-negative number.`;
@@ -2717,10 +2724,16 @@ function PurchaseOrdersPage({
         if (!Number.isFinite(received) || received < 0) {
           return `Line ${lineNumber}: received quantity must be a non-negative number.`;
         }
+        if (!Number.isInteger(received)) {
+          return `Line ${lineNumber}: received quantity must be a whole number.`;
+        }
         if (received > quantity) {
           return `Line ${lineNumber}: received quantity cannot be greater than ordered quantity.`;
         }
       }
+    }
+    if (form.approved_by.trim() && !isUuid(form.approved_by)) {
+      return "Approved by must be a valid user ID (UUID) or left blank.";
     }
     return null;
   }

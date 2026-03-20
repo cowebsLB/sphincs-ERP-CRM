@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.2`
+- `Beta V1.11.3`
 
 Rationale:
 
@@ -122,6 +122,10 @@ Rationale:
 - `Beta V1.11.2` marks the purchase-order medium-desktop fit fix:
   - workflow now stacks earlier on desktop widths that still felt crowded in real usage
   - purchase-order header fields wrap sooner to reduce squeezed or visually colliding controls
+- `Beta V1.11.3` marks the purchase-order patch reliability + error clarity fix:
+  - soft-delete-only purchase-order patches no longer re-trigger full line-item validation
+  - purchase-order form now validates integer-only quantity/received values before submission
+  - API client now surfaces cleaner backend validation messages in frontend toasts
 
 ## Workflow For Future Updates
 

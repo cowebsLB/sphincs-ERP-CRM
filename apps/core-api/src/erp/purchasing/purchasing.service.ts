@@ -118,6 +118,27 @@ export class PurchasingService {
     return parsed;
   }
 
+  private parseDeletedAt(value: unknown): Date | null {
+    if (value === null || value === "") {
+      return null;
+    }
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) {
+        throw new BadRequestException("deleted_at must be a valid date");
+      }
+      return value;
+    }
+    const text = String(value ?? "").trim();
+    if (!text) {
+      return null;
+    }
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException("deleted_at must be a valid date");
+    }
+    return parsed;
+  }
+
   private parseStatus(value: unknown, fallback: PurchaseOrderStatus): PurchaseOrderStatus {
     const text = String(value ?? "").trim().toUpperCase();
     if (!text) {
@@ -284,6 +305,23 @@ export class PurchasingService {
       throw new NotFoundException("Purchase order not found");
     }
 
+    const bodyKeys = Object.keys(body);
+    const isDeleteOnlyPatch =
+      bodyKeys.length > 0 && bodyKeys.every((key) => key === "deleted_at");
+
+    if (isDeleteOnlyPatch) {
+      return this.prisma.purchaseOrder.update({
+        where: { id },
+        data: {
+          deleted_at: this.parseDeletedAt(body.deleted_at),
+          updated_by: user.id
+        },
+        include: {
+          line_items: true
+        }
+      });
+    }
+
     const payload = this.buildPurchaseOrderData(
       {
         ...existing,
@@ -298,7 +336,7 @@ export class PurchasingService {
       where: { id },
       data: {
         ...payload.data,
-        deleted_at: body.deleted_at === undefined ? undefined : (body.deleted_at as Date | null),
+        deleted_at: body.deleted_at === undefined ? undefined : this.parseDeletedAt(body.deleted_at),
         updated_by: user.id,
         line_items: {
           deleteMany: {},

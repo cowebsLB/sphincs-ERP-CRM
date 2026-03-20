@@ -35,11 +35,33 @@ export class AuthSessionExpiredError extends Error {
 export class ApiClient {
   constructor(private readonly baseUrl: string) {}
 
+  private async readErrorMessage(response: Response) {
+    const raw = await response.text();
+    if (!raw) {
+      return `HTTP ${response.status}`;
+    }
+    try {
+      const parsed = JSON.parse(raw) as {
+        error?: { message?: string | string[] };
+        message?: string | string[];
+      };
+      const message = parsed?.error?.message ?? parsed?.message;
+      if (Array.isArray(message)) {
+        return message.join(", ");
+      }
+      if (typeof message === "string" && message.trim()) {
+        return message;
+      }
+    } catch {
+      // Not JSON, fall back to raw text.
+    }
+    return raw;
+  }
+
   private async rawRequest<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, init);
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new ApiHttpError(response.status, errorText || `HTTP ${response.status}`);
+      throw new ApiHttpError(response.status, await this.readErrorMessage(response));
     }
     return response.json() as Promise<T>;
   }
@@ -92,7 +114,7 @@ export class ApiClient {
     let response = await perform(tokens.accessToken);
     if (response.status !== 401) {
       if (!response.ok) {
-        throw new ApiHttpError(response.status, (await response.text()) || `HTTP ${response.status}`);
+        throw new ApiHttpError(response.status, await this.readErrorMessage(response));
       }
       return { data: (await response.json()) as T, tokens };
     }
@@ -108,9 +130,9 @@ export class ApiClient {
     response = await perform(refreshed.accessToken);
     if (!response.ok) {
       if (response.status === 401) {
-        throw new AuthSessionExpiredError((await response.text()) || "Your session expired. Please sign in again.");
+        throw new AuthSessionExpiredError(await this.readErrorMessage(response));
       }
-      throw new ApiHttpError(response.status, (await response.text()) || `HTTP ${response.status}`);
+      throw new ApiHttpError(response.status, await this.readErrorMessage(response));
     }
 
     return {

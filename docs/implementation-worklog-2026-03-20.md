@@ -51,6 +51,47 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 12) Purchase-order patch reliability + validation clarity
+
+Problem observed:
+
+- production logs showed repeated `PATCH /api/v1/erp/purchase-orders/:id` failures with `400`
+- users also saw mixed `401`/`400` browser errors, while frontend toasts could surface raw JSON text that was hard to interpret quickly
+- soft-delete style patches could unnecessarily flow through full purchase-order line-item rebuild/validation
+
+Implemented:
+
+- backend purchase-order update hardening in `apps/core-api/src/erp/purchasing/purchasing.service.ts`:
+  - added a delete-only patch path (`{ deleted_at }`) that updates deletion state directly without rebuilding line items
+  - added strict `deleted_at` parsing/validation for safer patch handling
+- frontend purchase-order form validation hardening in `apps/erp-web/src/app.tsx`:
+  - quantity and received quantity now require whole numbers before submit
+  - `approved_by` now validates as UUID when provided
+- API error readability improvements in `packages/api-client/src/index.ts`:
+  - added structured error extraction to prefer backend `error.message` values over raw response text
+- added backend unit regression coverage in:
+  - `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+  - new test confirms delete-only patch updates succeed without line-item rebuild
+- bumped product version to `Beta V1.11.3`
+
+Files:
+
+- `apps/core-api/src/erp/purchasing/purchasing.service.ts`
+- `apps/core-api/src/erp/purchasing/purchasing.service.spec.ts`
+- `apps/erp-web/src/app.tsx`
+- `packages/api-client/src/index.ts`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/crm-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test -- purchasing.service.spec.ts` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ### 6) Full system specification PDF
 
 Problem observed:

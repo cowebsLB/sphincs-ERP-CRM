@@ -85,4 +85,37 @@ describe("PurchasingService", () => {
       )
     ).toThrow(BadRequestException);
   });
+
+  it("allows delete-only patch updates without rebuilding line items", async () => {
+    const prismaMock = {
+      purchaseOrder: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: "po-1",
+          organization_id: "org-1",
+          created_by: "user-1",
+          line_items: []
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "po-1",
+          deleted_at: new Date("2026-03-20T00:00:00.000Z")
+        })
+      }
+    };
+
+    const service = new PurchasingService(prismaMock as never);
+    await service.update(
+      "po-1",
+      { deleted_at: "2026-03-20T00:00:00.000Z" },
+      { id: "user-1", organizationId: "org-1", branchId: "branch-1" }
+    );
+
+    expect(prismaMock.purchaseOrder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "po-1" },
+        data: expect.objectContaining({
+          updated_by: "user-1"
+        })
+      })
+    );
+  });
 });
