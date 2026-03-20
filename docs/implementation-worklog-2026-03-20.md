@@ -94,6 +94,18 @@ Validation:
 - PDF generated successfully at `output/pdf/sphincs-full-system-spec.pdf`
 - basic artifact check confirmed the file was written successfully
 - visual PDF page rendering was not available in this environment because `pdftoppm` is not installed
+
+Revision:
+
+- upgraded the PDF styling to use:
+  - branded cover treatment
+  - embedded SPHINCS logo from `assets/branding`
+  - structured header/footer
+  - page numbering
+  - stronger section styling for a more polished document feel
+- sanity-checked the styled PDF with `PyPDF2`:
+  - 14 pages detected
+  - cover and first content page text extracted successfully
 - `pnpm --filter @sphincs/core-api test` passed
 
 ### 2) CRM UX consistency pass
