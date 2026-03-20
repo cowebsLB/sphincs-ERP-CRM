@@ -173,10 +173,10 @@ then it belongs in Beta V3, not Beta V2.
 
 - [ ] Add e2e coverage for role-change and forced session invalidation.
 - [ ] Add e2e coverage for cross-app single-session behavior.
-- [ ] Add e2e coverage for bug-report submission.
+- [x] Add e2e coverage for bug-report submission.
 - [ ] Add meaningful flow coverage for upgraded ERP item, supplier, and purchase-order behavior.
 - [ ] Add regression coverage for conditional form behavior.
-- [ ] Production smoke checks are documented and repeatable.
+- [x] Production smoke checks are documented and repeatable.
 
 ## 7) Beta Operations
 

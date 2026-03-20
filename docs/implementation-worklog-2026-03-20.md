@@ -137,3 +137,45 @@ Validation:
 - `pnpm --filter @sphincs/crm-web build` passed
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/core-api test` passed
+
+### 4) Quality and observability coverage pass
+
+Problem observed:
+
+- Beta V2 quality work existed, but some of it was not yet reflected clearly in the checklist or testing docs
+- shared-session reuse and forced re-login behavior needed executable frontend coverage
+- production smoke steps needed a cleaner repeatable checklist for post-deploy validation
+
+Implemented:
+
+- added frontend regression tests for:
+  - shared-session reuse in ERP
+  - shared-session reuse in CRM
+  - forced session-expiry recovery in ERP
+  - forced session-expiry recovery in CRM
+- confirmed existing backend e2e smoke already covers:
+  - auth login
+  - signup
+  - `/auth/me`
+  - ERP items fetch
+  - bug-report submission
+- updated testing documentation with:
+  - current frontend regression coverage
+  - backend smoke coverage summary
+  - repeatable production smoke checks for Beta V2
+- marked the following Beta V2 checklist items complete:
+  - bug-report e2e coverage
+  - documented repeatable production smoke checks
+
+Files:
+
+- `apps/erp-web/src/app.test.tsx`
+- `apps/crm-web/src/app.test.tsx`
+- `docs/testing.md`
+- `docs/beta-v2-checklist.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
