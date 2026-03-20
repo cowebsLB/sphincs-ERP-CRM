@@ -128,6 +128,27 @@ describe("AuthService hardening", () => {
     );
   });
 
+  it("shows a clear message for blocked accounts", async () => {
+    const prisma = createPrismaMock();
+    const limiter = createRateLimiterMock();
+    const passwordHash = await hashPassword("ChangeMe123!");
+
+    prisma.user.findFirst.mockResolvedValue({
+      id: "user-1",
+      email: "blocked@sphincs.local",
+      password_hash: passwordHash,
+      status: "BLOCKED",
+      organization_id: "org-1",
+      branch_id: "branch-1",
+      user_roles: [{ role: { name: "Staff" } }]
+    });
+
+    const service = new AuthService(prisma as never, limiter);
+    await expect(service.login("blocked@sphincs.local", "ChangeMe123!", "ip-blocked")).rejects.toThrow(
+      "Your account is blocked. Contact an admin."
+    );
+  });
+
   it("shows a clear message for active accounts with no roles", async () => {
     const prisma = createPrismaMock();
     const limiter = createRateLimiterMock();

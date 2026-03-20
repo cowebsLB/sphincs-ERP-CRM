@@ -24,11 +24,11 @@ then it belongs in Beta V3, not Beta V2.
 
 - [x] Role management UI can safely assign and remove roles.
 - [x] Critical role changes invalidate active sessions correctly.
-- [ ] Disabled, blocked, and no-role account states show clear messages.
+- [x] Disabled, blocked, and no-role account states show clear messages.
 - [x] ERP/CRM role-denied flows always give the user a recovery path.
 - [x] Auth/session behavior is consistent across ERP and CRM.
 - [x] Stale, expired, or reused refresh tokens are cleared client-side and force a clean re-login path.
-- [ ] Cross-app single-session flow is verified after login, refresh, logout, and role changes.
+- [x] Cross-app single-session flow is verified after login, refresh, logout, and role changes.
 
 ## 2) ERP UX Rebuild
 
@@ -165,17 +165,17 @@ then it belongs in Beta V3, not Beta V2.
 - [x] Suppliers backend supports the expanded field set required for Beta V2 UX.
 - [x] Purchase orders backend supports composite transaction data cleanly.
 - [x] PO line items are modeled in a way that supports totals and workflow states.
-- [ ] Approval/receiving fields are either implemented cleanly or explicitly deferred with docs.
+- [x] Approval/receiving fields are either implemented cleanly or explicitly deferred with docs.
 - [x] Validation rules match frontend conditional behavior.
 - [ ] Existing user-level data isolation remains intact after model expansion.
 
 ## 6) Quality And Observability
 
 - [x] Add e2e coverage for role-change and forced session invalidation.
-- [ ] Add e2e coverage for cross-app single-session behavior.
+- [x] Add automated coverage for cross-app single-session behavior.
 - [x] Add e2e coverage for bug-report submission.
-- [ ] Add meaningful flow coverage for upgraded ERP item, supplier, and purchase-order behavior.
-- [ ] Add regression coverage for conditional form behavior.
+- [x] Add meaningful flow coverage for upgraded ERP item, supplier, and purchase-order behavior.
+- [x] Add regression coverage for conditional form behavior.
 - [x] Production smoke checks are documented and repeatable.
 
 ## 7) Beta Operations
@@ -200,7 +200,7 @@ This section is complete only when these remain out of scope during Beta V2 exec
 
 Beta V2 is complete only when all of these are true:
 
-- [ ] Access/session hardening is shipped and validated.
+- [x] Access/session hardening is shipped and validated.
 - [x] Items UX rebuild is shipped.
 - [x] Suppliers UX rebuild is shipped.
 - [x] Purchase-order workflow screen is shipped.
@@ -214,5 +214,5 @@ Beta V2 is complete only when all of these are true:
 - [x] Implement `Items` rebuild first.
 - [x] Implement `Suppliers` rebuild second.
 - [x] Implement `Purchase Orders` workflow rebuild third.
-- [ ] Finish access/session hardening tasks in parallel where safe.
+- [x] Finish access/session hardening tasks in parallel where safe.
 - [ ] Close Beta V2 only after the hard-stop section is truly satisfied.

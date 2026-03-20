@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.4` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.5` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.5 - 2026-03-20
+
+### Added
+
+- Added backend auth unit coverage for blocked-account login messaging.
+- Added frontend regression checks for shared-session token refresh sync and logout cleanup in ERP and CRM.
+- Added backend e2e coverage for upgraded ERP create flows (item, supplier, purchase-order) plus non-integer PO quantity rejection.
+
+### Changed
+
+- Auth service now returns a dedicated blocked-account message (`Your account is blocked. Contact an admin.`) instead of folding blocked status into generic disabled messaging.
+- ERP and CRM now preserve specific backend account-state messages after session expiry/refresh failure instead of always showing a generic re-login notice.
+- Beta V2 checklist status updated for completed access/session and quality coverage items.
 
 ## Beta V1.11.4 - 2026-03-20
 

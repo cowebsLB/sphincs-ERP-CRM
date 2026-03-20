@@ -39,6 +39,8 @@ Current coverage per app:
 - Shared-session reuse across ERP and CRM using the common `sphincs.session` storage key
 - Forced session-expiry recovery that clears stored session state and returns the user to login
 - Startup role-sync that updates stored session permissions before app access is granted
+- Shared-session token refresh sync that updates stored access/refresh tokens after `/auth/me`
+- Shared-session logout behavior that clears the common session key and returns to login
 
 Run commands:
 
@@ -89,6 +91,19 @@ Added frontend regression coverage for shared-session and forced re-login behavi
 
 - `apps/erp-web/src/app.test.tsx`
 - `apps/crm-web/src/app.test.tsx`
+
+Added backend auth + ERP e2e coverage for upgraded Beta V2 ERP flows:
+
+- `apps/core-api/test/auth-items.e2e-spec.ts`
+  - item create flow
+  - supplier create flow
+  - purchase-order create flow
+  - purchase-order non-integer quantity rejection (`400`)
+
+Added backend auth unit coverage for blocked-account messaging:
+
+- `apps/core-api/src/core/auth/auth.service.spec.ts`
+  - blocked-account login message assertion
 
 Verified commands:
 

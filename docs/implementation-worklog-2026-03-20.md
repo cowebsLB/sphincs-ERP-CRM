@@ -125,6 +125,62 @@ Validation:
 - `pnpm --filter @sphincs/crm-web build` passed
 - `pnpm --filter @sphincs/erp-web build` passed
 
+## 14) Access/session closeout + Beta V2 coverage pass
+
+Problem observed:
+
+- Beta V2 checklist still had open access/session and quality coverage items
+- blocked accounts were still mapped to a generic disabled message in backend auth flow
+- frontend auth-notice handling could overwrite backend account-state detail with a generic session-expired message
+- quality checklist needed stronger automated proof for shared-session behavior and upgraded ERP create flows
+
+Implemented:
+
+- backend auth messaging hardening in `apps/core-api/src/core/auth/auth.service.ts`:
+  - added explicit blocked-account message
+  - kept disabled and fallback non-active status messages clear
+- backend auth unit coverage in `apps/core-api/src/core/auth/auth.service.spec.ts`:
+  - added blocked-account login message test
+- frontend auth-notice behavior updates in:
+  - `apps/erp-web/src/app.tsx`
+  - `apps/crm-web/src/app.tsx`
+  - auth flow now preserves specific backend account-state messages from `AuthSessionExpiredError`
+- frontend regression coverage in:
+  - `apps/erp-web/src/app.test.tsx`
+  - `apps/crm-web/src/app.test.tsx`
+  - added shared-session token refresh sync assertions
+  - added shared-session logout cleanup assertions
+- backend e2e coverage in `apps/core-api/test/auth-items.e2e-spec.ts`:
+  - added upgraded ERP create-flow coverage for items, suppliers, and purchase orders
+  - added purchase-order non-integer quantity rejection coverage
+- checklist/test docs updates:
+  - updated `docs/testing.md`
+  - updated `docs/beta-v2-checklist.md` to mark completed access/session + coverage items
+- bumped product version to `Beta V1.11.5`
+
+Files:
+
+- `apps/core-api/src/core/auth/auth.service.ts`
+- `apps/core-api/src/core/auth/auth.service.spec.ts`
+- `apps/core-api/test/auth-items.e2e-spec.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/erp-web/src/app.test.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/crm-web/src/app.test.tsx`
+- `docs/testing.md`
+- `docs/beta-v2-checklist.md`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test -- auth.service.spec.ts` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+
 ### 6) Full system specification PDF
 
 Problem observed:

@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.4";
+const APP_RELEASE_VERSION = "Beta V1.11.5";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -168,7 +168,7 @@ async function withAuth<T>(
     result = await client.authorized<T>(path, session, init);
   } catch (error) {
     if (error instanceof AuthSessionExpiredError) {
-      setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+      setStoredAuthNotice(error.message || "Your session expired or your access changed. Please sign in again.");
       setSession(null);
     } else if (error instanceof ApiHttpError && error.status === 403) {
       try {
@@ -180,7 +180,7 @@ async function withAuth<T>(
         });
       } catch (syncError) {
         if (syncError instanceof AuthSessionExpiredError) {
-          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setStoredAuthNotice(syncError.message || "Your session expired or your access changed. Please sign in again.");
           setSession(null);
         }
       }
@@ -324,7 +324,7 @@ function useSessionBootstrap(session: SessionState | null, setSession: (next: Se
           return;
         }
         if (error instanceof AuthSessionExpiredError) {
-          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setStoredAuthNotice(error.message || "Your session expired or your access changed. Please sign in again.");
           setSession(null);
         }
       } finally {

@@ -91,6 +91,16 @@ export class AuthService {
     this.logger.log(JSON.stringify(metrics));
   }
 
+  private accountStatusMessage(status: string): string {
+    if (status === "BLOCKED") {
+      return "Your account is blocked. Contact an admin.";
+    }
+    if (status === "DISABLED") {
+      return "Your account is disabled. Contact an admin.";
+    }
+    return "Your account is not active. Contact an admin.";
+  }
+
   async login(email: string, password: string, clientFingerprint = "unknown") {
     const loginStart = Date.now();
     const normalizedEmail = this.sanitizeEmail(email);
@@ -132,7 +142,7 @@ export class AuthService {
     }
 
     if (user.status !== "ACTIVE") {
-      throw new UnauthorizedException("Your account is disabled. Contact an admin.");
+      throw new UnauthorizedException(this.accountStatusMessage(user.status));
     }
 
     const passwordStart = Date.now();
@@ -363,7 +373,7 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
     if (user.status !== "ACTIVE") {
-      throw new UnauthorizedException("Your account is disabled. Contact an admin.");
+      throw new UnauthorizedException(this.accountStatusMessage(user.status));
     }
     const roles = await this.prisma.userRole.findMany({
       where: { user_id: user.id, deleted_at: null },

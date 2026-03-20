@@ -184,4 +184,67 @@ describe("ERP RootApp", () => {
       expect(screen.getByText("Your account has no active platform roles.")).toBeInTheDocument()
     );
   });
+
+  it("updates the shared session tokens after startup refresh", async () => {
+    localStorage.setItem(
+      "sphincs.session",
+      JSON.stringify({
+        accessToken: "old-access",
+        refreshToken: "old-refresh",
+        user: adminUser
+      })
+    );
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return {
+          data: adminUser,
+          tokens: {
+            accessToken: "new-access",
+            refreshToken: "new-refresh"
+          }
+        };
+      }
+      return { data: [], tokens };
+    });
+
+    render(<RootApp />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+    );
+
+    const stored = JSON.parse(localStorage.getItem("sphincs.session") || "{}");
+    expect(stored.accessToken).toBe("new-access");
+    expect(stored.refreshToken).toBe("new-refresh");
+  });
+
+  it("clears the shared session on logout", async () => {
+    localStorage.setItem(
+      "sphincs.session",
+      JSON.stringify({
+        accessToken: "shared-access",
+        refreshToken: "shared-refresh",
+        user: adminUser
+      })
+    );
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return { data: adminUser, tokens };
+      }
+      return { data: [], tokens };
+    });
+
+    render(<RootApp />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Logout" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Sign in once for ERP + CRM" })).toBeInTheDocument()
+    );
+    expect(localStorage.getItem("sphincs.session")).toBeNull();
+  });
 });

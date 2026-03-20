@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.4`
+- `Beta V1.11.5`
 
 Rationale:
 
@@ -130,6 +130,10 @@ Rationale:
   - Leads now select contacts through popup-only browse flow
   - Opportunities now select leads through popup-only browse flow
   - inline dropdown relation selectors removed from these CRM forms
+- `Beta V1.11.5` marks the access/session + coverage closeout pass:
+  - blocked-account messaging is now explicit and preserved through frontend auth-notice handling
+  - shared-session behavior is now regression-tested for refresh token sync and logout cleanup in ERP and CRM
+  - backend e2e now covers upgraded ERP create flows for items, suppliers, and purchase orders
 
 ## Workflow For Future Updates
 

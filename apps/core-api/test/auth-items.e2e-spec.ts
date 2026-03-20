@@ -211,14 +211,63 @@ describe("Auth + ERP smoke (e2e)", () => {
     item: {
       findMany: jest.fn(async () => [
         {
-          id: "33333333-3333-3333-3333-333333333333",
+          id: "33333333-3333-4333-8333-333333333333",
           organization_id: adminUser.organization_id,
           branch_id: adminUser.branch_id,
           name: "Seed Item",
           sku: "ITEM-001",
           deleted_at: null
         }
-      ])
+      ]),
+      create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+        id: "33333333-3333-3333-3333-333333333334",
+        organization_id: adminUser.organization_id,
+        branch_id: adminUser.branch_id,
+        name: String(data.name ?? "New Item"),
+        sku: String(data.sku ?? "ITEM-NEW"),
+        status: String(data.status ?? "ACTIVE"),
+        deleted_at: null
+      }))
+    },
+    supplier: {
+      findMany: jest.fn(async () => [
+        {
+          id: "66666666-6666-4666-8666-666666666666",
+          organization_id: adminUser.organization_id,
+          branch_id: adminUser.branch_id,
+          name: "Seed Supplier",
+          supplier_code: "SUP-001",
+          status: "ACTIVE",
+          deleted_at: null
+        }
+      ]),
+      create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+        id: "66666666-6666-4666-8666-666666666667",
+        organization_id: adminUser.organization_id,
+        branch_id: adminUser.branch_id,
+        name: String(data.name ?? "New Supplier"),
+        supplier_code: String(data.supplier_code ?? "SUP-NEW"),
+        status: String(data.status ?? "ACTIVE"),
+        deleted_at: null
+      }))
+    },
+    purchaseOrder: {
+      findMany: jest.fn(async () => []),
+      findFirst: jest.fn(async () => null),
+      create: jest.fn(async ({ data }: { data: Record<string, unknown> & { line_items?: { create?: unknown[] } } }) => ({
+        id: "77777777-7777-4777-8777-777777777777",
+        organization_id: adminUser.organization_id,
+        branch_id: adminUser.branch_id,
+        po_number: String(data.po_number ?? "PO-NEW"),
+        supplier_id: String(data.supplier_id ?? ""),
+        status: String(data.status ?? "DRAFT"),
+        payment_status: String(data.payment_status ?? "UNPAID"),
+        line_items: data.line_items?.create ?? []
+      })),
+      update: jest.fn(async () => ({
+        id: "77777777-7777-4777-8777-777777777777",
+        status: "DRAFT"
+      }))
     },
     auditLog: {
       create: jest.fn(async () => ({
@@ -393,5 +442,85 @@ describe("Auth + ERP smoke (e2e)", () => {
       .post("/api/v1/auth/refresh")
       .send({ refreshToken })
       .expect(401);
+  });
+
+  it("supports Beta V2 ERP create flows for item, supplier, and purchase order", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+    const token = login.body.accessToken as string;
+
+    const item = await request(app.getHttpServer())
+      .post("/api/v1/erp/items")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "Beta Test Mouse",
+        sku: "beta-mouse-1",
+        status: "ACTIVE",
+        selling_price: 25
+      })
+      .expect(201);
+
+    expect(item.body.name).toBe("Beta Test Mouse");
+    expect(item.body.sku).toBe("BETA-MOUSE-1");
+
+    const supplier = await request(app.getHttpServer())
+      .post("/api/v1/erp/suppliers")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "Beta Supplier",
+        supplier_code: "beta-sup-1",
+        status: "ACTIVE"
+      })
+      .expect(201);
+
+    expect(supplier.body.name).toBe("Beta Supplier");
+    expect(supplier.body.supplier_code).toBe("BETA-SUP-1");
+
+    const purchaseOrder = await request(app.getHttpServer())
+      .post("/api/v1/erp/purchase-orders")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        supplier_id: "66666666-6666-4666-8666-666666666666",
+        status: "DRAFT",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 2,
+            unit_cost: 10,
+            tax_rate: 5,
+            discount: 0
+          }
+        ]
+      })
+      .expect(201);
+
+    expect(purchaseOrder.body.status).toBe("DRAFT");
+    expect(Array.isArray(purchaseOrder.body.line_items)).toBe(true);
+  });
+
+  it("rejects purchase-order line items with non-integer quantity", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+    const token = login.body.accessToken as string;
+
+    await request(app.getHttpServer())
+      .post("/api/v1/erp/purchase-orders")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        supplier_id: "66666666-6666-4666-8666-666666666666",
+        status: "DRAFT",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 1.5,
+            unit_cost: 10
+          }
+        ]
+      })
+      .expect(400);
   });
 });
