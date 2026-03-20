@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.3";
+const APP_RELEASE_VERSION = "Beta V1.11.4";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -728,18 +728,6 @@ function LeadsPage({
     return (
       <div className="supplier-picker">
         <div className="supplier-picker-row">
-          <select
-            className="ui-input"
-            value={currentContactId}
-            onChange={(e) => updateForm(target, { contact_id: e.target.value })}
-          >
-            <option value="">No contact selected</option>
-            {contactOptions.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name}
-              </option>
-            ))}
-          </select>
           <button
             className="ui-btn ui-btn-secondary"
             type="button"
@@ -748,8 +736,17 @@ function LeadsPage({
               setContactPickerOpen(target);
             }}
           >
-            Browse contacts
+            {currentContactId ? "Change contact" : "Browse contacts"}
           </button>
+          {currentContactId && (
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => updateForm(target, { contact_id: "" })}
+            >
+              Clear
+            </button>
+          )}
         </div>
         <p className="ui-muted supplier-picker-hint">
           {currentContactId
@@ -1170,18 +1167,6 @@ function OpportunitiesPage({
     return (
       <div className="supplier-picker">
         <div className="supplier-picker-row">
-          <select
-            className="ui-input"
-            value={currentLeadId}
-            onChange={(e) => updateForm(target, { lead_id: e.target.value })}
-          >
-            <option value="">No lead selected</option>
-            {leadOptions.map((lead) => (
-              <option key={lead.id} value={lead.id}>
-                {lead.name}
-              </option>
-            ))}
-          </select>
           <button
             className="ui-btn ui-btn-secondary"
             type="button"
@@ -1190,8 +1175,17 @@ function OpportunitiesPage({
               setLeadPickerOpen(target);
             }}
           >
-            Browse leads
+            {currentLeadId ? "Change lead" : "Browse leads"}
           </button>
+          {currentLeadId && (
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => updateForm(target, { lead_id: "" })}
+            >
+              Clear
+            </button>
+          )}
         </div>
         <p className="ui-muted supplier-picker-hint">
           {currentLeadId

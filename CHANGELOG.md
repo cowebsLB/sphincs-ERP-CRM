@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.3` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.4` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.4 - 2026-03-20
+
+### Changed
+
+- CRM Leads relation picker now uses popup-only selection (removed inline contact dropdown).
+- CRM Opportunities relation picker now uses popup-only selection (removed inline lead dropdown).
+- Added quick `Clear` actions in both popup-driven pickers to reset selected relation cleanly.
 
 ## Beta V1.11.3 - 2026-03-20
 

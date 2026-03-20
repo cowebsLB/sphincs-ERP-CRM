@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.3`
+- `Beta V1.11.4`
 
 Rationale:
 
@@ -126,6 +126,10 @@ Rationale:
   - soft-delete-only purchase-order patches no longer re-trigger full line-item validation
   - purchase-order form now validates integer-only quantity/received values before submission
   - API client now surfaces cleaner backend validation messages in frontend toasts
+- `Beta V1.11.4` marks the CRM relation picker simplification:
+  - Leads now select contacts through popup-only browse flow
+  - Opportunities now select leads through popup-only browse flow
+  - inline dropdown relation selectors removed from these CRM forms
 
 ## Workflow For Future Updates
 

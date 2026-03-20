@@ -92,6 +92,39 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 13) CRM popup-only relation pickers (Leads and Opportunities)
+
+Problem observed:
+
+- Leads and Opportunities still had inline dropdown selectors in addition to popup browse modals
+- this made relation selection feel duplicated and visually heavier than needed
+
+Implemented:
+
+- updated CRM Leads contact selection UI in `apps/crm-web/src/app.tsx`:
+  - removed inline contact dropdown from the picker block
+  - kept popup browse modal as the single selection path
+  - added `Clear` button when a contact is selected
+- updated CRM Opportunities lead selection UI in `apps/crm-web/src/app.tsx`:
+  - removed inline lead dropdown from the picker block
+  - kept popup browse modal as the single selection path
+  - added `Clear` button when a lead is selected
+- bumped product version to `Beta V1.11.4`
+
+Files:
+
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/crm-web build` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+
 ### 6) Full system specification PDF
 
 Problem observed:
