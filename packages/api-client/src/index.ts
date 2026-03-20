@@ -15,6 +15,16 @@ export interface SessionState extends SessionTokens {
   user: AuthUser;
 }
 
+export class ApiHttpError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string
+  ) {
+    super(message);
+    this.name = "ApiHttpError";
+  }
+}
+
 export class AuthSessionExpiredError extends Error {
   constructor(message = "Your session expired. Please sign in again.") {
     super(message);
@@ -29,7 +39,7 @@ export class ApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, init);
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}`);
+      throw new ApiHttpError(response.status, errorText || `HTTP ${response.status}`);
     }
     return response.json() as Promise<T>;
   }
@@ -82,7 +92,7 @@ export class ApiClient {
     let response = await perform(tokens.accessToken);
     if (response.status !== 401) {
       if (!response.ok) {
-        throw new Error(await response.text());
+        throw new ApiHttpError(response.status, (await response.text()) || `HTTP ${response.status}`);
       }
       return { data: (await response.json()) as T, tokens };
     }
@@ -100,7 +110,7 @@ export class ApiClient {
       if (response.status === 401) {
         throw new AuthSessionExpiredError();
       }
-      throw new Error(await response.text());
+      throw new ApiHttpError(response.status, (await response.text()) || `HTTP ${response.status}`);
     }
 
     return {

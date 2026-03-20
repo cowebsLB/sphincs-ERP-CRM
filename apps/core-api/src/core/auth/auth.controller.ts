@@ -41,7 +41,6 @@ export class AuthController {
   }
 
   @Get("me")
-  @Roles("Admin", "ERP Manager", "CRM Manager", "Staff")
   me(@Req() req: { user?: { id: string } }) {
     return this.authService.me(req.user?.id ?? "");
   }

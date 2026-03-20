@@ -1,6 +1,6 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { ApiClient, AuthSessionExpiredError, type SessionState } from "@sphincs/api-client";
+import { ApiClient, ApiHttpError, AuthSessionExpiredError, type AuthUser, type SessionState } from "@sphincs/api-client";
 import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.10.2";
+const APP_RELEASE_VERSION = "Beta V1.11.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -189,8 +189,43 @@ type ItemSkuStatus = {
   message: string;
 };
 
+type UserAccessRecord = RecordData & {
+  email?: string | null;
+  status?: string | null;
+  branch_id?: string | null;
+  roles?: string[] | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+type RoleRecord = {
+  id: string;
+  name: string;
+};
+
+type UserAccessFormState = {
+  email: string;
+  password: string;
+  status: string;
+  roles: string[];
+};
+
+const AUTH_NOTICE_KEY = "sphincs.auth.notice";
+
 function isValidEmailAddress(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function setStoredAuthNotice(message: string) {
+  sessionStorage.setItem(AUTH_NOTICE_KEY, message);
+}
+
+function takeStoredAuthNotice() {
+  const value = sessionStorage.getItem(AUTH_NOTICE_KEY);
+  if (value) {
+    sessionStorage.removeItem(AUTH_NOTICE_KEY);
+  }
+  return value;
 }
 
 function parseOptionalNonNegativeNumber(value: string, label: string) {
@@ -296,7 +331,22 @@ async function withAuth<T>(
     result = await client.authorized<T>(path, session, init);
   } catch (error) {
     if (error instanceof AuthSessionExpiredError) {
+      setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
       setSession(null);
+    } else if (error instanceof ApiHttpError && error.status === 403) {
+      try {
+        const syncResult = await client.authorized<AuthUser>("/auth/me", session);
+        setSession({
+          accessToken: syncResult.tokens.accessToken,
+          refreshToken: syncResult.tokens.refreshToken,
+          user: syncResult.data
+        });
+      } catch (syncError) {
+        if (syncError instanceof AuthSessionExpiredError) {
+          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setSession(null);
+        }
+      }
     }
     throw error;
   }
@@ -313,7 +363,7 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [mode, setMode] = React.useState<"login" | "signup">("login");
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(() => takeStoredAuthNotice());
   const [busy, setBusy] = React.useState(false);
   const navigate = useNavigate();
 
@@ -359,7 +409,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         <input
           className="ui-input"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="Email"
           autoComplete="email"
         />
@@ -369,7 +422,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         <input
           className="ui-input"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="Password"
           type="password"
           autoComplete="current-password"
@@ -399,6 +455,56 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
       </section>
     </main>
   );
+}
+
+function useSessionBootstrap(session: SessionState | null, setSession: (next: SessionState | null) => void) {
+  const [checking, setChecking] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+
+    async function run() {
+      if (!session) {
+        if (active) {
+          setChecking(false);
+        }
+        return;
+      }
+
+      setChecking(true);
+      try {
+        const result = await client.authorized<AuthUser>("/auth/me", session);
+        if (!active) {
+          return;
+        }
+        setSession({
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
+          user: result.data
+        });
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        if (error instanceof AuthSessionExpiredError) {
+          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setSession(null);
+        }
+      } finally {
+        if (active) {
+          setChecking(false);
+        }
+      }
+    }
+
+    void run();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.accessToken, session?.refreshToken, setSession]);
+
+  return checking;
 }
 
 function createDefaultItemForm(): ItemFormState {
@@ -2821,6 +2927,317 @@ function PurchaseOrdersPage({
   );
 }
 
+function createDefaultUserAccessForm(): UserAccessFormState {
+  return {
+    email: "",
+    password: "",
+    status: "ACTIVE",
+    roles: ["Staff"]
+  };
+}
+
+function AccessPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [records, setRecords] = React.useState<UserAccessRecord[]>([]);
+  const [roles, setRoles] = React.useState<RoleRecord[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [busy, setBusy] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [searchText, setSearchText] = React.useState("");
+  const [editing, setEditing] = React.useState<UserAccessRecord | null>(null);
+  const [creating, setCreating] = React.useState(false);
+  const [form, setForm] = React.useState<UserAccessFormState>(createDefaultUserAccessForm);
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const [userData, roleData] = await Promise.all([
+        withAuth<UserAccessRecord[]>(session, setSession, `/users${query}`),
+        withAuth<RoleRecord[]>(session, setSession, "/roles")
+      ]);
+      setRecords(userData);
+      setRoles(roleData);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function openCreate() {
+    setCreating(true);
+    setEditing(null);
+    setForm(createDefaultUserAccessForm());
+  }
+
+  function openEdit(record: UserAccessRecord) {
+    setCreating(false);
+    setEditing(record);
+    setForm({
+      email: record.email ?? "",
+      password: "",
+      status: record.status ?? "ACTIVE",
+      roles: record.roles ?? []
+    });
+  }
+
+  async function save() {
+    if (!isValidEmailAddress(form.email)) {
+      notify("error", "Enter a valid email address.");
+      return;
+    }
+    if (creating && form.password.trim().length < 8) {
+      notify("error", "New users need a password with at least 8 characters.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const payload = {
+        email: form.email.trim().toLowerCase(),
+        password: form.password.trim() || undefined,
+        status: form.status,
+        roles: form.roles,
+        updated_by: session.user.id,
+        created_by: session.user.id
+      };
+      if (creating) {
+        await withAuth(session, setSession, "/users", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        notify("success", "User created.");
+      } else if (editing) {
+        await withAuth(session, setSession, `/users/${editing.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload)
+        });
+        notify("success", "User access updated.");
+      }
+      setCreating(false);
+      setEditing(null);
+      setForm(createDefaultUserAccessForm());
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "User update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleUserStatus(record: UserAccessRecord) {
+    const nextStatus = record.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
+    const confirmed = window.confirm(
+      nextStatus === "DISABLED"
+        ? `Disable ${record.email}? Active sessions will be revoked.`
+        : `Re-enable ${record.email}?`
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/users/${record.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: nextStatus,
+          updated_by: session.user.id
+        })
+      });
+      notify("success", `${record.email} is now ${nextStatus}.`);
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "User status update failed");
+    }
+  }
+
+  async function restoreUser(record: UserAccessRecord) {
+    const confirmed = window.confirm(`Restore ${record.email}?`);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/users/${record.id}/restore`, {
+        method: "POST",
+        body: JSON.stringify({ updated_by: session.user.id })
+      });
+      notify("success", `${record.email} restored.`);
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Restore failed");
+    }
+  }
+
+  const tableRows = records.map((record) => ({
+    ...record,
+    roles_summary: (record.roles ?? []).join(", ") || "No roles"
+  }));
+
+  return (
+    <section className="ui-card">
+      <div className="items-header">
+        <div>
+          <h2 className="ui-title">Access Control</h2>
+          <p className="purchase-orders-copy ui-muted">
+            Manage user roles, account status, and session-sensitive access changes.
+          </p>
+        </div>
+        <div className="items-header-actions">
+          <label className="item-form-inline">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+            />
+            Include deleted
+          </label>
+          <button className="ui-btn ui-btn-primary" type="button" onClick={openCreate}>
+            New user
+          </button>
+        </div>
+      </div>
+      {loading ? (
+        <p className="ui-muted">Loading users...</p>
+      ) : (
+        <DataTable
+          rows={tableRows}
+          searchText={searchText}
+          onSearchTextChange={setSearchText}
+          columns={[
+            { key: "email", label: "Email", sortable: true },
+            { key: "status", label: "Status", sortable: true },
+            { key: "roles_summary", label: "Roles" },
+            { key: "branch_id", label: "Branch" }
+          ]}
+          renderActions={(row) => (
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => openEdit(row)}>
+                Edit
+              </button>
+              {row.deleted_at ? (
+                <button className="ui-btn ui-btn-secondary" type="button" onClick={() => void restoreUser(row)}>
+                  Restore
+                </button>
+              ) : (
+                <button className="ui-btn ui-btn-secondary" type="button" onClick={() => void toggleUserStatus(row)}>
+                  {row.status === "ACTIVE" ? "Disable" : "Enable"}
+                </button>
+              )}
+            </div>
+          )}
+        />
+      )}
+      {(creating || editing) && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card item-modal-card">
+            <div className="item-modal-topbar">
+              <div>
+                <h3>{creating ? "Create User" : "Edit User Access"}</h3>
+                <p className="ui-muted">
+                  Critical changes revoke active refresh sessions so access changes take effect cleanly.
+                </p>
+              </div>
+              <button
+                className="ui-btn ui-btn-secondary"
+                type="button"
+                onClick={() => {
+                  setCreating(false);
+                  setEditing(null);
+                }}
+              >
+                Close
+              </button>
+            </div>
+            <div className="item-form-grid">
+              <label className="item-form-field">
+                <span>Email</span>
+                <input
+                  className="ui-input"
+                  value={form.email}
+                  disabled={!creating}
+                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                />
+              </label>
+              <label className="item-form-field">
+                <span>Status</span>
+                <select
+                  className="ui-input"
+                  value={form.status}
+                  onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="DISABLED">DISABLED</option>
+                </select>
+              </label>
+              <label className="item-form-field">
+                <span>{creating ? "Password" : "Reset password (optional)"}</span>
+                <input
+                  className="ui-input"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                />
+              </label>
+              <div className="item-form-field item-form-field-wide">
+                <span>Roles</span>
+                <div className="role-checkbox-grid">
+                  {roles.map((role) => (
+                    <label key={role.id} className="role-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={form.roles.includes(role.name)}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            roles: e.target.checked
+                              ? [...prev.roles, role.name]
+                              : prev.roles.filter((value) => value !== role.name)
+                          }))
+                        }
+                      />
+                      <span>{role.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="ui-muted">
+                  Leave all roles unchecked only if you intentionally want a no-access account state.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button
+                className="ui-btn ui-btn-secondary"
+                type="button"
+                onClick={() => {
+                  setCreating(false);
+                  setEditing(null);
+                }}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button className="ui-btn ui-btn-primary" type="button" onClick={() => void save()} disabled={busy}>
+                {busy ? "Saving..." : creating ? "Create user" : "Save access"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ERPApp({
   session,
   setSession
@@ -2925,6 +3342,7 @@ function ERPApp({
         <Link to="/items">Items</Link>
         <Link to="/suppliers">Suppliers</Link>
         <Link to="/purchase-orders">Purchase Orders</Link>
+        {hasRole(session, "Admin") && <Link to="/access">Access</Link>}
       </aside>
       <section className="app-main">
         <header className="app-topbar">
@@ -3076,6 +3494,16 @@ function ERPApp({
               />
             }
           />
+          <Route
+            path="/access"
+            element={
+              hasRole(session, "Admin") ? (
+                <AccessPage session={session} setSession={setSession} notify={notify} />
+              ) : (
+                <Navigate to="/items" replace />
+              )
+            }
+          />
           <Route path="*" element={<Navigate to="/items" replace />} />
         </Routes>
       </section>
@@ -3085,6 +3513,19 @@ function ERPApp({
 
 export function RootApp() {
   const { session, setSession } = useSessionState();
+  const checkingSession = useSessionBootstrap(session, setSession);
+
+  if (checkingSession) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <h1>Restoring session...</h1>
+          <p className="ui-muted">We are syncing your current access before opening the app.</p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <HashRouter>
       <Routes>

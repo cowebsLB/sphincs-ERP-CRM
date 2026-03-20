@@ -6,6 +6,13 @@ import { RootApp } from "./app";
 import { ApiClient, AuthSessionExpiredError } from "@sphincs/api-client";
 
 describe("CRM RootApp", () => {
+  const adminUser = {
+    id: "u1",
+    email: "admin@sphincs.local",
+    roles: ["Admin"],
+    organizationId: "org1"
+  };
+
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
@@ -26,14 +33,12 @@ describe("CRM RootApp", () => {
       accessToken: "access",
       refreshToken: "refresh",
       tokenType: "Bearer",
-      user: {
-        id: "u1",
-        email: "admin@sphincs.local",
-        roles: ["Admin"],
-        organizationId: "org1"
-      }
+      user: adminUser
     });
-    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (_path, tokens) => {
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return { data: adminUser, tokens };
+      }
       return { data: [], tokens };
     });
 
@@ -45,7 +50,7 @@ describe("CRM RootApp", () => {
     );
   });
 
-  it("blocks non-crm roles", () => {
+  it("blocks non-crm roles", async () => {
     localStorage.setItem(
       "sphincs.session",
       JSON.stringify({
@@ -59,8 +64,23 @@ describe("CRM RootApp", () => {
         }
       })
     );
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return {
+          data: {
+            ...adminUser,
+            email: "staff@sphincs.local",
+            roles: ["ERP Manager"]
+          },
+          tokens
+        };
+      }
+      return { data: [], tokens };
+    });
     render(<RootApp />);
-    expect(screen.getByText("Your account does not have CRM access.")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Your account does not have CRM access.")).toBeInTheDocument()
+    );
   });
 
   it("reuses the shared session key to open CRM without a second login", async () => {
@@ -69,15 +89,13 @@ describe("CRM RootApp", () => {
       JSON.stringify({
         accessToken: "shared-access",
         refreshToken: "shared-refresh",
-        user: {
-          id: "u1",
-          email: "admin@sphincs.local",
-          roles: ["Admin"],
-          organizationId: "org1"
-        }
+        user: adminUser
       })
     );
-    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (_path, tokens) => {
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return { data: adminUser, tokens };
+      }
       return { data: [], tokens };
     });
 
@@ -94,12 +112,7 @@ describe("CRM RootApp", () => {
       JSON.stringify({
         accessToken: "expired-access",
         refreshToken: "expired-refresh",
-        user: {
-          id: "u1",
-          email: "admin@sphincs.local",
-          roles: ["Admin"],
-          organizationId: "org1"
-        }
+        user: adminUser
       })
     );
     vi.spyOn(ApiClient.prototype, "authorized").mockRejectedValue(
@@ -112,5 +125,34 @@ describe("CRM RootApp", () => {
       expect(screen.getByRole("heading", { name: "Sign in once for ERP + CRM" })).toBeInTheDocument()
     );
     expect(localStorage.getItem("sphincs.session")).toBeNull();
+  });
+
+  it("shows the refreshed no-access state after startup role sync", async () => {
+    localStorage.setItem(
+      "sphincs.session",
+      JSON.stringify({
+        accessToken: "shared-access",
+        refreshToken: "shared-refresh",
+        user: adminUser
+      })
+    );
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return {
+          data: {
+            ...adminUser,
+            roles: ["ERP Manager"]
+          },
+          tokens
+        };
+      }
+      return { data: [], tokens };
+    });
+
+    render(<RootApp />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Your account does not have CRM access.")).toBeInTheDocument()
+    );
   });
 });

@@ -259,6 +259,23 @@ body {
   grid-column: 1 / -1;
 }
 
+.role-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.role-checkbox {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+}
+
 .item-textarea {
   min-height: 100px;
   resize: vertical;

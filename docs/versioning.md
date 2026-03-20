@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.10.2`
+- `Beta V1.11.0`
 
 Rationale:
 
@@ -111,6 +111,11 @@ Rationale:
 - `Beta V1.10.2` marks the login credential safety fix:
   - ERP and CRM login screens now start with empty email/password fields
   - beta visitors no longer see prefilled admin credentials on first load
+- `Beta V1.11.0` marks the access-control hardening pass:
+  - ERP now includes an admin-facing access management screen for user roles and status
+  - critical account changes revoke active refresh sessions
+  - ERP and CRM sync `/auth/me` on startup so stored sessions pick up updated role state
+  - backend and e2e coverage now include role-change session invalidation
 
 ## Workflow For Future Updates
 

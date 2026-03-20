@@ -367,3 +367,69 @@ Notes:
 - Beta V1 is complete on the product/code side
 - the only unfinished Beta V1 item is the external infrastructure secret rotation and post-rotation production sweep
 - no runtime version bump was made because this pass confirms status and docs rather than changing shipped behavior
+## 9) Beta V2 access-control hardening pass
+
+Problem observed:
+
+- Beta V2 still lacked a real admin-facing role-management surface even though access/session hardening was a core release requirement
+- backend user updates did not yet revoke active refresh sessions on critical account changes such as role updates, password resets, disablement, or deletion
+- ERP and CRM reused shared session storage, but they were still too dependent on stale client-side role data until the next full re-login or token refresh
+
+Implemented:
+
+- locked `users` and `roles` management endpoints behind admin-only access
+- upgraded `roles` lookup to read active roles from the database instead of a hard-coded list
+- expanded `users` backend behavior to:
+  - return role-aware user records
+  - assign roles on create
+  - sync role assignments on update
+  - revoke active refresh sessions on critical account changes
+- removed the role requirement from `/api/v1/auth/me` so active users with zero roles can still resolve a clean account-state response
+- added an ERP `Access` page for admins to:
+  - list users
+  - create users
+  - assign and remove roles
+  - change account status
+  - restore deleted users
+- added shared startup role-sync behavior in ERP and CRM via `/auth/me`
+- added cleaner auth notice handling when sessions expire or access changes
+- added backend and frontend test coverage for:
+  - role-assignment behavior
+  - refresh-session invalidation after role changes
+  - startup no-access sync behavior in ERP and CRM
+- bumped product version to `Beta V1.11.0`
+
+Files:
+
+- `apps/core-api/src/core/auth/auth.controller.ts`
+- `apps/core-api/src/core/roles/roles.controller.ts`
+- `apps/core-api/src/core/roles/roles.service.ts`
+- `apps/core-api/src/core/users/users.controller.ts`
+- `apps/core-api/src/core/users/users.service.ts`
+- `apps/core-api/src/core/users/users.service.spec.ts`
+- `apps/core-api/test/auth-items.e2e-spec.ts`
+- `packages/api-client/src/index.ts`
+- `packages/ui-core/src/ui.css`
+- `apps/erp-web/src/app.tsx`
+- `apps/erp-web/src/app.test.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/crm-web/src/app.test.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `docs/testing.md`
+- `docs/beta-v2-checklist.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
+Notes:
+
+- this closes a meaningful chunk of the Beta V2 access/session block, but the checklist still keeps cross-app single-session verification and the remaining account-state messaging item open until they are explicitly finished

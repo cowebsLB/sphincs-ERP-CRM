@@ -22,6 +22,20 @@ describe("Auth + ERP smoke (e2e)", () => {
     status: "ACTIVE",
     deleted_at: null
   };
+  const roleCatalog = [
+    { id: "role-admin", name: "Admin" },
+    { id: "role-erp", name: "ERP Manager" },
+    { id: "role-crm", name: "CRM Manager" },
+    { id: "role-staff", name: "Staff" }
+  ];
+  let adminRoleAssignments = [{ id: "ur-admin", roleName: "Admin", deleted_at: null as Date | null }];
+  const refreshTokenStore: Array<{
+    id: string;
+    user_id: string;
+    token_hash: string;
+    expires_at: Date;
+    revoked_at: Date | null;
+  }> = [];
   let signupUser: null | {
     id: string;
     email: string;
@@ -65,7 +79,11 @@ describe("Auth + ERP smoke (e2e)", () => {
         deleted_at: null,
         created_by: null,
         updated_by: null
-      }))
+      })),
+      findMany: jest.fn(async ({ where }: { where?: { name?: { in?: string[] }; deleted_at?: null } }) => {
+        const names = where?.name?.in;
+        return roleCatalog.filter((role) => !names || names.includes(role.name));
+      })
     },
     user: {
       findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
@@ -82,7 +100,9 @@ describe("Auth + ERP smoke (e2e)", () => {
             password_hash: adminUser.password_hash,
             organization_id: adminUser.organization_id,
             branch_id: adminUser.branch_id,
-            user_roles: [{ role: { name: "Admin" } }]
+            user_roles: adminRoleAssignments
+              .filter((assignment) => assignment.deleted_at === null)
+              .map((assignment) => ({ role: { name: assignment.roleName } }))
           };
         }
         return null;
@@ -92,7 +112,12 @@ describe("Auth + ERP smoke (e2e)", () => {
           return signupUser;
         }
         if (where.email === adminUser.email || where.id === adminUser.id) {
-          return adminUser;
+          return {
+            ...adminUser,
+            user_roles: adminRoleAssignments
+              .filter((assignment) => assignment.deleted_at === null)
+              .map((assignment) => ({ role: { name: assignment.roleName } }))
+          };
         }
         return null;
       }),
@@ -111,29 +136,76 @@ describe("Auth + ERP smoke (e2e)", () => {
       update: jest.fn(async ({ data }: { data: Partial<typeof adminUser> }) => ({
         ...adminUser,
         ...data
-      }))
+      })),
+      findMany: jest.fn(async () => [])
     },
     userRole: {
-      findMany: jest.fn(async ({ where }: { where?: { user_id?: string } }) => {
+      findMany: jest.fn(async ({ where }: { where?: { user_id?: string; deleted_at?: null } }) => {
         if (where?.user_id === signupUser?.id) {
           return [{ role: { name: "Staff" } }];
         }
-        return [{ role: { name: "Admin" } }];
+        return adminRoleAssignments
+          .filter((assignment) => (where?.deleted_at === null ? assignment.deleted_at === null : true))
+          .map((assignment) => ({
+            id: assignment.id,
+            deleted_at: assignment.deleted_at,
+            role: { name: assignment.roleName }
+          }));
       }),
       create: jest.fn(async () => ({
         id: "ur-1",
         user_id: signupUser?.id ?? "none",
         role_id: "role-staff"
-      }))
+      })),
+      update: jest.fn(async ({ where, data }: { where: { id: string }; data: { deleted_at?: Date | null } }) => {
+        adminRoleAssignments = adminRoleAssignments.map((assignment) =>
+          assignment.id === where.id
+            ? { ...assignment, deleted_at: data.deleted_at === undefined ? assignment.deleted_at : data.deleted_at }
+            : assignment
+        );
+        return { id: where.id };
+      })
     },
     refreshToken: {
-      create: jest.fn(async () => ({
-        id: "22222222-2222-2222-2222-222222222222"
-      })),
-      findFirst: jest.fn(async () => null),
-      update: jest.fn(async () => ({
-        id: "22222222-2222-2222-2222-222222222222"
-      }))
+      create: jest.fn(async ({ data }: { data: { user_id: string; token_hash: string; expires_at: Date } }) => {
+        const record = {
+          id: `rt-${refreshTokenStore.length + 1}`,
+          user_id: data.user_id,
+          token_hash: data.token_hash,
+          expires_at: data.expires_at,
+          revoked_at: null
+        };
+        refreshTokenStore.push(record);
+        return record;
+      }),
+      findFirst: jest.fn(async ({ where }: { where: { token_hash?: string; user_id?: string } }) => {
+        return (
+          refreshTokenStore.find(
+            (record) =>
+              (where.token_hash === undefined || record.token_hash === where.token_hash) &&
+              (where.user_id === undefined || record.user_id === where.user_id)
+          ) ?? null
+        );
+      }),
+      update: jest.fn(async ({ where, data }: { where: { id: string }; data: { revoked_at?: Date | null } }) => {
+        const record = refreshTokenStore.find((entry) => entry.id === where.id);
+        if (record) {
+          record.revoked_at = data.revoked_at === undefined ? record.revoked_at : data.revoked_at;
+        }
+        return record ?? { id: where.id };
+      }),
+      updateMany: jest.fn(async ({ where, data }: { where: { user_id?: string; revoked_at?: null }; data: { revoked_at: Date } }) => {
+        let count = 0;
+        for (const record of refreshTokenStore) {
+          const matchesUser = where.user_id === undefined || record.user_id === where.user_id;
+          const matchesRevoked = where.revoked_at === null ? record.revoked_at === null : true;
+          if (matchesUser && matchesRevoked) {
+            record.revoked_at = data.revoked_at;
+            count += 1;
+          }
+        }
+        return { count };
+      })
     },
     item: {
       findMany: jest.fn(async () => [
@@ -187,6 +259,11 @@ describe("Auth + ERP smoke (e2e)", () => {
     });
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
+  });
+
+  beforeEach(() => {
+    adminRoleAssignments = [{ id: "ur-admin", roleName: "Admin", deleted_at: null }];
+    refreshTokenStore.length = 0;
   });
 
   afterAll(async () => {
@@ -269,5 +346,51 @@ describe("Auth + ERP smoke (e2e)", () => {
     expect(bug.body.issueNumber).toBe(999);
     expect(bug.body.issueState).toBe("open");
     expect(bug.body.issueUrl).toContain("/issues/999");
+  });
+
+  it("revokes active refresh sessions when an admin changes roles", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+
+    const accessToken = login.body.accessToken as string;
+    const refreshToken = login.body.refreshToken as string;
+
+    mockPrisma.userRole.create.mockImplementationOnce(async (...args: unknown[]) => {
+      const payload = args[0] as { data: { role_id: string } };
+      const role = roleCatalog.find((entry) => entry.id === payload.data.role_id);
+      adminRoleAssignments.push({
+        id: "ur-crm",
+        roleName: role?.name ?? "CRM Manager",
+        deleted_at: null
+      });
+      return {
+        id: "ur-crm",
+        user_id: adminUser.id,
+        role_id: payload.data.role_id
+      };
+    });
+
+    await request(app.getHttpServer())
+      .patch(`/api/v1/users/${adminUser.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        roles: ["CRM Manager"],
+        updated_by: adminUser.id
+      })
+      .expect(200);
+
+    const me = await request(app.getHttpServer())
+      .get("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(me.body.roles).toEqual(["CRM Manager"]);
+
+    await request(app.getHttpServer())
+      .post("/api/v1/auth/refresh")
+      .send({ refreshToken })
+      .expect(401);
   });
 });

@@ -22,12 +22,12 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 1) Access And Identity
 
-- [ ] Role management UI can safely assign and remove roles.
-- [ ] Critical role changes invalidate active sessions correctly.
+- [x] Role management UI can safely assign and remove roles.
+- [x] Critical role changes invalidate active sessions correctly.
 - [ ] Disabled, blocked, and no-role account states show clear messages.
-- [ ] ERP/CRM role-denied flows always give the user a recovery path.
-- [ ] Auth/session behavior is consistent across ERP and CRM.
-- [ ] Stale, expired, or reused refresh tokens are cleared client-side and force a clean re-login path.
+- [x] ERP/CRM role-denied flows always give the user a recovery path.
+- [x] Auth/session behavior is consistent across ERP and CRM.
+- [x] Stale, expired, or reused refresh tokens are cleared client-side and force a clean re-login path.
 - [ ] Cross-app single-session flow is verified after login, refresh, logout, and role changes.
 
 ## 2) ERP UX Rebuild
@@ -171,7 +171,7 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 6) Quality And Observability
 
-- [ ] Add e2e coverage for role-change and forced session invalidation.
+- [x] Add e2e coverage for role-change and forced session invalidation.
 - [ ] Add e2e coverage for cross-app single-session behavior.
 - [x] Add e2e coverage for bug-report submission.
 - [ ] Add meaningful flow coverage for upgraded ERP item, supplier, and purchase-order behavior.

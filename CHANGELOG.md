@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.10.2` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.0` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.0 - 2026-03-20
+
+### Added
+
+- ERP now includes an admin-facing `Access` screen for listing users, assigning/removing roles, creating accounts, and managing access state from inside the app.
+- Added backend role-management support on `/api/v1/users` so role changes and account status updates return normalized role-aware user records.
+- Added backend coverage for user role assignment and session revocation plus e2e coverage for refresh-session invalidation after role changes.
+
+### Changed
+
+- Critical account changes now revoke active refresh sessions so role, password, and account-state changes force a clean access recovery path.
+- ERP and CRM now sync `/auth/me` on startup so shared sessions pick up updated role state instead of relying only on stale client storage.
+- Role-denied flows now refresh user context more cleanly and push the user toward a recoverable sign-in path when access changed.
 
 ## Beta V1.10.2 - 2026-03-20
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { ApiClient, AuthSessionExpiredError, type SessionState } from "@sphincs/api-client";
+import { ApiClient, ApiHttpError, AuthSessionExpiredError, type AuthUser, type SessionState } from "@sphincs/api-client";
 import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.10.2";
+const APP_RELEASE_VERSION = "Beta V1.11.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -26,6 +26,8 @@ type OpportunityRecord = RecordData & {
   lead_name?: string;
   status?: string | null;
 };
+
+const AUTH_NOTICE_KEY = "sphincs.auth.notice";
 type SystemInfo = {
   version?: string;
   environment?: string;
@@ -60,6 +62,18 @@ type ContactFormState = {
 
 function isValidEmailAddress(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function setStoredAuthNotice(message: string) {
+  sessionStorage.setItem(AUTH_NOTICE_KEY, message);
+}
+
+function takeStoredAuthNotice() {
+  const value = sessionStorage.getItem(AUTH_NOTICE_KEY);
+  if (value) {
+    sessionStorage.removeItem(AUTH_NOTICE_KEY);
+  }
+  return value;
 }
 
 function SystemStatusCard() {
@@ -154,7 +168,22 @@ async function withAuth<T>(
     result = await client.authorized<T>(path, session, init);
   } catch (error) {
     if (error instanceof AuthSessionExpiredError) {
+      setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
       setSession(null);
+    } else if (error instanceof ApiHttpError && error.status === 403) {
+      try {
+        const syncResult = await client.authorized<AuthUser>("/auth/me", session);
+        setSession({
+          accessToken: syncResult.tokens.accessToken,
+          refreshToken: syncResult.tokens.refreshToken,
+          user: syncResult.data
+        });
+      } catch (syncError) {
+        if (syncError instanceof AuthSessionExpiredError) {
+          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setSession(null);
+        }
+      }
     }
     throw error;
   }
@@ -171,7 +200,7 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [mode, setMode] = React.useState<"login" | "signup">("login");
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(() => takeStoredAuthNotice());
   const [busy, setBusy] = React.useState(false);
   const navigate = useNavigate();
 
@@ -217,7 +246,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         <input
           className="ui-input"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="Email"
           autoComplete="email"
         />
@@ -227,7 +259,10 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         <input
           className="ui-input"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="Password"
           type="password"
           autoComplete="current-password"
@@ -257,6 +292,56 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
       </section>
     </main>
   );
+}
+
+function useSessionBootstrap(session: SessionState | null, setSession: (next: SessionState | null) => void) {
+  const [checking, setChecking] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+
+    async function run() {
+      if (!session) {
+        if (active) {
+          setChecking(false);
+        }
+        return;
+      }
+
+      setChecking(true);
+      try {
+        const result = await client.authorized<AuthUser>("/auth/me", session);
+        if (!active) {
+          return;
+        }
+        setSession({
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
+          user: result.data
+        });
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        if (error instanceof AuthSessionExpiredError) {
+          setStoredAuthNotice("Your session expired or your access changed. Please sign in again.");
+          setSession(null);
+        }
+      } finally {
+        if (active) {
+          setChecking(false);
+        }
+      }
+    }
+
+    void run();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.accessToken, session?.refreshToken, setSession]);
+
+  return checking;
 }
 
 function ContactsPage({
@@ -1655,6 +1740,19 @@ function CRMApp({
 
 export function RootApp() {
   const { session, setSession } = useSessionState();
+  const checkingSession = useSessionBootstrap(session, setSession);
+
+  if (checkingSession) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <h1>Restoring session...</h1>
+          <p className="ui-muted">We are syncing your current access before opening the app.</p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <HashRouter>
       <Routes>

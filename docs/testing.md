@@ -38,6 +38,7 @@ Current coverage per app:
 - Role-block message for unauthorized role access
 - Shared-session reuse across ERP and CRM using the common `sphincs.session` storage key
 - Forced session-expiry recovery that clears stored session state and returns the user to login
+- Startup role-sync that updates stored session permissions before app access is granted
 
 Run commands:
 
@@ -57,6 +58,7 @@ Current backend e2e smoke assertions:
 - `/auth/me`
 - ERP items fetch
 - bug-report submission
+- refresh-session invalidation after admin role changes
 
 ## Auth Login Latency Guardrail (2026-03-18)
 
