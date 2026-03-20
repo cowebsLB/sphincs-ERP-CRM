@@ -265,3 +265,46 @@ Validation:
 
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
+## 6) Multi-phase beta roadmap expansion
+
+Problem observed:
+
+- planning existed for Beta V2, but there was no staged execution path beyond it
+- the project now has a full system vision, so later-phase roadmap work needs to be broken into explicit beta checkpoints
+- without named post-V2 checklists, future work would be easier to blur together and harder to sequence cleanly
+
+Implemented:
+
+- created a staged release-path document covering:
+  - Beta V2
+  - Beta V3
+  - Beta V4
+  - Beta V5
+  - Beta V6
+  - final product direction
+- created dedicated planned execution checklists for:
+  - `docs/beta-v3-checklist.md`
+  - `docs/beta-v4-checklist.md`
+  - `docs/beta-v5-checklist.md`
+  - `docs/beta-v6-checklist.md`
+- positioned each phase around a distinct job:
+  - Beta V3 = relational backbone and connected workflow
+  - Beta V4 = platform core maturity
+  - Beta V5 = commercial operations expansion
+  - Beta V6 = ecosystem and production-candidate readiness
+- updated both documentation indexes so the new staged roadmap is discoverable from the root project docs and the docs landing page
+
+Files:
+
+- `docs/release-path-roadmap.md`
+- `docs/beta-v3-checklist.md`
+- `docs/beta-v4-checklist.md`
+- `docs/beta-v5-checklist.md`
+- `docs/beta-v6-checklist.md`
+- `docs/index.md`
+- `index.md`
+
+Notes:
+
+- this change does not bump the runtime product version because it is roadmap/documentation planning, not a shipped platform behavior change
+- Beta V2 remains the active execution phase until its hard-stop criteria are actually satisfied
