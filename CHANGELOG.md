@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.9` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.10` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.10 - 2026-03-20
+
+### Changed
+
+- Removed login-page shortcut links to `Home`, `ERP`, and `CRM` in both ERP and CRM apps.
+- Moved the login back button to the top-left of the page for faster, clearer navigation.
+- Simplified login header layout to keep focus on authentication.
 
 ## Beta V1.11.9 - 2026-03-20
 

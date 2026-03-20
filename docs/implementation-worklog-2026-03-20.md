@@ -51,6 +51,41 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 19) Login page nav simplification + top-left back control
+
+Problem observed:
+
+- login screens still showed `Home`, `ERP`, and `CRM` quick links, creating extra clutter and unnecessary click paths during sign-in
+- back navigation existed near the lower form action area instead of the expected top-left location
+
+Implemented:
+
+- updated ERP login screen in `apps/erp-web/src/app.tsx`:
+  - removed `Home`/`ERP`/`CRM` links from the login header
+  - removed inline `Back to home` from the lower switch row
+  - added a dedicated top-left `Back` button anchored at page level
+- updated CRM login screen in `apps/crm-web/src/app.tsx` with the same behavior
+- updated shared auth styling in `packages/ui-core/src/ui.css`:
+  - added `.auth-back-btn` absolute positioning at top-left
+  - adjusted auth header alignment for simplified branding-only header
+  - responsive offset tuning for mobile
+- bumped product version to `Beta V1.11.10`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## 18) Mobile nav gesture + scroll-lock refinement
 
 Problem observed:

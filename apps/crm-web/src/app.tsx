@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.9";
+const APP_RELEASE_VERSION = "Beta V1.11.10";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -228,14 +228,12 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
 
   return (
     <main className="auth-page">
+      <a className="ui-btn ui-btn-secondary auth-back-btn" href="../">
+        Back
+      </a>
       <section className="auth-card">
         <header className="auth-header">
           <strong>SPHINCS</strong>
-          <nav className="auth-nav">
-            <a href="../">Home</a>
-            <a href="../erp/">ERP</a>
-            <a href="../crm/">CRM</a>
-          </nav>
         </header>
         <p className="auth-eyebrow">SPHINCS Platform</p>
         <h1>{mode === "signup" ? "Create your account" : "Sign in once for ERP + CRM"}</h1>
@@ -274,9 +272,6 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         </form>
         {error && <p className="ui-error">{error}</p>}
         <p className="auth-switch">
-          <a className="ui-btn ui-btn-secondary" href="../">
-            Back to home
-          </a>
           {mode === "signup" ? "Already have an account?" : "New tester?"}{" "}
           <button
             className="ui-btn ui-btn-secondary"

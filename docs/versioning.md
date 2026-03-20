@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.9`
+- `Beta V1.11.10`
 
 Rationale:
 
@@ -149,6 +149,9 @@ Rationale:
 - `Beta V1.11.9` marks the mobile nav interaction refinement pass:
   - edge-swipe open and swipe-close gestures are enabled for ERP and CRM side drawers
   - body scroll is locked while the drawer is open to keep mobile focus on navigation
+- `Beta V1.11.10` marks the login navigation simplification pass:
+  - login-page shortcut links were removed to reduce visual noise and mis-click paths
+  - back navigation is now placed at the top-left of the login screen in ERP and CRM
 
 ## Workflow For Future Updates
 

@@ -749,6 +749,7 @@ body {
   display: grid;
   place-items: center;
   padding: 24px;
+  position: relative;
 }
 
 .auth-card {
@@ -768,10 +769,16 @@ body {
 
 .auth-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 8px;
   gap: 8px;
+}
+
+.auth-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
 }
 
 .auth-nav {
@@ -940,6 +947,11 @@ body {
 
   .auth-page {
     padding: 12px;
+  }
+
+  .auth-back-btn {
+    top: 12px;
+    left: 12px;
   }
 
   .auth-card {
