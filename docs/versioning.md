@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.8`
+- `Beta V1.11.9`
 
 Rationale:
 
@@ -146,6 +146,9 @@ Rationale:
   - ERP and CRM now use a collapsible sidebar drawer on small screens
   - the menu toggle animates from hamburger to `X` when open
   - overlay click and route navigation both close the drawer cleanly
+- `Beta V1.11.9` marks the mobile nav interaction refinement pass:
+  - edge-swipe open and swipe-close gestures are enabled for ERP and CRM side drawers
+  - body scroll is locked while the drawer is open to keep mobile focus on navigation
 
 ## Workflow For Future Updates
 

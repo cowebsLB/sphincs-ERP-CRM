@@ -51,6 +51,43 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 18) Mobile nav gesture + scroll-lock refinement
+
+Problem observed:
+
+- after adding the collapsible drawer, navigation still depended only on tap controls
+- on mobile, background page scrolling could continue while the drawer was open, which made nav interaction feel loose
+
+Implemented:
+
+- updated ERP shell in `apps/erp-web/src/app.tsx`:
+  - added touch gesture detection for mobile nav:
+    - edge-swipe right opens the drawer
+    - swipe left closes the drawer
+  - added body-scroll lock while drawer is open
+- updated CRM shell in `apps/crm-web/src/app.tsx`:
+  - mirrored the same swipe-open/swipe-close behavior
+  - mirrored the same body-scroll lock behavior
+- updated shared UI in `packages/ui-core/src/ui.css`:
+  - tightened shell overflow handling for mobile
+  - added sidebar touch/overscroll behavior polish
+- bumped product version to `Beta V1.11.9`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `packages/ui-core/src/ui.css`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## 17) Mobile nav drawer + animated hamburger toggle
 
 Problem observed:

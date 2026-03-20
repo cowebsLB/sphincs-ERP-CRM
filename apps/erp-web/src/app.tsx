@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.8";
+const APP_RELEASE_VERSION = "Beta V1.11.9";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -3261,6 +3261,8 @@ function ERPApp({
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+  const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const bodyOverflowRef = React.useRef<string>("");
   const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showBugDialog, setShowBugDialog] = React.useState(false);
   const [bugBusy, setBugBusy] = React.useState(false);
@@ -3283,6 +3285,48 @@ function ERPApp({
   React.useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
+
+  React.useEffect(() => {
+    if (mobileNavOpen) {
+      bodyOverflowRef.current = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = bodyOverflowRef.current;
+    }
+    return () => {
+      document.body.style.overflow = bodyOverflowRef.current;
+    };
+  }, [mobileNavOpen]);
+
+  function handleTouchStart(e: React.TouchEvent<HTMLElement>) {
+    if (e.touches.length !== 1) {
+      touchStartRef.current = null;
+      return;
+    }
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLElement>) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || e.changedTouches.length !== 1) {
+      return;
+    }
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaY) > 46) {
+      return;
+    }
+    if (!mobileNavOpen && start.x <= 28 && deltaX >= 72) {
+      setMobileNavOpen(true);
+      return;
+    }
+    if (mobileNavOpen && deltaX <= -72) {
+      setMobileNavOpen(false);
+    }
+  }
 
   if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
     return (
@@ -3358,7 +3402,14 @@ function ERPApp({
   }
 
   return (
-    <main className="app-shell">
+    <main
+      className="app-shell"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        touchStartRef.current = null;
+      }}
+    >
       <aside className={`app-sidebar${mobileNavOpen ? " is-open" : ""}`}>
         <h2>SPHINCS ERP</h2>
         <p className="ui-muted">{session.user.email}</p>

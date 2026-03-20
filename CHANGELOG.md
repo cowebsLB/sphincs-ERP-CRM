@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.8` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.9` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.9 - 2026-03-20
+
+### Added
+
+- Swipe gesture support for mobile navigation drawers in ERP and CRM:
+  - edge swipe right opens the sidebar
+  - swipe left closes it
+
+### Changed
+
+- Body scrolling is now locked while the mobile sidebar drawer is open.
+- Mobile shell overflow behavior is tightened to reduce horizontal drift while swiping.
 
 ## Beta V1.11.8 - 2026-03-20
 
