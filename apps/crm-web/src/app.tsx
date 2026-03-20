@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.10";
+const APP_RELEASE_VERSION = "Beta V1.11.11";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -291,9 +291,19 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
 
 function useSessionBootstrap(session: SessionState | null, setSession: (next: SessionState | null) => void) {
   const [checking, setChecking] = React.useState(false);
+  const bootstrappedUserRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
+    const userId = session?.user?.id ?? null;
+
+    if (!userId) {
+      bootstrappedUserRef.current = null;
+    } else if (bootstrappedUserRef.current === userId) {
+      return () => {
+        active = false;
+      };
+    }
 
     async function run() {
       if (!session) {
@@ -309,6 +319,7 @@ function useSessionBootstrap(session: SessionState | null, setSession: (next: Se
         if (!active) {
           return;
         }
+        bootstrappedUserRef.current = result.data.id;
         setSession({
           accessToken: result.tokens.accessToken,
           refreshToken: result.tokens.refreshToken,
@@ -334,7 +345,7 @@ function useSessionBootstrap(session: SessionState | null, setSession: (next: Se
     return () => {
       active = false;
     };
-  }, [session?.accessToken, session?.refreshToken, setSession]);
+  }, [session?.user?.id, setSession]);
 
   return checking;
 }

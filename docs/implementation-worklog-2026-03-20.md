@@ -51,6 +51,36 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 20) Session bootstrap loop fix (`Restoring session...` stuck state)
+
+Problem observed:
+
+- users could remain stuck on `Restoring session...` in ERP/CRM
+- bootstrap effect dependencies were tied to token changes, so token refresh updates could re-trigger bootstrap repeatedly
+
+Implemented:
+
+- updated bootstrap logic in:
+  - `apps/erp-web/src/app.tsx`
+  - `apps/crm-web/src/app.tsx`
+- session bootstrap is now keyed by signed-in user id instead of token churn
+- added a per-user bootstrap guard so each app bootstraps once per signed-in user session
+- bumped product version to `Beta V1.11.11`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## 19) Login page nav simplification + top-left back control
 
 Problem observed:

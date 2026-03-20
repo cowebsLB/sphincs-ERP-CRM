@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.10`
+- `Beta V1.11.11`
 
 Rationale:
 
@@ -152,6 +152,9 @@ Rationale:
 - `Beta V1.11.10` marks the login navigation simplification pass:
   - login-page shortcut links were removed to reduce visual noise and mis-click paths
   - back navigation is now placed at the top-left of the login screen in ERP and CRM
+- `Beta V1.11.11` marks the session-bootstrap stability fix:
+  - ERP and CRM no longer re-bootstrap on every token update
+  - users are no longer trapped on persistent `Restoring session...` screens caused by bootstrap loops
 
 ## Workflow For Future Updates
 

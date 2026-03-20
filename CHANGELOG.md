@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.10` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.11` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.11 - 2026-03-20
+
+### Fixed
+
+- Prevented ERP/CRM session bootstrap loops that could keep users stuck on `Restoring session...`.
+- Session bootstrap now runs once per signed-in user instead of re-triggering on every token update.
 
 ## Beta V1.11.10 - 2026-03-20
 
