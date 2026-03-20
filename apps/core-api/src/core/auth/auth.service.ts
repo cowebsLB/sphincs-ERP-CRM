@@ -100,11 +100,12 @@ export class AuthService {
 
     const dbLookupStart = Date.now();
     const user = await this.prisma.user.findFirst({
-      where: { email: normalizedEmail, deleted_at: null, status: "ACTIVE" },
+      where: { email: normalizedEmail, deleted_at: null },
       select: {
         id: true,
         email: true,
         password_hash: true,
+        status: true,
         organization_id: true,
         branch_id: true,
         user_roles: {
@@ -128,6 +129,10 @@ export class AuthService {
         roleCount: 0
       });
       throw new UnauthorizedException("Invalid credentials");
+    }
+
+    if (user.status !== "ACTIVE") {
+      throw new UnauthorizedException("Your account is disabled. Contact an admin.");
     }
 
     const passwordStart = Date.now();
@@ -161,6 +166,9 @@ export class AuthService {
     this.authRateLimitService.reset(rateLimitKey);
 
     const roles = this.getRoleNamesFromUser(user);
+    if (roles.length === 0) {
+      throw new UnauthorizedException("Your account does not have platform access. Contact an admin.");
+    }
     const jwtStart = Date.now();
     const accessToken = this.createAccessToken({
       sub: user.id,
@@ -353,6 +361,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.deleted_at !== null) {
       throw new UnauthorizedException("User not found");
+    }
+    if (user.status !== "ACTIVE") {
+      throw new UnauthorizedException("Your account is disabled. Contact an admin.");
     }
     const roles = await this.prisma.userRole.findMany({
       where: { user_id: user.id, deleted_at: null },

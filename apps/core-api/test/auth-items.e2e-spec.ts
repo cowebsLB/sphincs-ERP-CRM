@@ -98,6 +98,7 @@ describe("Auth + ERP smoke (e2e)", () => {
             id: adminUser.id,
             email: adminUser.email,
             password_hash: adminUser.password_hash,
+            status: adminUser.status,
             organization_id: adminUser.organization_id,
             branch_id: adminUser.branch_id,
             user_roles: adminRoleAssignments

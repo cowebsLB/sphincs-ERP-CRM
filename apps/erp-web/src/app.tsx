@@ -3268,7 +3268,11 @@ function ERPApp({
   if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
     return (
       <main style={{ padding: "24px" }}>
-        <p>Your account does not have ERP access.</p>
+        <p>
+          {session.user.roles.length === 0
+            ? "Your account has no active platform roles."
+            : "Your account does not have ERP access."}
+        </p>
         <button
           className="ui-btn ui-btn-secondary"
           type="button"

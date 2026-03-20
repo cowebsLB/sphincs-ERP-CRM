@@ -433,3 +433,44 @@ Validation:
 Notes:
 
 - this closes a meaningful chunk of the Beta V2 access/session block, but the checklist still keeps cross-app single-session verification and the remaining account-state messaging item open until they are explicitly finished
+## 10) Beta V2 account-state messaging follow-up
+
+Problem observed:
+
+- the access-control hardening pass improved role sync and session invalidation, but the account-state messaging still needed clearer wording for disabled and no-role users
+- if we are going to count Beta V2 access behavior as serious, the system cannot hide behind generic auth wording when the real problem is account state
+
+Implemented:
+
+- updated backend login and `/auth/me` behavior so disabled accounts now return a clearer admin-contact message
+- updated API client unauthorized handling so a post-refresh `401` can preserve the backend message instead of collapsing into a generic session-expired fallback
+- updated ERP and CRM role-denied views so zero-role users now see a specific `no active platform roles` message rather than the generic module-denied copy
+- added test coverage for:
+  - disabled-account login messaging
+  - no-role account login rejection
+  - ERP no-role startup message
+  - CRM no-role startup message
+
+Files:
+
+- `apps/core-api/src/core/auth/auth.service.ts`
+- `apps/core-api/src/core/auth/auth.service.spec.ts`
+- `packages/api-client/src/index.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/erp-web/src/app.test.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/crm-web/src/app.test.tsx`
+- `CHANGELOG.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/core-api test` passed
+- `pnpm --filter @sphincs/core-api test:e2e` passed
+- `pnpm --filter @sphincs/erp-web test` passed
+- `pnpm --filter @sphincs/crm-web test` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
+Notes:
+
+- this improves the open Beta V2 account-state messaging item, but I am still leaving the checklist conservative until the remaining blocked/cross-app verification language is explicitly finished

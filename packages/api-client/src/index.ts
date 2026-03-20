@@ -108,7 +108,7 @@ export class ApiClient {
     response = await perform(refreshed.accessToken);
     if (!response.ok) {
       if (response.status === 401) {
-        throw new AuthSessionExpiredError();
+        throw new AuthSessionExpiredError((await response.text()) || "Your session expired. Please sign in again.");
       }
       throw new ApiHttpError(response.status, (await response.text()) || `HTTP ${response.status}`);
     }

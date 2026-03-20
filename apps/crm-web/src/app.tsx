@@ -1513,7 +1513,11 @@ function CRMApp({
   if (!hasRole(session, "Admin", "CRM Manager", "Staff")) {
     return (
       <main style={{ padding: "24px" }}>
-        <p>Your account does not have CRM access.</p>
+        <p>
+          {session.user.roles.length === 0
+            ? "Your account has no active platform roles."
+            : "Your account does not have CRM access."}
+        </p>
         <button
           className="ui-btn ui-btn-secondary"
           type="button"

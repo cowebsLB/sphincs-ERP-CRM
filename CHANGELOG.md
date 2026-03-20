@@ -22,6 +22,7 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 - Critical account changes now revoke active refresh sessions so role, password, and account-state changes force a clean access recovery path.
 - ERP and CRM now sync `/auth/me` on startup so shared sessions pick up updated role state instead of relying only on stale client storage.
 - Role-denied flows now refresh user context more cleanly and push the user toward a recoverable sign-in path when access changed.
+- Disabled accounts now receive a clearer admin-contact message, and zero-role accounts now receive explicit no-platform-role messaging in ERP and CRM.
 
 ## Beta V1.10.2 - 2026-03-20
 

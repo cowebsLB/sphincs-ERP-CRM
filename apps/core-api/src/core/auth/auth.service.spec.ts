@@ -66,6 +66,7 @@ describe("AuthService hardening", () => {
       id: "user-1",
       email: "admin@sphincs.local",
       password_hash: passwordHash,
+      status: "ACTIVE",
       organization_id: "org-1",
       branch_id: "branch-1",
       user_roles: [{ role: { name: "Admin" } }]
@@ -92,6 +93,7 @@ describe("AuthService hardening", () => {
       id: "user-1",
       email: "admin@sphincs.local",
       password_hash: passwordHash,
+      status: "ACTIVE",
       organization_id: "org-1",
       branch_id: "branch-1",
       user_roles: [{ role: { name: "Admin" } }]
@@ -103,6 +105,48 @@ describe("AuthService hardening", () => {
     );
     expect(limiter.recordFailure).toHaveBeenCalled();
     expect(limiter.reset).not.toHaveBeenCalled();
+  });
+
+  it("shows a clear message for disabled accounts", async () => {
+    const prisma = createPrismaMock();
+    const limiter = createRateLimiterMock();
+    const passwordHash = await hashPassword("ChangeMe123!");
+
+    prisma.user.findFirst.mockResolvedValue({
+      id: "user-1",
+      email: "disabled@sphincs.local",
+      password_hash: passwordHash,
+      status: "DISABLED",
+      organization_id: "org-1",
+      branch_id: "branch-1",
+      user_roles: [{ role: { name: "Staff" } }]
+    });
+
+    const service = new AuthService(prisma as never, limiter);
+    await expect(service.login("disabled@sphincs.local", "ChangeMe123!", "ip-disabled")).rejects.toThrow(
+      "Your account is disabled. Contact an admin."
+    );
+  });
+
+  it("shows a clear message for active accounts with no roles", async () => {
+    const prisma = createPrismaMock();
+    const limiter = createRateLimiterMock();
+    const passwordHash = await hashPassword("ChangeMe123!");
+
+    prisma.user.findFirst.mockResolvedValue({
+      id: "user-1",
+      email: "noroles@sphincs.local",
+      password_hash: passwordHash,
+      status: "ACTIVE",
+      organization_id: "org-1",
+      branch_id: "branch-1",
+      user_roles: []
+    });
+
+    const service = new AuthService(prisma as never, limiter);
+    await expect(service.login("noroles@sphincs.local", "ChangeMe123!", "ip-noroles")).rejects.toThrow(
+      "Your account does not have platform access. Contact an admin."
+    );
   });
 
   it("blocks login when rate limiter rejects the request", async () => {
@@ -155,6 +199,7 @@ describe("AuthService hardening", () => {
         id: "user-2",
         email: "tester@sphincs.local",
         password_hash: passwordHash,
+        status: "ACTIVE",
         organization_id: "org-1",
         branch_id: "branch-1",
         user_roles: [{ role: { name: "Staff" } }]

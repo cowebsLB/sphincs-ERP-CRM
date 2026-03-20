@@ -155,4 +155,33 @@ describe("ERP RootApp", () => {
       expect(screen.getByText("Your account does not have ERP access.")).toBeInTheDocument()
     );
   });
+
+  it("shows the no-role account message after startup sync", async () => {
+    localStorage.setItem(
+      "sphincs.session",
+      JSON.stringify({
+        accessToken: "shared-access",
+        refreshToken: "shared-refresh",
+        user: adminUser
+      })
+    );
+    vi.spyOn(ApiClient.prototype, "authorized").mockImplementation(async (path, tokens) => {
+      if (path === "/auth/me") {
+        return {
+          data: {
+            ...adminUser,
+            roles: []
+          },
+          tokens
+        };
+      }
+      return { data: [], tokens };
+    });
+
+    render(<RootApp />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Your account has no active platform roles.")).toBeInTheDocument()
+    );
+  });
 });
