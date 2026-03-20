@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.10.0";
+const APP_RELEASE_VERSION = "Beta V1.10.1";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -188,6 +188,21 @@ type ItemSkuStatus = {
   state: "idle" | "available" | "duplicate";
   message: string;
 };
+
+function isValidEmailAddress(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function parseOptionalNonNegativeNumber(value: string, label: string) {
+  if (!value.trim()) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return `${label} must be a non-negative number.`;
+  }
+  return null;
+}
 
 function SystemStatusCard() {
   const [healthOk, setHealthOk] = React.useState<boolean | null>(null);
@@ -858,6 +873,11 @@ function ItemsPage({
 
   async function createItem(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateItemForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/erp/items", {
         method: "POST",
@@ -876,6 +896,11 @@ function ItemsPage({
   async function updateItem(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validateItemForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -904,6 +929,48 @@ function ItemsPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validateItemForm(form: ItemFormState) {
+    if (!form.name.trim()) {
+      return "Item name is required.";
+    }
+    if (!form.sku.trim()) {
+      return "SKU is required.";
+    }
+    if (!form.selling_price.trim()) {
+      return "Selling price is required.";
+    }
+    const sellingPrice = Number(form.selling_price);
+    if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+      return "Selling price must be a non-negative number.";
+    }
+    const costPriceError = parseOptionalNonNegativeNumber(form.cost_price, "Cost price");
+    if (costPriceError) {
+      return costPriceError;
+    }
+    const taxRateError = parseOptionalNonNegativeNumber(form.tax_rate, "Tax rate");
+    if (taxRateError) {
+      return taxRateError;
+    }
+    if (form.track_inventory && !form.is_service) {
+      if (!form.quantity_on_hand.trim()) {
+        return "Quantity on hand is required when inventory tracking is on.";
+      }
+      const quantity = Number(form.quantity_on_hand);
+      if (!Number.isFinite(quantity) || quantity < 0) {
+        return "Quantity on hand must be a non-negative number.";
+      }
+      const reorderError = parseOptionalNonNegativeNumber(form.reorder_level, "Reorder level");
+      if (reorderError) {
+        return reorderError;
+      }
+      const maxStockError = parseOptionalNonNegativeNumber(form.max_stock_level, "Max stock level");
+      if (maxStockError) {
+        return maxStockError;
+      }
+    }
+    return null;
   }
 
   function renderSectionToggle(
@@ -1231,7 +1298,12 @@ function ItemsPage({
                 <button
                   className="ui-btn ui-btn-danger"
                   type="button"
-                  onClick={() => patchItem(row.id, { deleted_at: new Date().toISOString() })}
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this item? You can restore it later.")) {
+                      return;
+                    }
+                    void patchItem(row.id, { deleted_at: new Date().toISOString() });
+                  }}
                 >
                   Soft Delete
                 </button>
@@ -1240,8 +1312,11 @@ function ItemsPage({
                 <button
                   className="ui-btn ui-btn-primary"
                   type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/erp/items/${row.id}/restore`, {
+                  onClick={() => {
+                    if (!window.confirm("Restore this item to the active ERP catalog?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/erp/items/${row.id}/restore`, {
                       method: "POST",
                       body: JSON.stringify({})
                     })
@@ -1251,8 +1326,8 @@ function ItemsPage({
                       })
                       .catch((error: unknown) => {
                         notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
+                      });
+                  }}
                 >
                   Restore
                 </button>
@@ -1544,6 +1619,11 @@ function SuppliersPage({
 
   async function createSupplier(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateSupplierForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/erp/suppliers", {
         method: "POST",
@@ -1561,6 +1641,11 @@ function SuppliersPage({
   async function updateSupplier(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validateSupplierForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -1588,6 +1673,29 @@ function SuppliersPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validateSupplierForm(form: SupplierFormState) {
+    if (!form.name.trim()) {
+      return "Supplier name is required.";
+    }
+    if (form.email.trim() && !isValidEmailAddress(form.email.trim())) {
+      return "Supplier email must be a valid email address.";
+    }
+    if (form.contact_email.trim() && !isValidEmailAddress(form.contact_email.trim())) {
+      return "Contact person email must be a valid email address.";
+    }
+    const creditLimitError = parseOptionalNonNegativeNumber(form.credit_limit, "Credit limit");
+    if (creditLimitError) {
+      return creditLimitError;
+    }
+    if (form.rating.trim()) {
+      const rating = Number(form.rating);
+      if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+        return "Rating must be a number between 0 and 5.";
+      }
+    }
+    return null;
   }
 
   function renderSupplierSectionToggle(
@@ -1871,7 +1979,12 @@ function SuppliersPage({
                 <button
                   className="ui-btn ui-btn-danger"
                   type="button"
-                  onClick={() => patchSupplier(row.id, { deleted_at: new Date().toISOString() })}
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this supplier? You can restore it later.")) {
+                      return;
+                    }
+                    void patchSupplier(row.id, { deleted_at: new Date().toISOString() });
+                  }}
                 >
                   Soft Delete
                 </button>
@@ -1880,8 +1993,11 @@ function SuppliersPage({
                 <button
                   className="ui-btn ui-btn-primary"
                   type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/erp/suppliers/${row.id}/restore`, {
+                  onClick={() => {
+                    if (!window.confirm("Restore this supplier to the active ERP list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/erp/suppliers/${row.id}/restore`, {
                       method: "POST",
                       body: JSON.stringify({})
                     })
@@ -1891,8 +2007,8 @@ function SuppliersPage({
                       })
                       .catch((error: unknown) => {
                         notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
+                      });
+                  }}
                 >
                   Restore
                 </button>
@@ -2185,6 +2301,9 @@ function PurchaseOrdersPage({
   }
 
   function removeLineItem(target: "create" | "edit", index: number) {
+    if (!window.confirm("Remove this line item from the purchase order draft?")) {
+      return;
+    }
     const setForm = target === "create" ? setCreateForm : setEditForm;
     setForm((prev) => ({
       ...prev,
@@ -2398,6 +2517,11 @@ function PurchaseOrdersPage({
 
   async function createPurchaseOrder(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validatePurchaseOrderForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/erp/purchase-orders", {
         method: "POST",
@@ -2414,6 +2538,11 @@ function PurchaseOrdersPage({
   async function updatePurchaseOrder(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validatePurchaseOrderForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -2441,6 +2570,53 @@ function PurchaseOrdersPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validatePurchaseOrderForm(form: PurchaseOrderFormState) {
+    if (!form.supplier_id.trim()) {
+      return "Choose a supplier before saving the purchase order.";
+    }
+    if (!form.order_date.trim()) {
+      return "Order date is required.";
+    }
+    if (form.expected_delivery_date && form.expected_delivery_date < form.order_date) {
+      return "Expected delivery date cannot be before the order date.";
+    }
+    if (form.line_items.length === 0) {
+      return "Add at least one line item before saving.";
+    }
+    for (const [index, line] of form.line_items.entries()) {
+      const lineNumber = index + 1;
+      if (!line.item_id.trim()) {
+        return `Line ${lineNumber}: choose an item so the order stays connected to inventory.`;
+      }
+      const quantity = Number(line.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return `Line ${lineNumber}: quantity must be greater than 0.`;
+      }
+      const unitCost = Number(line.unit_cost);
+      if (!Number.isFinite(unitCost) || unitCost < 0) {
+        return `Line ${lineNumber}: unit cost must be a non-negative number.`;
+      }
+      const taxRateError = parseOptionalNonNegativeNumber(line.tax_rate, `Line ${lineNumber} tax rate`);
+      if (taxRateError) {
+        return taxRateError;
+      }
+      const discountError = parseOptionalNonNegativeNumber(line.discount, `Line ${lineNumber} discount`);
+      if (discountError) {
+        return discountError;
+      }
+      if (line.received_quantity.trim()) {
+        const received = Number(line.received_quantity);
+        if (!Number.isFinite(received) || received < 0) {
+          return `Line ${lineNumber}: received quantity must be a non-negative number.`;
+        }
+        if (received > quantity) {
+          return `Line ${lineNumber}: received quantity cannot be greater than ordered quantity.`;
+        }
+      }
+    }
+    return null;
   }
 
   return (
@@ -2567,7 +2743,12 @@ function PurchaseOrdersPage({
                   Open
                 </button>
                 {!row.deleted_at && (
-                  <button className="ui-btn ui-btn-danger" type="button" onClick={() => patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() })}>
+                  <button className="ui-btn ui-btn-danger" type="button" onClick={() => {
+                    if (!window.confirm("Soft-delete this purchase order? You can restore it later.")) {
+                      return;
+                    }
+                    void patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() });
+                  }}>
                     Soft Delete
                   </button>
                 )}
@@ -2575,8 +2756,11 @@ function PurchaseOrdersPage({
                   <button
                     className="ui-btn ui-btn-primary"
                     type="button"
-                    onClick={() =>
-                      withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
+                    onClick={() => {
+                      if (!window.confirm("Restore this purchase order to the active ERP list?")) {
+                        return;
+                      }
+                      void withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
                         method: "POST",
                         body: JSON.stringify({})
                       })
@@ -2586,8 +2770,8 @@ function PurchaseOrdersPage({
                         })
                         .catch((error: unknown) => {
                           notify("error", error instanceof Error ? error.message : "Restore failed");
-                        })
-                    }
+                        });
+                    }}
                   >
                     Restore
                   </button>

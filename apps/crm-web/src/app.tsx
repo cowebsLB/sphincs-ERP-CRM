@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.10.0";
+const APP_RELEASE_VERSION = "Beta V1.10.1";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -57,6 +57,10 @@ type ContactFormState = {
   full_name: string;
   email: string;
 };
+
+function isValidEmailAddress(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
 
 function SystemStatusCard() {
   const [healthOk, setHealthOk] = React.useState<boolean | null>(null);
@@ -307,6 +311,11 @@ function ContactsPage({
 
   async function createContact(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateContactForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/crm/contacts", {
         method: "POST",
@@ -326,6 +335,11 @@ function ContactsPage({
   async function updateContact(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validateContactForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -356,6 +370,16 @@ function ContactsPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validateContactForm(form: ContactFormState) {
+    if (!form.full_name.trim()) {
+      return "Full name is required.";
+    }
+    if (form.email.trim() && !isValidEmailAddress(form.email.trim())) {
+      return "Email must be a valid email address.";
+    }
+    return null;
   }
 
   return (
@@ -464,7 +488,12 @@ function ContactsPage({
                 <button
                   className="ui-btn ui-btn-danger"
                   type="button"
-                  onClick={() => patchContact(row.id, { deleted_at: new Date().toISOString() })}
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this contact? You can restore it later.")) {
+                      return;
+                    }
+                    void patchContact(row.id, { deleted_at: new Date().toISOString() });
+                  }}
                 >
                   Soft Delete
                 </button>
@@ -473,8 +502,11 @@ function ContactsPage({
                 <button
                   className="ui-btn ui-btn-primary"
                   type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/crm/contacts/${row.id}/restore`, {
+                  onClick={() => {
+                    if (!window.confirm("Restore this contact to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/contacts/${row.id}/restore`, {
                       method: "POST",
                       body: JSON.stringify({})
                     })
@@ -484,8 +516,8 @@ function ContactsPage({
                       })
                       .catch((error: unknown) => {
                         notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
+                      });
+                  }}
                 >
                   Restore
                 </button>
@@ -647,6 +679,11 @@ function LeadsPage({
 
   async function createLead(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateLeadForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/crm/leads", {
         method: "POST",
@@ -666,6 +703,11 @@ function LeadsPage({
   async function updateLead(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validateLeadForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -696,6 +738,16 @@ function LeadsPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validateLeadForm(form: LeadFormState) {
+    if (!form.contact_id.trim()) {
+      return "Choose a contact before saving the lead.";
+    }
+    if (!form.status.trim()) {
+      return "Lead status is required.";
+    }
+    return null;
   }
 
   return (
@@ -802,7 +854,12 @@ function LeadsPage({
                 <button
                   className="ui-btn ui-btn-danger"
                   type="button"
-                  onClick={() => patchLead(row.id, { deleted_at: new Date().toISOString() })}
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this lead? You can restore it later.")) {
+                      return;
+                    }
+                    void patchLead(row.id, { deleted_at: new Date().toISOString() });
+                  }}
                 >
                   Soft Delete
                 </button>
@@ -811,8 +868,11 @@ function LeadsPage({
                 <button
                   className="ui-btn ui-btn-primary"
                   type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/crm/leads/${row.id}/restore`, {
+                  onClick={() => {
+                    if (!window.confirm("Restore this lead to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/leads/${row.id}/restore`, {
                       method: "POST",
                       body: JSON.stringify({})
                     })
@@ -822,8 +882,8 @@ function LeadsPage({
                       })
                       .catch((error: unknown) => {
                         notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
+                      });
+                  }}
                 >
                   Restore
                 </button>
@@ -1061,6 +1121,11 @@ function OpportunitiesPage({
 
   async function createOpportunity(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateOpportunityForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
     try {
       await withAuth(session, setSession, "/crm/opportunities", {
         method: "POST",
@@ -1080,6 +1145,11 @@ function OpportunitiesPage({
   async function updateOpportunity(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) {
+      return;
+    }
+    const validationError = validateOpportunityForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
       return;
     }
     try {
@@ -1110,6 +1180,16 @@ function OpportunitiesPage({
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
     }
+  }
+
+  function validateOpportunityForm(form: OpportunityFormState) {
+    if (!form.lead_id.trim()) {
+      return "Choose a lead before saving the opportunity.";
+    }
+    if (!form.status.trim()) {
+      return "Opportunity status is required.";
+    }
+    return null;
   }
 
   return (
@@ -1214,7 +1294,12 @@ function OpportunitiesPage({
                 <button
                   className="ui-btn ui-btn-danger"
                   type="button"
-                  onClick={() => patchOpportunity(row.id, { deleted_at: new Date().toISOString() })}
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this opportunity? You can restore it later.")) {
+                      return;
+                    }
+                    void patchOpportunity(row.id, { deleted_at: new Date().toISOString() });
+                  }}
                 >
                   Soft Delete
                 </button>
@@ -1223,8 +1308,11 @@ function OpportunitiesPage({
                 <button
                   className="ui-btn ui-btn-primary"
                   type="button"
-                  onClick={() =>
-                    withAuth(session, setSession, `/crm/opportunities/${row.id}/restore`, {
+                  onClick={() => {
+                    if (!window.confirm("Restore this opportunity to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/opportunities/${row.id}/restore`, {
                       method: "POST",
                       body: JSON.stringify({})
                     })
@@ -1234,8 +1322,8 @@ function OpportunitiesPage({
                       })
                       .catch((error: unknown) => {
                         notify("error", error instanceof Error ? error.message : "Restore failed");
-                      })
-                  }
+                      });
+                  }}
                 >
                   Restore
                 </button>

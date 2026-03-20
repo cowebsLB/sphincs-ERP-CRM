@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.10.0` - current active beta snapshot as of 2026-03-20
+- `Beta V1.10.1` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.10.1 - 2026-03-20
+
+### Fixed
+
+- ERP and CRM destructive actions now require explicit confirmation before soft-delete or restore changes are applied.
+- Purchase-order line removal now asks for confirmation before mutating the current draft.
+- Frontend validation now catches common bad-input paths earlier across key ERP and CRM forms instead of deferring everything to API errors.
 
 ## Beta V1.10.0 - 2026-03-20
 

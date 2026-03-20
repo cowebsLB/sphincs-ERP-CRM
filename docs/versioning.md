@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.10.0`
+- `Beta V1.10.1`
 
 Rationale:
 
@@ -104,6 +104,10 @@ Rationale:
   - Contacts now use a first-class custom CRM page instead of the older generic resource manager
   - contact and lead pickers are searchable inside their browse modals
   - Contacts, Leads, and Opportunities now share clearer empty-state guidance and aligned create/edit handling
+- `Beta V1.10.1` marks the data-safety hardening pass:
+  - soft-delete and restore flows now require explicit user confirmation
+  - purchase-order line removal now confirms before mutating the draft
+  - frontend validation blocks common invalid ERP and CRM form submissions before they fall through to API errors
 
 ## Workflow For Future Updates
 

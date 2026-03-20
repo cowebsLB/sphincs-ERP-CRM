@@ -152,12 +152,12 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 4) Data And Safety
 
-- [ ] Destructive actions use explicit confirmation patterns.
-- [ ] Soft-delete restore paths are visible and understandable.
+- [x] Destructive actions use explicit confirmation patterns.
+- [x] Soft-delete restore paths are visible and understandable.
 - [ ] Hard-delete admin flows have strong guardrails or remain restricted.
-- [ ] Read-only and computed fields are not presented as editable inputs.
-- [ ] Org/branch/audit metadata stays hidden from normal create/edit forms.
-- [ ] Form validation is clear and prevents common bad-input paths before API failure.
+- [x] Read-only and computed fields are not presented as editable inputs.
+- [x] Org/branch/audit metadata stays hidden from normal create/edit forms.
+- [x] Form validation is clear and prevents common bad-input paths before API failure.
 
 ## 5) Backend And Data Shape
 

@@ -92,3 +92,48 @@ Files:
 Validation:
 
 - `pnpm --filter @sphincs/crm-web build` passed
+
+### 3) Data and safety hardening pass
+
+Problem observed:
+
+- destructive actions still triggered too easily across ERP and CRM list pages
+- purchase-order drafts could lose a line item with a single click
+- several key form flows still relied on backend/API validation for avoidable bad input cases
+
+Implemented:
+
+- added explicit confirmation prompts before:
+  - ERP soft-delete and restore actions for items, suppliers, and purchase orders
+  - CRM soft-delete and restore actions for contacts, leads, and opportunities
+  - purchase-order line-item removal inside the workflow editor
+- added clearer client-side validation across the most important beta forms:
+  - ERP items
+  - ERP suppliers
+  - ERP purchase orders
+  - CRM contacts
+  - CRM leads
+  - CRM opportunities
+- validation now catches issues like:
+  - missing required linked records
+  - invalid email formatting
+  - negative numeric values
+  - invalid purchase-order quantities and receiving values
+- bumped product release to:
+  - `Beta V1.10.1`
+
+Files:
+
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `docs/beta-v2-checklist.md`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/crm-web build` passed
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/core-api test` passed
