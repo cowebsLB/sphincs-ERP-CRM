@@ -180,12 +180,12 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 7) Beta Operations
 
-- [ ] Create a repeatable release checklist for beta deployments.
-- [ ] Create a short tester-facing release note template.
-- [ ] Create an issue triage workflow doc.
-- [ ] Standardize GitHub issue labels/milestones for Beta V2 execution.
-- [ ] Every meaningful product update is logged in `CHANGELOG.md`.
-- [ ] Product version is bumped consistently until `Beta V2.0.0`.
+- [x] Create a repeatable release checklist for beta deployments.
+- [x] Create a short tester-facing release note template.
+- [x] Create an issue triage workflow doc.
+- [x] Standardize GitHub issue labels/milestones for Beta V2 execution.
+- [x] Every meaningful product update is logged in `CHANGELOG.md`.
+- [x] Product version is bumped consistently until `Beta V2.0.0`.
 
 ## 8) Non-Goals
 

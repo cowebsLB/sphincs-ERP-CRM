@@ -308,3 +308,34 @@ Notes:
 
 - this change does not bump the runtime product version because it is roadmap/documentation planning, not a shipped platform behavior change
 - Beta V2 remains the active execution phase until its hard-stop criteria are actually satisfied
+## 7) Beta V2 operations documentation pass
+
+Problem observed:
+
+- Beta V2 still had open operational checklist items even though the product-side work had moved much further ahead
+- there was no single repeatable release checklist, no short tester release-note template, and no explicit triage/labeling standard to keep issue handling disciplined during the rest of Beta V2
+- the versioning and changelog habits were already being followed in practice, but the supporting operational docs were missing
+
+Implemented:
+
+- created `docs/beta-release-checklist.md` for repeatable beta deployment readiness and post-deploy smoke validation
+- created `docs/beta-release-notes-template.md` for short tester-facing release notes
+- created `docs/issue-triage-workflow.md` to define intake, labeling, priority, and closure rules for beta issues
+- created `docs/github-labels-and-milestones.md` to standardize labels, severity tags, module tags, and beta milestones
+- updated `docs/beta-v2-checklist.md` to mark the Beta Operations documentation items complete
+- updated `docs/index.md` and `index.md` so the new operational docs are easy to find from both entry points
+
+Files:
+
+- `docs/beta-release-checklist.md`
+- `docs/beta-release-notes-template.md`
+- `docs/issue-triage-workflow.md`
+- `docs/github-labels-and-milestones.md`
+- `docs/beta-v2-checklist.md`
+- `docs/index.md`
+- `index.md`
+
+Notes:
+
+- runtime product version remains `Beta V1.10.2` because this pass adds process documentation, not shipped product behavior
+- this closes most of the remaining Beta V2 operations block and gives us a cleaner path to the final hard-stop items
