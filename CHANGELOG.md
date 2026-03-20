@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.9.0` - current active beta snapshot as of 2026-03-19
+- `Beta V1.9.1` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.9.1 - 2026-03-20
+
+### Fixed
+
+- ERP and CRM now clear stale client sessions when refresh-token reuse or refresh-token expiry is detected.
+- Reused/expired refresh tokens now force a clean sign-in recovery path instead of leaving the frontend stuck retrying invalid session state.
 
 ## Beta V1.9.0 - 2026-03-19
 

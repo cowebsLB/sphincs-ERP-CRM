@@ -1,6 +1,6 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { ApiClient, type SessionState } from "@sphincs/api-client";
+import { ApiClient, AuthSessionExpiredError, type SessionState } from "@sphincs/api-client";
 import { DataTable, ResourceManager } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.9.0";
+const APP_RELEASE_VERSION = "Beta V1.9.1";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -140,7 +140,15 @@ async function withAuth<T>(
   path: string,
   init?: RequestInit
 ) {
-  const result = await client.authorized<T>(path, session, init);
+  let result;
+  try {
+    result = await client.authorized<T>(path, session, init);
+  } catch (error) {
+    if (error instanceof AuthSessionExpiredError) {
+      setSession(null);
+    }
+    throw error;
+  }
   if (
     result.tokens.accessToken !== session.accessToken ||
     result.tokens.refreshToken !== session.refreshToken

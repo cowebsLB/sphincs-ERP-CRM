@@ -15,6 +15,13 @@ export interface SessionState extends SessionTokens {
   user: AuthUser;
 }
 
+export class AuthSessionExpiredError extends Error {
+  constructor(message = "Your session expired. Please sign in again.") {
+    super(message);
+    this.name = "AuthSessionExpiredError";
+  }
+}
+
 export class ApiClient {
   constructor(private readonly baseUrl: string) {}
 
@@ -80,9 +87,19 @@ export class ApiClient {
       return { data: (await response.json()) as T, tokens };
     }
 
-    const refreshed = await this.refresh(tokens.refreshToken);
+    let refreshed: SessionTokens & { tokenType: string };
+    try {
+      refreshed = await this.refresh(tokens.refreshToken);
+    } catch (error) {
+      throw new AuthSessionExpiredError(
+        error instanceof Error && error.message ? error.message : "Your session expired. Please sign in again."
+      );
+    }
     response = await perform(refreshed.accessToken);
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new AuthSessionExpiredError();
+      }
       throw new Error(await response.text());
     }
 

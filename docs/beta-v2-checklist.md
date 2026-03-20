@@ -27,6 +27,7 @@ then it belongs in Beta V3, not Beta V2.
 - [ ] Disabled, blocked, and no-role account states show clear messages.
 - [ ] ERP/CRM role-denied flows always give the user a recovery path.
 - [ ] Auth/session behavior is consistent across ERP and CRM.
+- [ ] Stale, expired, or reused refresh tokens are cleared client-side and force a clean re-login path.
 - [ ] Cross-app single-session flow is verified after login, refresh, logout, and role changes.
 
 ## 2) ERP UX Rebuild

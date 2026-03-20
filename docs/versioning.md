@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.9.0`
+- `Beta V1.9.1`
 
 Rationale:
 
@@ -97,6 +97,9 @@ Rationale:
   - composite purchase-order backend shape with line items and totals
   - full-page purchase-order workflow editor
   - approval, receiving, logistics, and payment state grouped without clutter
+- `Beta V1.9.1` marks the stale-session recovery fix:
+  - refresh-token reuse/expiry now clears invalid frontend session state
+  - ERP and CRM fall back cleanly to sign-in instead of looping on refresh failures
 
 ## Workflow For Future Updates
 
