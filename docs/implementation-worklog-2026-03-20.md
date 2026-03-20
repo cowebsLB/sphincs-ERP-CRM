@@ -50,6 +50,50 @@ Validation:
 
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
+
+### 6) Full system specification PDF
+
+Problem observed:
+
+- the product vision existed as a draft in chat form, but not yet as a durable long-term platform document
+- the project needed a proper system-level blueprint that explains the end product beyond the current beta implementation details
+
+Implemented:
+
+- created a full written system specification in:
+  - `docs/sphincs-full-system-spec.md`
+- generated a polished PDF version in:
+  - `output/pdf/sphincs-full-system-spec.pdf`
+- added a dedicated PDF generation script in:
+  - `scripts/generate_full_system_spec_pdf.py`
+- linked both the markdown source and PDF from:
+  - `docs/index.md`
+
+Coverage included in the spec:
+
+- product vision
+- platform architecture
+- tenant model
+- ERP and CRM module scope
+- core systems
+- onboarding
+- subscription tiers
+- cross-module workflows
+- relational backbone expectations
+- expansion roadmap
+
+Files:
+
+- `docs/sphincs-full-system-spec.md`
+- `output/pdf/sphincs-full-system-spec.pdf`
+- `scripts/generate_full_system_spec_pdf.py`
+- `docs/index.md`
+
+Validation:
+
+- PDF generated successfully at `output/pdf/sphincs-full-system-spec.pdf`
+- basic artifact check confirmed the file was written successfully
+- visual PDF page rendering was not available in this environment because `pdftoppm` is not installed
 - `pnpm --filter @sphincs/core-api test` passed
 
 ### 2) CRM UX consistency pass

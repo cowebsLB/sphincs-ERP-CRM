@@ -7,6 +7,8 @@ This is the canonical entry point for all project documentation.
 - [Monorepo Overview](./architecture.md)
 - [Backend Modules](./backend-modules.md)
 - [Branding Assets](./branding-assets.md)
+- [SPHINCS Full System Specification](./sphincs-full-system-spec.md)
+- [SPHINCS Full System Specification PDF](../output/pdf/sphincs-full-system-spec.pdf)
 
 ## Data & API
 
