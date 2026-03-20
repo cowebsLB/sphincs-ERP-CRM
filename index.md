@@ -13,7 +13,7 @@ The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flow
 
 Current product version:
 
-- `Beta V1.11.1`
+- `Beta V1.11.2`
 
 ## Features
 

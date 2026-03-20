@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.1` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.2` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.2 - 2026-03-20
+
+### Fixed
+
+- Purchase-order workflow now stacks earlier on desktop (`<=1760px`) to prevent editor/summary crowding.
+- Purchase-order header fields now wrap sooner to avoid squeezed inputs on medium desktop widths.
 
 ## Beta V1.11.1 - 2026-03-20
 

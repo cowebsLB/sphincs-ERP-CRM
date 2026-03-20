@@ -511,3 +511,32 @@ Notes:
 
 - this patch targets layout stability only and does not change backend behavior
 - it is designed to reduce overlap perception and improve usability on narrower desktop windows without changing the existing visual theme
+
+## 11) Purchase-order medium-desktop fit follow-up
+
+Problem observed:
+
+- after the first overlap hotfix, some real-world desktop widths still felt crowded in the purchase-order workflow
+- users could still perceive sections as visually colliding because the two-column split stayed active too long on medium desktop widths
+
+Implemented:
+
+- updated shared UI in `packages/ui-core/src/ui.css`:
+  - reduced purchase-order header grid minimum field width (`220px -> 180px`) so controls wrap sooner instead of compressing
+  - changed the purchase-order workflow stack breakpoint from `1400px` to `1760px` so summary/sidebar moves below editor earlier on desktop
+- bumped product version to `Beta V1.11.2`
+
+Files:
+
+- `packages/ui-core/src/ui.css`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed

@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.1`
+- `Beta V1.11.2`
 
 Rationale:
 
@@ -119,6 +119,9 @@ Rationale:
 - `Beta V1.11.1` marks the purchase-order layout stability fix:
   - workflow grid sizing no longer squeezes the editor and summary into overlap on tighter desktop widths
   - line-item grids scroll inside their own section instead of forcing page-wide horizontal overflow
+- `Beta V1.11.2` marks the purchase-order medium-desktop fit fix:
+  - workflow now stacks earlier on desktop widths that still felt crowded in real usage
+  - purchase-order header fields wrap sooner to reduce squeezed or visually colliding controls
 
 ## Workflow For Future Updates
 
