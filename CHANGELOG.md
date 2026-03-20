@@ -7,7 +7,19 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.9.1` - current active beta snapshot as of 2026-03-20
+- `Beta V1.10.0` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.10.0 - 2026-03-20
+
+### Added
+
+- CRM Contacts now use the same custom page pattern as Leads and Opportunities instead of falling back to the old generic resource screen.
+- CRM contact and lead relation pickers now support in-modal searching for faster selection in larger tenant datasets.
+
+### Changed
+
+- CRM Contacts, Leads, and Opportunities now share the same page structure, lightweight create flow, inline edit flow, and table handling pattern.
+- CRM empty states now explain the next useful action instead of leaving blank tables with no guidance.
 
 ## Beta V1.9.1 - 2026-03-20
 

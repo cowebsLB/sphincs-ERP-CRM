@@ -51,3 +51,44 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 - `pnpm --filter @sphincs/core-api test` passed
+
+### 2) CRM UX consistency pass
+
+Problem observed:
+
+- CRM still mixed two different interaction patterns:
+  - Contacts used the older generic resource page
+  - Leads and Opportunities already used the newer custom workflow pattern
+- CRM relation pickers were readable but not yet searchable inside the modal flow
+- empty-state guidance was uneven across CRM pages
+
+Implemented:
+
+- replaced the old generic Contacts screen with a custom CRM page in:
+  - `apps/crm-web/src/app.tsx`
+- aligned Contacts, Leads, and Opportunities around the same structure:
+  - consistent page header
+  - lightweight create form
+  - inline edit form
+  - searchable table
+  - soft-delete and restore actions
+- added searchable modal browsing for:
+  - contact selection in Leads
+  - lead selection in Opportunities
+- added stronger empty-state guidance so users know what to create next when a CRM list is empty
+- bumped product release to:
+  - `Beta V1.10.0`
+
+Files:
+
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `docs/beta-v2-checklist.md`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `docs/index.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/crm-web build` passed

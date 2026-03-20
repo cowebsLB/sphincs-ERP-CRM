@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.9.1`
+- `Beta V1.10.0`
 
 Rationale:
 
@@ -100,6 +100,10 @@ Rationale:
 - `Beta V1.9.1` marks the stale-session recovery fix:
   - refresh-token reuse/expiry now clears invalid frontend session state
   - ERP and CRM fall back cleanly to sign-in instead of looping on refresh failures
+- `Beta V1.10.0` marks the CRM consistency pass:
+  - Contacts now use a first-class custom CRM page instead of the older generic resource manager
+  - contact and lead pickers are searchable inside their browse modals
+  - Contacts, Leads, and Opportunities now share clearer empty-state guidance and aligned create/edit handling
 
 ## Workflow For Future Updates
 

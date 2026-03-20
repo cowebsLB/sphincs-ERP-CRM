@@ -13,7 +13,7 @@ The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flow
 
 Current product version:
 
-- `Beta V1.9.1`
+- `Beta V1.10.0`
 
 ## Features
 
@@ -65,3 +65,4 @@ For Beta V1 test execution:
 - [Milestones And Tickets](./docs/milestones.md)
 - [Beta V2 Checklist](./docs/beta-v2-checklist.md)
 - [Implementation Worklog (2026-03-19)](./docs/implementation-worklog-2026-03-19.md)
+- [Implementation Worklog (2026-03-20)](./docs/implementation-worklog-2026-03-20.md)

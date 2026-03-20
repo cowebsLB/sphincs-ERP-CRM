@@ -1,14 +1,14 @@
 import React from "react";
 import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ApiClient, AuthSessionExpiredError, type SessionState } from "@sphincs/api-client";
-import { DataTable, ResourceManager } from "@sphincs/ui-core";
+import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.9.1";
+const APP_RELEASE_VERSION = "Beta V1.10.0";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -51,6 +51,11 @@ type LeadFormState = {
 type OpportunityFormState = {
   lead_id: string;
   status: string;
+};
+
+type ContactFormState = {
+  full_name: string;
+  email: string;
 };
 
 function SystemStatusCard() {
@@ -250,57 +255,103 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
   );
 }
 
-function ResourcePage({
+function ContactsPage({
   session,
   setSession,
-  endpoint,
-  title,
-  fields,
   notify
 }: {
   session: SessionState;
   setSession: (next: SessionState | null) => void;
-  endpoint: string;
-  title: string;
-  fields: Array<{ key: string; label: string }>;
   notify: (type: "success" | "error", message: string) => void;
 }) {
-  const [rows, setRows] = React.useState<RecordData[]>([]);
+  const [rows, setRows] = React.useState<ContactRecord[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [createForm, setCreateForm] = React.useState<ContactFormState>({ full_name: "", email: "" });
+  const [editing, setEditing] = React.useState<ContactRecord | null>(null);
+  const [editForm, setEditForm] = React.useState<ContactFormState>({ full_name: "", email: "" });
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const query = includeDeleted ? "?includeDeleted=true" : "";
-    const data = await withAuth<RecordData[]>(session, setSession, `${endpoint}${query}`);
-    setRows(data);
-    setLoading(false);
-  }, [endpoint, includeDeleted, session, setSession]);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const data = await withAuth<ContactRecord[]>(session, setSession, `/crm/contacts${query}`);
+      setRows(data);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load contacts");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
 
   React.useEffect(() => {
     void load();
   }, [load]);
 
-  async function createItem(form: Record<string, string>) {
+  function updateForm(target: "create" | "edit", patch: Partial<ContactFormState>) {
+    if (target === "create") {
+      setCreateForm((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function startEdit(row: ContactRecord) {
+    setEditing(row);
+    setEditForm({
+      full_name: row.full_name ? String(row.full_name) : "",
+      email: row.email ? String(row.email) : ""
+    });
+  }
+
+  async function createContact(e: React.FormEvent) {
+    e.preventDefault();
     try {
-      await withAuth(session, setSession, endpoint, {
+      await withAuth(session, setSession, "/crm/contacts", {
         method: "POST",
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          full_name: createForm.full_name || undefined,
+          email: createForm.email || undefined
+        })
       });
-      notify("success", `${title}: record created`);
+      notify("success", "Contacts: record created");
+      setCreateForm({ full_name: "", email: "" });
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Create failed");
     }
   }
 
-  async function patchItem(id: string, payload: Record<string, unknown>) {
+  async function updateContact(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
     try {
-      await withAuth(session, setSession, `${endpoint}/${id}`, {
+      await withAuth(session, setSession, `/crm/contacts/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          full_name: editForm.full_name || undefined,
+          email: editForm.email || null
+        })
+      });
+      notify("success", "Contacts: record updated");
+      setEditing(null);
+      setEditForm({ full_name: "", email: "" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchContact(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/crm/contacts/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload)
       });
-      notify("success", `${title}: record updated`);
+      notify("success", "Contacts: record updated");
       await load();
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "Update failed");
@@ -308,31 +359,142 @@ function ResourcePage({
   }
 
   return (
-    <ResourceManager<RecordData>
-      title={title}
-      rows={rows}
-      loading={loading}
-      includeDeleted={includeDeleted}
-      onToggleIncludeDeleted={setIncludeDeleted}
-      columns={fields.map((f) => ({ key: f.key as keyof RecordData, label: f.label, sortable: true }))}
-      createFields={fields}
-      editFields={fields}
-      onCreate={createItem}
-      onUpdate={(id, payload) => patchItem(id, payload)}
-      onSoftDelete={(id) => patchItem(id, { deleted_at: new Date().toISOString() })}
-      onRestore={async (id) => {
-        try {
-          await withAuth(session, setSession, `${endpoint}/${id}/restore`, {
-            method: "POST",
-            body: JSON.stringify({})
-          });
-          notify("success", `${title}: record restored`);
-          await load();
-        } catch (error) {
-          notify("error", error instanceof Error ? error.message : "Restore failed");
-        }
-      }}
-    />
+    <section className="ui-card">
+      <div className="purchase-orders-header">
+        <div>
+          <h2 className="ui-title">Contacts</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Keep contact creation lightweight so Leads and Opportunities can link to real people without friction.
+          </p>
+        </div>
+        <label className="ui-checkline">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => setIncludeDeleted(e.target.checked)}
+          />
+          Include deleted
+        </label>
+      </div>
+
+      <form className="ui-form purchase-order-form" onSubmit={createContact}>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Full Name</span>
+          <input
+            className="ui-input"
+            value={createForm.full_name}
+            onChange={(e) => updateForm("create", { full_name: e.target.value })}
+            placeholder="Contact name"
+            required
+          />
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Email</span>
+          <input
+            className="ui-input"
+            type="email"
+            value={createForm.email}
+            onChange={(e) => updateForm("create", { email: e.target.value })}
+            placeholder="contact@example.com"
+          />
+        </label>
+        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
+          Create
+        </button>
+      </form>
+
+      {editing && (
+        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updateContact}>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Full Name</span>
+            <input
+              className="ui-input"
+              value={editForm.full_name}
+              onChange={(e) => updateForm("edit", { full_name: e.target.value })}
+              required
+            />
+          </label>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Email</span>
+            <input
+              className="ui-input"
+              type="email"
+              value={editForm.email}
+              onChange={(e) => updateForm("edit", { email: e.target.value })}
+            />
+          </label>
+          <div className="purchase-order-actions">
+            <button className="ui-btn ui-btn-primary" type="submit">
+              Save
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setEditForm({ full_name: "", email: "" });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : rows.length === 0 ? (
+        <div className="ui-empty">No contacts found yet. Create one here so lead and opportunity flows have something to connect to.</div>
+      ) : (
+        <DataTable<ContactRecord>
+          rows={rows}
+          columns={[
+            { key: "full_name", label: "Full Name", sortable: true },
+            { key: "email", label: "Email", sortable: true },
+            { key: "created_at", label: "Created At", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => patchContact(row.id, { deleted_at: new Date().toISOString() })}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() =>
+                    withAuth(session, setSession, `/crm/contacts/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Contacts: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      })
+                  }
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+    </section>
   );
 }
 
@@ -360,6 +522,7 @@ function LeadsPage({
     status: "NEW"
   });
   const [contactPickerOpen, setContactPickerOpen] = React.useState<"create" | "edit" | null>(null);
+  const [contactPickerSearch, setContactPickerSearch] = React.useState("");
 
   const contactMap = React.useMemo(
     () =>
@@ -381,6 +544,16 @@ function LeadsPage({
       })),
     [contacts]
   );
+
+  const filteredContactOptions = React.useMemo(() => {
+    const query = contactPickerSearch.trim().toLowerCase();
+    if (!query) {
+      return contactOptions;
+    }
+    return contactOptions.filter((contact) =>
+      `${contact.name} ${contact.meta}`.toLowerCase().includes(query)
+    );
+  }, [contactOptions, contactPickerSearch]);
 
   const rowsWithContactNames = React.useMemo(
     () =>
@@ -453,7 +626,10 @@ function LeadsPage({
           <button
             className="ui-btn ui-btn-secondary"
             type="button"
-            onClick={() => setContactPickerOpen(target)}
+            onClick={() => {
+              setContactPickerSearch("");
+              setContactPickerOpen(target);
+            }}
           >
             Browse contacts
           </button>
@@ -603,6 +779,10 @@ function LeadsPage({
 
       {loading ? (
         <div className="ui-loading">Loading data...</div>
+      ) : rowsWithContactNames.length === 0 ? (
+        <p className="ui-empty">
+          No leads found yet. Create one here once you have contacts ready to connect.
+        </p>
       ) : (
         <DataTable<LeadRecord>
           rows={rowsWithContactNames}
@@ -666,7 +846,10 @@ function LeadsPage({
               <button
                 className="ui-btn ui-btn-secondary"
                 type="button"
-                onClick={() => setContactPickerOpen(null)}
+                onClick={() => {
+                  setContactPickerSearch("");
+                  setContactPickerOpen(null);
+                }}
               >
                 Close
               </button>
@@ -674,26 +857,39 @@ function LeadsPage({
             {contactOptions.length === 0 ? (
               <p className="ui-empty">No contacts found yet. Create one from the Contacts page first.</p>
             ) : (
-              <div className="supplier-grid">
-                {contactOptions.map((contact) => (
-                  <button
-                    key={contact.id}
-                    className={`supplier-option${(
-                      contactPickerOpen === "create" ? createForm.contact_id : editForm.contact_id
-                    ) === contact.id
-                      ? " supplier-option-active"
-                      : ""}`}
-                    type="button"
-                    onClick={() => {
-                      updateForm(contactPickerOpen, { contact_id: contact.id });
-                      setContactPickerOpen(null);
-                    }}
-                  >
-                    <strong>{contact.name}</strong>
-                    <span>{contact.meta || "No email saved"}</span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <input
+                  className="ui-input"
+                  placeholder="Search contacts by name or email"
+                  value={contactPickerSearch}
+                  onChange={(e) => setContactPickerSearch(e.target.value)}
+                />
+                {filteredContactOptions.length === 0 ? (
+                  <p className="ui-empty">No contacts match that search yet.</p>
+                ) : (
+                  <div className="supplier-grid">
+                    {filteredContactOptions.map((contact) => (
+                      <button
+                        key={contact.id}
+                        className={`supplier-option${(
+                          contactPickerOpen === "create" ? createForm.contact_id : editForm.contact_id
+                        ) === contact.id
+                          ? " supplier-option-active"
+                          : ""}`}
+                        type="button"
+                        onClick={() => {
+                          updateForm(contactPickerOpen, { contact_id: contact.id });
+                          setContactPickerSearch("");
+                          setContactPickerOpen(null);
+                        }}
+                      >
+                        <strong>{contact.name}</strong>
+                        <span>{contact.meta || "No email saved"}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -727,6 +923,7 @@ function OpportunitiesPage({
     status: "OPEN"
   });
   const [leadPickerOpen, setLeadPickerOpen] = React.useState<"create" | "edit" | null>(null);
+  const [leadPickerSearch, setLeadPickerSearch] = React.useState("");
 
   const contactMap = React.useMemo(
     () =>
@@ -761,6 +958,14 @@ function OpportunitiesPage({
       })),
     [contactMap, leadMap, leads]
   );
+
+  const filteredLeadOptions = React.useMemo(() => {
+    const query = leadPickerSearch.trim().toLowerCase();
+    if (!query) {
+      return leadOptions;
+    }
+    return leadOptions.filter((lead) => `${lead.name} ${lead.meta}`.toLowerCase().includes(query));
+  }, [leadOptions, leadPickerSearch]);
 
   const rowsWithLeadNames = React.useMemo(
     () =>
@@ -835,7 +1040,10 @@ function OpportunitiesPage({
           <button
             className="ui-btn ui-btn-secondary"
             type="button"
-            onClick={() => setLeadPickerOpen(target)}
+            onClick={() => {
+              setLeadPickerSearch("");
+              setLeadPickerOpen(target);
+            }}
           >
             Browse leads
           </button>
@@ -983,6 +1191,10 @@ function OpportunitiesPage({
 
       {loading ? (
         <div className="ui-loading">Loading data...</div>
+      ) : rowsWithLeadNames.length === 0 ? (
+        <p className="ui-empty">
+          No opportunities found yet. Create one here once you have a lead worth tracking.
+        </p>
       ) : (
         <DataTable<OpportunityRecord>
           rows={rowsWithLeadNames}
@@ -1046,7 +1258,10 @@ function OpportunitiesPage({
               <button
                 className="ui-btn ui-btn-secondary"
                 type="button"
-                onClick={() => setLeadPickerOpen(null)}
+                onClick={() => {
+                  setLeadPickerSearch("");
+                  setLeadPickerOpen(null);
+                }}
               >
                 Close
               </button>
@@ -1054,26 +1269,39 @@ function OpportunitiesPage({
             {leadOptions.length === 0 ? (
               <p className="ui-empty">No leads found yet. Create one from the Leads page first.</p>
             ) : (
-              <div className="supplier-grid">
-                {leadOptions.map((lead) => (
-                  <button
-                    key={lead.id}
-                    className={`supplier-option${(
-                      leadPickerOpen === "create" ? createForm.lead_id : editForm.lead_id
-                    ) === lead.id
-                      ? " supplier-option-active"
-                      : ""}`}
-                    type="button"
-                    onClick={() => {
-                      updateForm(leadPickerOpen, { lead_id: lead.id });
-                      setLeadPickerOpen(null);
-                    }}
-                  >
-                    <strong>{lead.name}</strong>
-                    <span>{lead.meta}</span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <input
+                  className="ui-input"
+                  placeholder="Search leads by contact or status"
+                  value={leadPickerSearch}
+                  onChange={(e) => setLeadPickerSearch(e.target.value)}
+                />
+                {filteredLeadOptions.length === 0 ? (
+                  <p className="ui-empty">No leads match that search yet.</p>
+                ) : (
+                  <div className="supplier-grid">
+                    {filteredLeadOptions.map((lead) => (
+                      <button
+                        key={lead.id}
+                        className={`supplier-option${(
+                          leadPickerOpen === "create" ? createForm.lead_id : editForm.lead_id
+                        ) === lead.id
+                          ? " supplier-option-active"
+                          : ""}`}
+                        type="button"
+                        onClick={() => {
+                          updateForm(leadPickerOpen, { lead_id: lead.id });
+                          setLeadPickerSearch("");
+                          setLeadPickerOpen(null);
+                        }}
+                      >
+                        <strong>{lead.name}</strong>
+                        <span>{lead.meta}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1308,19 +1536,7 @@ function CRMApp({
         <Routes>
           <Route
             path="/contacts"
-            element={
-              <ResourcePage
-                session={session}
-                setSession={setSession}
-                endpoint="/crm/contacts"
-                title="Contacts"
-                fields={[
-                  { key: "full_name", label: "Full Name" },
-                  { key: "email", label: "Email" }
-                ]}
-                notify={notify}
-              />
-            }
+            element={<ContactsPage session={session} setSession={setSession} notify={notify} />}
           />
           <Route
             path="/leads"
@@ -1370,3 +1586,4 @@ export function RootApp() {
     </HashRouter>
   );
 }
+

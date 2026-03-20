@@ -144,11 +144,11 @@ then it belongs in Beta V3, not Beta V2.
 
 ## 3) CRM UX Consistency
 
-- [ ] Contacts, Leads, and Opportunities share consistent page structure and state handling.
-- [ ] Relation pickers remain readable and searchable across CRM flows.
-- [ ] Empty, loading, and error states are standardized across CRM pages.
-- [ ] Create flows are minimal.
-- [ ] Edit flows expose richer detail without overloading initial entry.
+- [x] Contacts, Leads, and Opportunities share consistent page structure and state handling.
+- [x] Relation pickers remain readable and searchable across CRM flows.
+- [x] Empty, loading, and error states are standardized across CRM pages.
+- [x] Create flows are minimal.
+- [x] Edit flows expose richer detail without overloading initial entry.
 
 ## 4) Data And Safety
 
@@ -204,7 +204,7 @@ Beta V2 is complete only when all of these are true:
 - [x] Items UX rebuild is shipped.
 - [x] Suppliers UX rebuild is shipped.
 - [x] Purchase-order workflow screen is shipped.
-- [ ] CRM page consistency and relation flows are stable.
+- [x] CRM page consistency and relation flows are stable.
 - [ ] Critical e2e and smoke checks pass.
 - [ ] Release, changelog, and triage workflow are active and being used.
 
