@@ -74,8 +74,49 @@ Rate-limit verification:
 - Rate limit activates with `429`
 - `Retry-After` header present (`900`)
 
-## Security Closeout (Deferred)
+## Local Validation Refresh (2026-03-20)
+
+Validated locally after the latest Beta V1/V2 hardening work:
+
+- `pnpm --filter @sphincs/core-api test` -> passed
+- `pnpm --filter @sphincs/core-api test:e2e` -> passed
+- `pnpm --filter @sphincs/erp-web build` -> passed
+- `pnpm --filter @sphincs/crm-web build` -> passed
+
+What this means:
+
+- the software-side Beta V1 baseline remains healthy
+- the remaining unfinished Beta V1 closeout is now an infrastructure credential task, not a known product or code failure
+
+## Security Closeout (Deferred External Action)
 
 - [ ] Rotate Supabase DB password
 - [ ] Update Render `DATABASE_URL` and `DIRECT_URL`
 - [ ] Redeploy and re-run this final sweep
+
+## Supabase Password Rotation Steps
+
+1. Open the Supabase project dashboard.
+2. Go to database connection or project database settings.
+3. Rotate or reset the database password.
+4. Copy the new pooled connection string and direct connection string.
+5. Open the Render service environment settings.
+6. Update:
+   - `DATABASE_URL`
+   - `DIRECT_URL`
+7. Save the environment changes.
+8. Trigger a backend redeploy.
+9. Re-run the production checks in this document:
+   - `GET /health`
+   - `GET /api/v1/system/info`
+   - `POST /api/v1/auth/login`
+   - `POST /api/v1/auth/refresh`
+   - `GET /api/v1/auth/me`
+   - representative ERP and CRM reads
+   - bug-report submission
+
+## Practical Beta V1 Closeout Status
+
+Beta V1 product scope is complete.
+
+The only remaining unchecked Beta V1 task is the external secret-rotation closeout, which must be executed in Supabase and Render before the deferred security action can be marked finished.

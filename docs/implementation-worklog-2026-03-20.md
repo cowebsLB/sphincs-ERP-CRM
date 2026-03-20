@@ -339,3 +339,31 @@ Notes:
 
 - runtime product version remains `Beta V1.10.2` because this pass adds process documentation, not shipped product behavior
 - this closes most of the remaining Beta V2 operations block and gives us a cleaner path to the final hard-stop items
+## 8) Beta V1 closeout validation refresh
+
+Problem observed:
+
+- the Beta V1 checklist was functionally complete, but the remaining deferred security closeout still needed to be separated clearly from product-scope completion
+- we needed a fresh validation snapshot to confirm the current codebase still satisfies the Beta V1 baseline before focusing fully on Beta V2
+
+Implemented:
+
+- refreshed core validation for the Beta V1 baseline:
+  - `pnpm --filter @sphincs/core-api test`
+  - `pnpm --filter @sphincs/core-api test:e2e`
+  - `pnpm --filter @sphincs/erp-web build`
+  - `pnpm --filter @sphincs/crm-web build`
+- updated `docs/backend-final-sweep.md` with:
+  - a local validation refresh snapshot dated `2026-03-20`
+  - explicit Supabase and Render password-rotation steps
+  - a clearer statement that Beta V1 product scope is complete and only the external secret-rotation closeout remains
+
+Files:
+
+- `docs/backend-final-sweep.md`
+
+Notes:
+
+- Beta V1 is complete on the product/code side
+- the only unfinished Beta V1 item is the external infrastructure secret rotation and post-rotation production sweep
+- no runtime version bump was made because this pass confirms status and docs rather than changing shipped behavior
