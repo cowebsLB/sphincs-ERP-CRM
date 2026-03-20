@@ -51,6 +51,43 @@ Validation:
 - `pnpm --filter @sphincs/erp-web build` passed
 - `pnpm --filter @sphincs/crm-web build` passed
 
+## 17) Mobile nav drawer + animated hamburger toggle
+
+Problem observed:
+
+- mobile testing exposed weak navigation affordance because sidebar links were always visible inline and consumed valuable vertical space
+- users needed an explicit collapsible navigation pattern with clearer open/close feedback on smaller screens
+
+Implemented:
+
+- updated shared UI shell in `packages/ui-core/src/ui.css`:
+  - added mobile-only `app-nav-toggle` control
+  - added animated hamburger-to-`X` transitions for open/close state
+  - converted sidebar to an off-canvas drawer under `max-width: 820px`
+  - added overlay layer with click-to-close behavior
+- updated ERP app shell in `apps/erp-web/src/app.tsx`:
+  - added mobile drawer open/close state
+  - wired topbar nav-toggle button
+  - auto-closes drawer on route change and sidebar link click
+- updated CRM app shell in `apps/crm-web/src/app.tsx`:
+  - mirrored ERP mobile drawer behavior for consistency
+- bumped product version to `Beta V1.11.8`
+
+Files:
+
+- `packages/ui-core/src/ui.css`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `apps/core-api/src/system/system.controller.ts`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## 12) Purchase-order patch reliability + validation clarity
 
 Problem observed:

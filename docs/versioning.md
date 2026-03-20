@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.7`
+- `Beta V1.11.8`
 
 Rationale:
 
@@ -142,6 +142,10 @@ Rationale:
   - shared UI shell/navigation/layout behavior now adapts for phone testing
   - table and modal overflow behavior is improved for smaller screens
   - this remains a practical testing baseline, not a full mobile-perfect design overhaul
+- `Beta V1.11.8` marks the mobile navigation control pass:
+  - ERP and CRM now use a collapsible sidebar drawer on small screens
+  - the menu toggle animates from hamburger to `X` when open
+  - overlay click and route navigation both close the drawer cleanly
 
 ## Workflow For Future Updates
 

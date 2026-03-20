@@ -1,5 +1,5 @@
 import React from "react";
-import { HashRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { HashRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { ApiClient, ApiHttpError, AuthSessionExpiredError, type AuthUser, type SessionState } from "@sphincs/api-client";
 import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.11.7";
+const APP_RELEASE_VERSION = "Beta V1.11.8";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -3259,6 +3259,8 @@ function ERPApp({
   setSession: (next: SessionState | null) => void;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showBugDialog, setShowBugDialog] = React.useState(false);
   const [bugBusy, setBugBusy] = React.useState(false);
@@ -3277,6 +3279,10 @@ function ERPApp({
     setToast({ type, message });
     setTimeout(() => setToast(null), 2600);
   }, []);
+
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
     return (
@@ -3353,17 +3359,36 @@ function ERPApp({
 
   return (
     <main className="app-shell">
-      <aside className="app-sidebar">
+      <aside className={`app-sidebar${mobileNavOpen ? " is-open" : ""}`}>
         <h2>SPHINCS ERP</h2>
         <p className="ui-muted">{session.user.email}</p>
-        <Link to="/items">Items</Link>
-        <Link to="/suppliers">Suppliers</Link>
-        <Link to="/purchase-orders">Purchase Orders</Link>
-        {hasRole(session, "Admin") && <Link to="/access">Access</Link>}
+        <Link to="/items" onClick={() => setMobileNavOpen(false)}>Items</Link>
+        <Link to="/suppliers" onClick={() => setMobileNavOpen(false)}>Suppliers</Link>
+        <Link to="/purchase-orders" onClick={() => setMobileNavOpen(false)}>Purchase Orders</Link>
+        {hasRole(session, "Admin") && <Link to="/access" onClick={() => setMobileNavOpen(false)}>Access</Link>}
       </aside>
+      <button
+        className={`app-sidebar-overlay${mobileNavOpen ? " is-visible" : ""}`}
+        type="button"
+        aria-label="Close navigation menu"
+        onClick={() => setMobileNavOpen(false)}
+      />
       <section className="app-main">
         <header className="app-topbar">
-          <strong>ERP Operations</strong>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button
+              className={`app-nav-toggle${mobileNavOpen ? " is-open" : ""}`}
+              type="button"
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <strong>ERP Operations</strong>
+          </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <nav className="app-topnav">
               <a href="../">Home</a>

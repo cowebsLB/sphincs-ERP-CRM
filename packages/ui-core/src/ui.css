@@ -73,6 +73,46 @@ body {
   align-items: center;
 }
 
+.app-nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0f141c;
+  color: var(--text);
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.app-nav-toggle span {
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  transform-origin: center;
+}
+
+.app-nav-toggle.is-open span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.app-nav-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.app-nav-toggle.is-open span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.app-sidebar-overlay {
+  display: none;
+}
+
 .app-topnav {
   display: flex;
   gap: 8px;
@@ -789,9 +829,22 @@ body {
   }
 
   .app-sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 14px 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(82vw, 300px);
+    z-index: 1200;
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+    padding: 16px 12px;
+    overflow-y: auto;
+    transform: translateX(-104%);
+    transition: transform 0.24s ease;
+  }
+
+  .app-sidebar.is-open {
+    transform: translateX(0);
   }
 
   .app-sidebar h2 {
@@ -808,6 +861,11 @@ body {
     padding: 14px;
   }
 
+  .app-nav-toggle {
+    display: inline-flex;
+    flex-direction: column;
+  }
+
   .app-topbar {
     align-items: stretch;
     flex-direction: column;
@@ -819,6 +877,23 @@ body {
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+  }
+
+  .app-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.44);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1100;
+    transition: opacity 0.2s ease;
+  }
+
+  .app-sidebar-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .app-topnav {

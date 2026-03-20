@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.7` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.8` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.8 - 2026-03-20
+
+### Added
+
+- Mobile navigation drawer with collapsible sidebar behavior in ERP and CRM.
+- Animated hamburger icon that transitions to an `X` when the drawer is open.
+- Mobile overlay click-to-close behavior for the sidebar drawer.
+
+### Changed
+
+- Sidebar links now close the drawer automatically on mobile after navigation.
+- Topbar now includes a dedicated nav-toggle control for small screens.
 
 ## Beta V1.11.7 - 2026-03-20
 
