@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.0`
+- `Beta V1.11.1`
 
 Rationale:
 
@@ -116,6 +116,9 @@ Rationale:
   - critical account changes revoke active refresh sessions
   - ERP and CRM sync `/auth/me` on startup so stored sessions pick up updated role state
   - backend and e2e coverage now include role-change session invalidation
+- `Beta V1.11.1` marks the purchase-order layout stability fix:
+  - workflow grid sizing no longer squeezes the editor and summary into overlap on tighter desktop widths
+  - line-item grids scroll inside their own section instead of forcing page-wide horizontal overflow
 
 ## Workflow For Future Updates
 

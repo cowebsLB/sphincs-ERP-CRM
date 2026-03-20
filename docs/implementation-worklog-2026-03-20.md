@@ -474,3 +474,40 @@ Validation:
 Notes:
 
 - this improves the open Beta V2 account-state messaging item, but I am still leaving the checklist conservative until the remaining blocked/cross-app verification language is explicitly finished
+## 10) Purchase-order overlap hotfix
+
+Problem observed:
+
+- live ERP purchase-order screens could feel visually overlapped on some desktop widths
+- the line-item grid could force page-wide horizontal overflow, making the summary panel appear crowded into editor content
+- the issue was reported from production usage and required an immediate UI stability patch
+
+Implemented:
+
+- updated shared UI layout constraints in `packages/ui-core/src/ui.css`:
+  - added `min-width: 0` guards for shell/editor containers to prevent runaway overflow behavior in nested grids
+  - tuned `purchase-order-workflow` columns to a safer desktop split (`main + fixed summary width`)
+  - made `purchase-order-line-items` horizontally scrollable within the section instead of stretching the whole page
+  - added explicit minimum widths for line-item grids so overflow is handled in the section, not by the page
+  - added an earlier desktop breakpoint (`max-width: 1400px`) to stack workflow and summary before they crowd each other
+- bumped product version to `Beta V1.11.1`
+
+Files:
+
+- `packages/ui-core/src/ui.css`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
+Notes:
+
+- this patch targets layout stability only and does not change backend behavior
+- it is designed to reduce overlap perception and improve usability on narrower desktop windows without changing the existing visual theme

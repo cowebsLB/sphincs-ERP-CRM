@@ -31,6 +31,7 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 240px 1fr;
+  min-width: 0;
 }
 
 .app-sidebar {
@@ -57,6 +58,7 @@ body {
 
 .app-main {
   padding: 24px;
+  min-width: 0;
 }
 
 .app-topbar {
@@ -611,13 +613,14 @@ body {
 .purchase-order-workflow {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   align-items: start;
 }
 
 .purchase-order-editor {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .purchase-order-section-header {
@@ -645,6 +648,8 @@ body {
 .purchase-order-line-items {
   display: grid;
   gap: 12px;
+  overflow-x: auto;
+  min-width: 0;
 }
 
 .purchase-order-line-grid {
@@ -652,10 +657,12 @@ body {
   grid-template-columns: minmax(170px, 1.2fr) minmax(180px, 1.4fr) repeat(4, minmax(90px, 0.65fr)) minmax(110px, 0.8fr) minmax(170px, 1fr);
   gap: 10px;
   align-items: start;
+  min-width: 980px;
 }
 
 .purchase-order-line-grid-receiving {
   grid-template-columns: minmax(170px, 1.2fr) minmax(180px, 1.4fr) repeat(5, minmax(90px, 0.65fr)) minmax(110px, 0.8fr) minmax(170px, 1fr);
+  min-width: 1070px;
 }
 
 .purchase-order-line-grid-header {
@@ -687,6 +694,7 @@ body {
   top: 24px;
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .purchase-order-summary h3 {
@@ -797,6 +805,16 @@ body {
 
   .purchase-order-line-grid,
   .purchase-order-line-grid-receiving {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-order-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 1400px) {
+  .purchase-order-workflow {
     grid-template-columns: 1fr;
   }
 

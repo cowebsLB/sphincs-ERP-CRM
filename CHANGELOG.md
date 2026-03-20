@@ -7,7 +7,15 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.0` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.1` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.1 - 2026-03-20
+
+### Fixed
+
+- Purchase-order layout no longer causes cross-panel overlap on narrower desktop viewports.
+- Purchase-order line-item grids now scroll inside their section instead of stretching the full page width.
+- Workflow column sizing now degrades earlier on smaller desktop widths so the summary panel does not crowd or clip editor content.
 
 ## Beta V1.11.0 - 2026-03-20
 
