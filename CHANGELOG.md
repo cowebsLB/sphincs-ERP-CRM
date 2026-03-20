@@ -7,7 +7,18 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.6` - current active beta snapshot as of 2026-03-20
+- `Beta V1.11.7` - current active beta snapshot as of 2026-03-20
+
+## Beta V1.11.7 - 2026-03-20
+
+### Changed
+
+- Added a mobile-testable baseline responsive pass for ERP/CRM app shell and shared UI:
+  - app shell now stacks on smaller screens
+  - sidebar and topbar adapt cleanly for phone widths
+  - table wrappers now support horizontal scrolling
+  - modal/auth spacing improved for small viewports
+- This is intentionally a baseline usability pass for testing, not a full mobile-perfect redesign.
 
 ## Beta V1.11.6 - 2026-03-20
 

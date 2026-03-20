@@ -181,6 +181,39 @@ Validation:
 - `pnpm --filter @sphincs/erp-web test` passed
 - `pnpm --filter @sphincs/crm-web test` passed
 
+## 16) Mobile-testable baseline responsiveness pass
+
+Problem observed:
+
+- platform was primarily desktop-tuned and difficult to use for practical testing on phone-sized viewports
+- Beta V2 non-goals explicitly avoid a full mobile-perfect redesign, but baseline mobile operability is still needed for tester coverage
+
+Implemented:
+
+- updated shared UI responsive behavior in `packages/ui-core/src/ui.css`:
+  - app shell now collapses to single-column layout on small screens
+  - sidebar becomes top section with wrapped quick links
+  - main content padding reduced for mobile
+  - topbar now stacks and wraps action controls cleanly
+  - tables now scroll horizontally inside wrappers instead of breaking layout
+  - modal and auth card spacing/heights adjusted for small viewports
+- bumped product version to `Beta V1.11.7`
+
+Files:
+
+- `packages/ui-core/src/ui.css`
+- `apps/core-api/src/system/system.controller.ts`
+- `apps/erp-web/src/app.tsx`
+- `apps/crm-web/src/app.tsx`
+- `CHANGELOG.md`
+- `docs/versioning.md`
+- `index.md`
+
+Validation:
+
+- `pnpm --filter @sphincs/erp-web build` passed
+- `pnpm --filter @sphincs/crm-web build` passed
+
 ## 15) Beta V2 checklist closeout evidence pass
 
 Problem observed:

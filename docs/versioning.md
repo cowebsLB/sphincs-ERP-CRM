@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.11.6`
+- `Beta V1.11.7`
 
 Rationale:
 
@@ -138,6 +138,10 @@ Rationale:
   - user-level data isolation is now backed by explicit service-level scope assertions for ERP core entities
   - critical automated checks are recorded as the Beta V2 closeout run
   - remaining Beta V2 hard-stop checklist gates are now explicitly closed with evidence references
+- `Beta V1.11.7` marks the mobile-testable baseline pass:
+  - shared UI shell/navigation/layout behavior now adapts for phone testing
+  - table and modal overflow behavior is improved for smaller screens
+  - this remains a practical testing baseline, not a full mobile-perfect design overhaul
 
 ## Workflow For Future Updates
 

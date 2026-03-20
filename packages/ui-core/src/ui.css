@@ -395,6 +395,7 @@ body {
 
 .ui-table-wrap {
   margin-top: 14px;
+  overflow-x: auto;
 }
 
 .ui-search {
@@ -407,6 +408,7 @@ body {
   background: #0f141c;
   border-radius: 10px;
   overflow: hidden;
+  min-width: 640px;
 }
 
 .ui-table th,
@@ -782,6 +784,43 @@ body {
 }
 
 @media (max-width: 820px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 12px;
+  }
+
+  .app-sidebar h2 {
+    margin: 0 0 6px;
+    font-size: 28px;
+  }
+
+  .app-sidebar a {
+    display: inline-flex;
+    margin: 0 6px 6px 0;
+  }
+
+  .app-main {
+    padding: 14px;
+  }
+
+  .app-topbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .app-topbar > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
   .app-topnav {
     display: none;
   }
@@ -810,6 +849,32 @@ body {
 
   .purchase-order-summary {
     position: static;
+  }
+
+  .ui-modal-backdrop {
+    padding: 8px;
+  }
+
+  .ui-modal-card {
+    max-height: calc(100vh - 16px);
+    padding: 12px;
+  }
+
+  .auth-page {
+    padding: 12px;
+  }
+
+  .auth-card {
+    padding: 14px;
+  }
+
+  .auth-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .auth-nav {
+    flex-wrap: wrap;
   }
 }
 
