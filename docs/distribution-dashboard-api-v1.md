@@ -35,6 +35,7 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/reservations`
 - `GET /api/v1/distribution/reorder-rules`
 - `POST /api/v1/distribution/reorder-rules`
+- `GET /api/v1/distribution/restocking-suggestions`
 
 ## Purpose
 
@@ -95,7 +96,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add restocking recommendation APIs derived from reorder rules and live stock.
+1. Add role-specific approval APIs for adjustments and high-risk stock operations.
 
 ## Movement API Notes (V1.16.3)
 
@@ -431,3 +432,24 @@ Supported query parameters:
 - `itemId`
 - `isActive`
 - `includeDeleted`
+
+## Restocking Suggestions API Notes (V1.16.14)
+
+### `GET /api/v1/distribution/restocking-suggestions`
+
+Supported query parameters:
+
+- `branchId`
+- `includeInactive`
+- `includeZero`
+- `includeDeleted`
+
+Behavior:
+
+- Suggestions are derived by joining reorder rules with current `inventory_stocks` snapshots.
+- For each rule, the API computes:
+  - `current_stock`
+  - `shortage_to_reorder_level`
+  - `suggested_order_quantity`
+  - `needs_restock`
+- By default, rules that do not currently need restocking are excluded unless `includeZero=true`.

@@ -9,6 +9,7 @@ describe("DistributionService", () => {
     inventoryStock: {
       findMany: jest.fn().mockResolvedValue([
         {
+          item_id: "item-1",
           branch_id: "branch-1",
           quantity_on_hand: 12,
           in_transit_quantity: 3,
@@ -24,6 +25,7 @@ describe("DistributionService", () => {
           }
         },
         {
+          item_id: "item-2",
           branch_id: "branch-1",
           quantity_on_hand: 0,
           in_transit_quantity: 0,
@@ -1194,6 +1196,107 @@ describe("DistributionService", () => {
         }
       )
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("builds restocking suggestions from rules and stock", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.reorderRule.findMany.mockResolvedValue([
+      {
+        id: "rr-1",
+        organization_id: "org-1",
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        preferred_supplier_id: "sup-1",
+        minimum_stock: 5,
+        reorder_level: 12,
+        reorder_quantity: 10,
+        lead_time_days: 4,
+        is_active: true,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A" },
+        preferred_supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" }
+      }
+    ]);
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: 3
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.listRestockingSuggestions(
+      {
+        includeZero: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        item_id: "item-1",
+        current_stock: 3,
+        shortage_to_reorder_level: 9,
+        suggested_order_quantity: 10,
+        needs_restock: true
+      })
+    );
+  });
+
+  it("can include zero-need restocking suggestions", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.reorderRule.findMany.mockResolvedValue([
+      {
+        id: "rr-1",
+        organization_id: "org-1",
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        preferred_supplier_id: null,
+        minimum_stock: 5,
+        reorder_level: 8,
+        reorder_quantity: 4,
+        lead_time_days: 2,
+        is_active: true,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A" },
+        preferred_supplier: null
+      }
+    ]);
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: 11
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.listRestockingSuggestions(
+      {
+        includeZero: true
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        current_stock: 11,
+        shortage_to_reorder_level: 0,
+        suggested_order_quantity: 0,
+        needs_restock: false
+      })
+    );
   });
 
   it("enforces user scope for dashboard access", async () => {

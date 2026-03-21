@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.13` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.14` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.14 - 2026-03-21
+
+### Added
+
+- Restocking suggestion API:
+  - `GET /api/v1/distribution/restocking-suggestions`
+- Suggestion filters:
+  - `branchId`, `includeInactive`, `includeZero`, `includeDeleted`
+- Derived suggestion fields per branch/item rule:
+  - current stock
+  - shortage to reorder level
+  - suggested order quantity
+  - restock-needed indicator
+
+### Changed
+
+- Distribution service now derives replenishment suggestions by combining reorder rules with live inventory stock snapshots.
+- System fallback version updated to `Beta V1.16.14`.
 
 ## Beta V1.16.13 - 2026-03-21
 

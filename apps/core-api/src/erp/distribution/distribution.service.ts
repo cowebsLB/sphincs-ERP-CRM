@@ -81,6 +81,13 @@ type ReorderRuleListFilters = {
   includeDeleted?: boolean;
 };
 
+type RestockingSuggestionFilters = {
+  branchId?: string;
+  includeInactive?: boolean;
+  includeZero?: boolean;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -1948,6 +1955,101 @@ export class DistributionService {
         }
       }
     });
+  }
+
+  async listRestockingSuggestions(filters: RestockingSuggestionFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rules = await this.prisma.reorderRule.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {}),
+        ...(filters.includeInactive ? {} : { is_active: true })
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        },
+        preferred_supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
+          }
+        }
+      },
+      take: 500
+    });
+
+    if (rules.length === 0) {
+      return [];
+    }
+
+    const itemIds = [...new Set(rules.map((rule) => rule.item_id))];
+    const branchIds = [...new Set(rules.map((rule) => rule.branch_id))];
+
+    const stocks = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        deleted_at: null,
+        item_id: { in: itemIds },
+        branch_id: { in: branchIds }
+      },
+      select: {
+        item_id: true,
+        branch_id: true,
+        quantity_on_hand: true
+      }
+    });
+
+    const stockByItemBranch = new Map<string, number>();
+    for (const row of stocks) {
+      stockByItemBranch.set(`${row.branch_id}:${row.item_id}`, row.quantity_on_hand ?? 0);
+    }
+
+    const suggestions = rules.map((rule) => {
+      const key = `${rule.branch_id}:${rule.item_id}`;
+      const currentQty = stockByItemBranch.get(key) ?? 0;
+      const shortageToLevel = Math.max((rule.reorder_level ?? 0) - currentQty, 0);
+      const suggestedOrderQty = shortageToLevel > 0 ? Math.max(shortageToLevel, rule.reorder_quantity ?? 0) : 0;
+
+      return {
+        branch_id: rule.branch_id,
+        branch_name: rule.branch.name,
+        item_id: rule.item_id,
+        item_name: rule.item.name,
+        sku: rule.item.sku,
+        preferred_supplier_id: rule.preferred_supplier_id,
+        preferred_supplier_name: rule.preferred_supplier?.name ?? null,
+        minimum_stock: rule.minimum_stock,
+        reorder_level: rule.reorder_level,
+        reorder_quantity: rule.reorder_quantity,
+        lead_time_days: rule.lead_time_days,
+        is_active: rule.is_active,
+        current_stock: currentQty,
+        shortage_to_reorder_level: shortageToLevel,
+        suggested_order_quantity: suggestedOrderQty,
+        needs_restock: suggestedOrderQty > 0
+      };
+    });
+
+    return filters.includeZero ? suggestions : suggestions.filter((row) => row.needs_restock);
   }
 
   async dashboard(scope?: UserScope) {

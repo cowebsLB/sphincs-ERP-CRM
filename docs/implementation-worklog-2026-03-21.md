@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Restocking Suggestions API (V1.16.14)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added restocking suggestion endpoint:
+  - `GET /api/v1/distribution/restocking-suggestions`
+- Added derived suggestion service logic that combines:
+  - reorder rules
+  - current inventory stock levels
+- Added filters for:
+  - `branchId`
+  - `includeInactive`
+  - `includeZero`
+  - `includeDeleted`
+- Added unit tests for:
+  - below-threshold suggestion generation
+  - optional inclusion of zero-need suggestions
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `85/85` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Suggestions are read-only and computed dynamically, enabling replenishment planning without additional persistence tables.
+
 ## Task: Distribution Reorder Rule APIs (V1.16.13)
 
 Date: 2026-03-21

@@ -341,4 +341,23 @@ export class DistributionController {
   createReorderRule(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReorderRule(body, req?.user);
   }
+
+  @Get("restocking-suggestions")
+  listRestockingSuggestions(
+    @Query("branchId") branchId?: string,
+    @Query("includeInactive") includeInactive?: string,
+    @Query("includeZero") includeZero?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listRestockingSuggestions(
+      {
+        branchId,
+        includeInactive: includeInactive === "true",
+        includeZero: includeZero === "true",
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }
