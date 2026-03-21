@@ -7,7 +7,28 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.14` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.15` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.15 - 2026-03-21
+
+### Added
+
+- Adjustment lifecycle action APIs:
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/submit`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/approve`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/apply`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/reverse`
+- Adjustment status transition guardrails:
+  - `DRAFT -> SUBMITTED|REVERSED`
+  - `SUBMITTED -> APPROVED|REVERSED`
+  - `APPROVED -> APPLIED|REVERSED`
+  - `APPLIED -> REVERSED`
+
+### Changed
+
+- Distribution service now enforces action-driven adjustment approvals/apply/reverse operations with branch-scope checks.
+- Adjustment lifecycle transitions now stamp operational metadata (`approved_by`, `applied_at`) where applicable.
+- System fallback version updated to `Beta V1.16.15`.
 
 ## Beta V1.16.14 - 2026-03-21
 

@@ -156,6 +156,42 @@ export class DistributionController {
     return this.distributionService.createAdjustment(body, req?.user);
   }
 
+  @Patch("adjustments/:adjustmentId/submit")
+  submitAdjustment(
+    @Param("adjustmentId") adjustmentId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionAdjustment(adjustmentId, { ...body, action: "SUBMIT" }, req?.user);
+  }
+
+  @Patch("adjustments/:adjustmentId/approve")
+  approveAdjustment(
+    @Param("adjustmentId") adjustmentId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionAdjustment(adjustmentId, { ...body, action: "APPROVE" }, req?.user);
+  }
+
+  @Patch("adjustments/:adjustmentId/apply")
+  applyAdjustment(
+    @Param("adjustmentId") adjustmentId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionAdjustment(adjustmentId, { ...body, action: "APPLY" }, req?.user);
+  }
+
+  @Patch("adjustments/:adjustmentId/reverse")
+  reverseAdjustment(
+    @Param("adjustmentId") adjustmentId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionAdjustment(adjustmentId, { ...body, action: "REVERSE" }, req?.user);
+  }
+
   @Get("dispatches")
   listDispatches(
     @Query("status") status?: string,

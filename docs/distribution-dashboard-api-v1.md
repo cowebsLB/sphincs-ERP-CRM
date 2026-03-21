@@ -17,6 +17,10 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/transfers/:transferId/receive`
 - `GET /api/v1/distribution/adjustments`
 - `POST /api/v1/distribution/adjustments`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/submit`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/approve`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/apply`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/reverse`
 - `GET /api/v1/distribution/dispatches`
 - `POST /api/v1/distribution/dispatches`
 - `PATCH /api/v1/distribution/dispatches/:dispatchId/ready`
@@ -96,7 +100,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add role-specific approval APIs for adjustments and high-risk stock operations.
+1. Add role-specific permission gates per distribution action (approve/apply/reverse/dispatch).
 
 ## Movement API Notes (V1.16.3)
 
@@ -265,6 +269,26 @@ Supported query parameters:
 - `adjustmentType`
 - `branchId`
 - `includeDeleted`
+
+## Adjustment Lifecycle Actions (V1.16.15)
+
+### Endpoints
+
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/submit`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/approve`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/apply`
+- `PATCH /api/v1/distribution/adjustments/:adjustmentId/reverse`
+
+### Behavior
+
+- Actions enforce strict status transitions:
+  - `DRAFT -> SUBMITTED|REVERSED`
+  - `SUBMITTED -> APPROVED|REVERSED`
+  - `APPROVED -> APPLIED|REVERSED`
+  - `APPLIED -> REVERSED`
+- Invalid transition attempts return `400 Bad Request`.
+- Branch scope is enforced against the adjustment branch.
+- Lifecycle updates stamp `approved_by` and `applied_at` where relevant.
 
 ## Dispatch API Notes (V1.16.7)
 

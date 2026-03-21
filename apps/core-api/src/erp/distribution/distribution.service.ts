@@ -91,6 +91,7 @@ type RestockingSuggestionFilters = {
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
+type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
 
 @Injectable()
 export class DistributionService {
@@ -262,6 +263,28 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockAdjustmentStatus).join(", ")}`);
     }
     return text as StockAdjustmentStatus;
+  }
+
+  private parseAdjustmentTransitionAction(value: unknown): AdjustmentTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("action is required");
+    }
+    if (!["SUBMIT", "APPROVE", "APPLY", "REVERSE"].includes(text)) {
+      throw new BadRequestException("action must be one of: SUBMIT, APPROVE, APPLY, REVERSE");
+    }
+    return text as AdjustmentTransitionAction;
+  }
+
+  private canTransitionAdjustment(fromStatus: StockAdjustmentStatus, toStatus: StockAdjustmentStatus): boolean {
+    const allowed: Record<StockAdjustmentStatus, StockAdjustmentStatus[]> = {
+      [StockAdjustmentStatus.DRAFT]: [StockAdjustmentStatus.SUBMITTED, StockAdjustmentStatus.REVERSED],
+      [StockAdjustmentStatus.SUBMITTED]: [StockAdjustmentStatus.APPROVED, StockAdjustmentStatus.REVERSED],
+      [StockAdjustmentStatus.APPROVED]: [StockAdjustmentStatus.APPLIED, StockAdjustmentStatus.REVERSED],
+      [StockAdjustmentStatus.APPLIED]: [StockAdjustmentStatus.REVERSED],
+      [StockAdjustmentStatus.REVERSED]: []
+    };
+    return allowed[fromStatus].includes(toStatus);
   }
 
   private parseOptionalStockAdjustmentType(value: unknown): StockAdjustmentType | undefined {
@@ -1297,6 +1320,81 @@ export class DistributionService {
         line_items: {
           create: lineItems
         }
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionAdjustment(
+    adjustmentIdRaw: string,
+    body: Record<string, unknown>,
+    scope?: UserScope
+  ) {
+    const user = this.requireScope(scope);
+    const adjustmentId = this.parseRequiredUuid(adjustmentIdRaw, "adjustmentId");
+    const action = this.parseAdjustmentTransitionAction(body.action);
+    const notes = this.parseOptionalString(body.notes);
+
+    const adjustment = await this.prisma.stockAdjustment.findFirst({
+      where: {
+        id: adjustmentId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        status: true,
+        branch_id: true
+      }
+    });
+    if (!adjustment) {
+      throw new NotFoundException("Adjustment not found");
+    }
+    await this.validateBranchScope(adjustment.branch_id, "adjustment.branch_id", user);
+
+    const targetStatus =
+      action === "SUBMIT"
+        ? StockAdjustmentStatus.SUBMITTED
+        : action === "APPROVE"
+          ? StockAdjustmentStatus.APPROVED
+          : action === "APPLY"
+            ? StockAdjustmentStatus.APPLIED
+            : StockAdjustmentStatus.REVERSED;
+
+    if (!this.canTransitionAdjustment(adjustment.status, targetStatus)) {
+      throw new BadRequestException(
+        `Cannot transition adjustment from ${adjustment.status} to ${targetStatus}`
+      );
+    }
+
+    return this.prisma.stockAdjustment.update({
+      where: { id: adjustment.id },
+      data: {
+        status: targetStatus,
+        approved_by:
+          targetStatus === StockAdjustmentStatus.APPROVED || targetStatus === StockAdjustmentStatus.APPLIED
+            ? user.id
+            : undefined,
+        applied_at: targetStatus === StockAdjustmentStatus.APPLIED ? new Date() : undefined,
+        notes: notes ?? undefined
       },
       include: {
         branch: {

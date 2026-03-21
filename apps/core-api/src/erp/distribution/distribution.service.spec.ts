@@ -99,10 +99,21 @@ describe("DistributionService", () => {
     },
     stockAdjustment: {
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "adj-1",
+        status: "DRAFT",
+        branch_id: BRANCH_1
+      }),
       create: jest.fn().mockResolvedValue({
         id: "adj-1",
         adjustment_number: "ADJ-20260321120000-ABCD",
         status: "DRAFT",
+        line_items: []
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "adj-1",
+        adjustment_number: "ADJ-20260321120000-ABCD",
+        status: "SUBMITTED",
         line_items: []
       })
     },
@@ -675,6 +686,90 @@ describe("DistributionService", () => {
             }
           ]
         },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("transitions adjustment to SUBMITTED from DRAFT", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionAdjustment(
+      "77777777-7777-4777-8777-777777777777",
+      { action: "SUBMIT" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAdjustment.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "77777777-7777-4777-8777-777777777777",
+          organization_id: "org-1",
+          deleted_at: null
+        })
+      })
+    );
+    expect(prismaMock.stockAdjustment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "SUBMITTED"
+        })
+      })
+    );
+  });
+
+  it("transitions adjustment to APPLIED from APPROVED", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockAdjustment.findFirst.mockResolvedValue({
+      id: "adj-1",
+      status: "APPROVED",
+      branch_id: BRANCH_1
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionAdjustment(
+      "77777777-7777-4777-8777-777777777777",
+      { action: "APPLY" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAdjustment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "APPLIED",
+          approved_by: "user-1",
+          applied_at: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("rejects invalid adjustment transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockAdjustment.findFirst.mockResolvedValue({
+      id: "adj-1",
+      status: "DRAFT",
+      branch_id: BRANCH_1
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionAdjustment(
+        "77777777-7777-4777-8777-777777777777",
+        { action: "APPLY" },
         {
           id: "user-1",
           organizationId: "org-1",

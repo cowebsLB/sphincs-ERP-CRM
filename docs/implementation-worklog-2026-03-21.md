@@ -1,5 +1,35 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Adjustment Lifecycle Actions (V1.16.15)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added adjustment transition endpoints:
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/submit`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/approve`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/apply`
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/reverse`
+- Added service-level adjustment transition engine with:
+  - action parsing
+  - allowed-transition validation
+  - branch scope validation
+  - approval/apply metadata stamping
+- Added unit tests for:
+  - valid submit transition
+  - valid apply transition
+  - invalid transition rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `88/88` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Adjustment approval and application flows are now action-driven and guarded against status-skipping transitions.
+
 ## Task: Distribution Restocking Suggestions API (V1.16.14)
 
 Date: 2026-03-21
