@@ -1,5 +1,35 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Transfer Lifecycle Actions (V1.16.9)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added transfer status transition action endpoints:
+  - `PATCH /api/v1/distribution/transfers/:transferId/request`
+  - `PATCH /api/v1/distribution/transfers/:transferId/approve`
+  - `PATCH /api/v1/distribution/transfers/:transferId/dispatch`
+  - `PATCH /api/v1/distribution/transfers/:transferId/receive`
+- Added service-level transition engine for transfer workflow:
+  - action parsing
+  - allowed-transition validation
+  - branch scope enforcement
+  - status-history append for audit traceability
+- Added unit test coverage for:
+  - valid request transition
+  - valid receive transition to `COMPLETED`
+  - invalid transition rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `71/71` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Transition actions now auto-stamp actor/time fields (`requested_by`, `approved_by`, `dispatched_date`, `received_date`) when applicable.
+
 ## Task: Full Workspace Build Verification
 
 Date: 2026-03-21

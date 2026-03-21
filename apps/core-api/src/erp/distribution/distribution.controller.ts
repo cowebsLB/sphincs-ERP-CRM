@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { DistributionService } from "./distribution.service";
 
@@ -94,6 +94,42 @@ export class DistributionController {
   @Post("transfers")
   createTransfer(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createTransfer(body, req?.user);
+  }
+
+  @Patch("transfers/:transferId/request")
+  requestTransfer(
+    @Param("transferId") transferId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionTransfer(transferId, { ...body, action: "REQUEST" }, req?.user);
+  }
+
+  @Patch("transfers/:transferId/approve")
+  approveTransfer(
+    @Param("transferId") transferId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionTransfer(transferId, { ...body, action: "APPROVE" }, req?.user);
+  }
+
+  @Patch("transfers/:transferId/dispatch")
+  dispatchTransfer(
+    @Param("transferId") transferId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionTransfer(transferId, { ...body, action: "DISPATCH" }, req?.user);
+  }
+
+  @Patch("transfers/:transferId/receive")
+  receiveTransfer(
+    @Param("transferId") transferId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionTransfer(transferId, { ...body, action: "RECEIVE" }, req?.user);
   }
 
   @Get("adjustments")

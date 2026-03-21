@@ -7,7 +7,30 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.8` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.9` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.9 - 2026-03-21
+
+### Added
+
+- Transfer lifecycle action APIs:
+  - `PATCH /api/v1/distribution/transfers/:transferId/request`
+  - `PATCH /api/v1/distribution/transfers/:transferId/approve`
+  - `PATCH /api/v1/distribution/transfers/:transferId/dispatch`
+  - `PATCH /api/v1/distribution/transfers/:transferId/receive`
+- Transition guardrails for transfer workflow states:
+  - `DRAFT -> REQUESTED`
+  - `REQUESTED -> APPROVED`
+  - `APPROVED -> DISPATCHED`
+  - `DISPATCHED -> PARTIAL|COMPLETED`
+  - `PARTIAL -> COMPLETED`
+- Status-history append behavior on each transfer transition for stronger auditability.
+
+### Changed
+
+- Distribution service now enforces action-based transfer transition validation and branch scope checks before status mutation.
+- Transfer transition actions now auto-stamp actor/time metadata (`requested_by`, `approved_by`, `dispatched_date`, `received_date`) based on the target state.
+- System fallback version updated to `Beta V1.16.9`.
 
 ## Beta V1.16.8 - 2026-03-21
 

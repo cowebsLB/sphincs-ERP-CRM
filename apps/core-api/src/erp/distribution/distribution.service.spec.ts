@@ -54,10 +54,23 @@ describe("DistributionService", () => {
     stockTransfer: {
       count: jest.fn().mockResolvedValue(3),
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "tr-1",
+        status: "DRAFT",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        status_history: []
+      }),
       create: jest.fn().mockResolvedValue({
         id: "tr-1",
         transfer_number: "TR-20260321120000-ABCD",
         status: "DRAFT",
+        line_items: []
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "tr-1",
+        transfer_number: "TR-20260321120000-ABCD",
+        status: "REQUESTED",
         line_items: []
       })
     },
@@ -437,6 +450,94 @@ describe("DistributionService", () => {
             }
           ]
         },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("transitions transfer to REQUESTED from DRAFT", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionTransfer(
+      "33333333-3333-4333-8333-333333333333",
+      { action: "REQUEST", notes: "Submit for approval" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "33333333-3333-4333-8333-333333333333",
+          organization_id: "org-1",
+          deleted_at: null
+        })
+      })
+    );
+    expect(prismaMock.stockTransfer.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "REQUESTED",
+          requested_by: "user-1"
+        })
+      })
+    );
+  });
+
+  it("transitions transfer to COMPLETED on receive", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findFirst.mockResolvedValue({
+      id: "tr-1",
+      status: "DISPATCHED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      status_history: []
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionTransfer(
+      "33333333-3333-4333-8333-333333333333",
+      { action: "RECEIVE", status: "COMPLETED" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_2
+      }
+    );
+
+    expect(prismaMock.stockTransfer.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "COMPLETED",
+          received_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("rejects invalid transfer transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findFirst.mockResolvedValue({
+      id: "tr-1",
+      status: "DRAFT",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      status_history: []
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionTransfer(
+        "33333333-3333-4333-8333-333333333333",
+        { action: "DISPATCH" },
         {
           id: "user-1",
           organizationId: "org-1",

@@ -66,6 +66,8 @@ type ReturnListFilters = {
   includeDeleted?: boolean;
 };
 
+type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
+
 @Injectable()
 export class DistributionService {
   constructor(private readonly prisma: PrismaService) {}
@@ -174,6 +176,57 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockTransferStatus).join(", ")}`);
     }
     return text as StockTransferStatus;
+  }
+
+  private parseTransferTransitionAction(value: unknown): TransferTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("action is required");
+    }
+    if (!["REQUEST", "APPROVE", "DISPATCH", "RECEIVE"].includes(text)) {
+      throw new BadRequestException("action must be one of: REQUEST, APPROVE, DISPATCH, RECEIVE");
+    }
+    return text as TransferTransitionAction;
+  }
+
+  private parseTransferReceiveStatus(value: unknown): StockTransferStatus {
+    const status = this.parseOptionalStockTransferStatus(value);
+    if (!status) {
+      return StockTransferStatus.COMPLETED;
+    }
+    if (status !== StockTransferStatus.PARTIAL && status !== StockTransferStatus.COMPLETED) {
+      throw new BadRequestException("receive status must be PARTIAL or COMPLETED");
+    }
+    return status;
+  }
+
+  private canTransitionTransfer(fromStatus: StockTransferStatus, toStatus: StockTransferStatus): boolean {
+    const allowed: Record<StockTransferStatus, StockTransferStatus[]> = {
+      [StockTransferStatus.DRAFT]: [StockTransferStatus.REQUESTED, StockTransferStatus.CANCELLED],
+      [StockTransferStatus.REQUESTED]: [StockTransferStatus.APPROVED, StockTransferStatus.CANCELLED],
+      [StockTransferStatus.APPROVED]: [StockTransferStatus.DISPATCHED, StockTransferStatus.CANCELLED],
+      [StockTransferStatus.DISPATCHED]: [StockTransferStatus.PARTIAL, StockTransferStatus.COMPLETED],
+      [StockTransferStatus.PARTIAL]: [StockTransferStatus.COMPLETED],
+      [StockTransferStatus.COMPLETED]: [],
+      [StockTransferStatus.CANCELLED]: []
+    };
+    return allowed[fromStatus].includes(toStatus);
+  }
+
+  private appendTransferStatusHistory(
+    existing: unknown,
+    nextStatus: StockTransferStatus,
+    userId: string,
+    notes?: string | null
+  ) {
+    const history = Array.isArray(existing) ? [...existing] : [];
+    history.push({
+      status: nextStatus,
+      changed_at: new Date().toISOString(),
+      changed_by: userId,
+      ...(notes ? { notes } : {})
+    });
+    return history;
   }
 
   private parseOptionalStockAdjustmentStatus(value: unknown): StockAdjustmentStatus | undefined {
@@ -960,6 +1013,95 @@ export class DistributionService {
         line_items: {
           create: lineItems
         }
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionTransfer(
+    transferIdRaw: string,
+    body: Record<string, unknown>,
+    scope?: UserScope
+  ) {
+    const user = this.requireScope(scope);
+    const transferId = this.parseRequiredUuid(transferIdRaw, "transferId");
+    const action = this.parseTransferTransitionAction(body.action);
+    const notes = this.parseOptionalString(body.notes);
+
+    const transfer = await this.prisma.stockTransfer.findFirst({
+      where: {
+        id: transferId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        status: true,
+        source_branch_id: true,
+        destination_branch_id: true,
+        status_history: true
+      }
+    });
+
+    if (!transfer) {
+      throw new NotFoundException("Transfer not found");
+    }
+    if (!this.scopedBranchIds(user, transfer.source_branch_id, transfer.destination_branch_id)) {
+      throw new BadRequestException("Transfer is outside your branch scope");
+    }
+
+    const targetStatus =
+      action === "REQUEST"
+        ? StockTransferStatus.REQUESTED
+        : action === "APPROVE"
+          ? StockTransferStatus.APPROVED
+          : action === "DISPATCH"
+            ? StockTransferStatus.DISPATCHED
+            : this.parseTransferReceiveStatus(body.status);
+
+    if (!this.canTransitionTransfer(transfer.status, targetStatus)) {
+      throw new BadRequestException(
+        `Cannot transition transfer from ${transfer.status} to ${targetStatus}`
+      );
+    }
+
+    return this.prisma.stockTransfer.update({
+      where: { id: transfer.id },
+      data: {
+        status: targetStatus,
+        requested_by: targetStatus === StockTransferStatus.REQUESTED ? user.id : undefined,
+        approved_by: targetStatus === StockTransferStatus.APPROVED ? user.id : undefined,
+        dispatched_date: targetStatus === StockTransferStatus.DISPATCHED ? new Date() : undefined,
+        received_date:
+          targetStatus === StockTransferStatus.PARTIAL || targetStatus === StockTransferStatus.COMPLETED
+            ? new Date()
+            : undefined,
+        notes: notes ?? undefined,
+        status_history: this.appendTransferStatusHistory(transfer.status_history, targetStatus, user.id, notes)
       },
       include: {
         source_branch: {

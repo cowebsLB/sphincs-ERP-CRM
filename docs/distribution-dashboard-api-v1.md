@@ -11,6 +11,10 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/receipts`
 - `GET /api/v1/distribution/transfers`
 - `POST /api/v1/distribution/transfers`
+- `PATCH /api/v1/distribution/transfers/:transferId/request`
+- `PATCH /api/v1/distribution/transfers/:transferId/approve`
+- `PATCH /api/v1/distribution/transfers/:transferId/dispatch`
+- `PATCH /api/v1/distribution/transfers/:transferId/receive`
 - `GET /api/v1/distribution/adjustments`
 - `POST /api/v1/distribution/adjustments`
 - `GET /api/v1/distribution/dispatches`
@@ -77,7 +81,8 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Expand workflow state transitions and approval actions across transfers, dispatches, and returns.
+1. Add dispatch lifecycle action APIs (`ready`, `packed`, `dispatched`, `delivered`, `failed`, `returned`).
+2. Add return lifecycle action APIs (`received`, `inspected`, `completed`, `cancelled`).
 
 ## Movement API Notes (V1.16.3)
 
@@ -187,6 +192,31 @@ Supported query parameters:
 - `sourceBranchId`
 - `destinationBranchId`
 - `includeDeleted`
+
+## Transfer Lifecycle Actions (V1.16.9)
+
+### Endpoints
+
+- `PATCH /api/v1/distribution/transfers/:transferId/request`
+- `PATCH /api/v1/distribution/transfers/:transferId/approve`
+- `PATCH /api/v1/distribution/transfers/:transferId/dispatch`
+- `PATCH /api/v1/distribution/transfers/:transferId/receive`
+
+### Behavior
+
+- Actions enforce strict status transitions:
+  - `DRAFT -> REQUESTED`
+  - `REQUESTED -> APPROVED`
+  - `APPROVED -> DISPATCHED`
+  - `DISPATCHED -> PARTIAL|COMPLETED`
+  - `PARTIAL -> COMPLETED`
+- Invalid transition attempts return `400 Bad Request`.
+- Branch scope is enforced using transfer source/destination branch IDs.
+- Each transition appends to `status_history` with actor/time metadata.
+
+### Notes
+
+- `receive` accepts optional `status` in `{ PARTIAL, COMPLETED }`; defaults to `COMPLETED` when omitted.
 
 ## Adjustment API Notes (V1.16.6)
 
