@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { DispatchStatus, GoodsReceiptStatus, StockTransferStatus } from "@prisma/client";
+﻿import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  DispatchStatus,
+  DistributionMovementType,
+  GoodsReceiptStatus,
+  StockTransferStatus
+} from "@prisma/client";
 import { PrismaService } from "../../prisma.service";
 
 type UserScope = {
@@ -13,9 +18,21 @@ type DashboardMetric = {
   value: number;
 };
 
+type MovementListFilters = {
+  movementType?: string;
+  itemId?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 @Injectable()
 export class DistributionService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   private requireScope(scope?: UserScope): UserScope {
     if (!scope?.id || !scope.organizationId) {
@@ -39,6 +56,274 @@ export class DistributionService {
       return true;
     }
     return sourceBranchId === scope.branchId || destinationBranchId === scope.branchId;
+  }
+
+  private parseRequiredUuid(value: unknown, fieldName: string): string {
+    const text = String(value ?? "").trim();
+    if (!text) {
+      throw new BadRequestException(`${fieldName} is required`);
+    }
+    if (!this.uuidPattern.test(text)) {
+      throw new BadRequestException(`${fieldName} must be a valid UUID`);
+    }
+    return text;
+  }
+
+  private parseOptionalUuid(value: unknown, fieldName: string): string | null {
+    const text = String(value ?? "").trim();
+    if (!text) {
+      return null;
+    }
+    if (!this.uuidPattern.test(text)) {
+      throw new BadRequestException(`${fieldName} must be a valid UUID`);
+    }
+    return text;
+  }
+
+  private parseOptionalString(value: unknown): string | null {
+    const text = String(value ?? "").trim();
+    return text ? text : null;
+  }
+
+  private parseRequiredMovementType(value: unknown): DistributionMovementType {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("movement_type is required");
+    }
+    if (!Object.values(DistributionMovementType).includes(text as DistributionMovementType)) {
+      throw new BadRequestException(`movement_type must be one of: ${Object.values(DistributionMovementType).join(", ")}`);
+    }
+    return text as DistributionMovementType;
+  }
+
+  private parseOptionalMovementType(value: unknown): DistributionMovementType | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(DistributionMovementType).includes(text as DistributionMovementType)) {
+      throw new BadRequestException(`movementType must be one of: ${Object.values(DistributionMovementType).join(", ")}`);
+    }
+    return text as DistributionMovementType;
+  }
+
+  private parseInteger(value: unknown, fieldName: string, fallback: number): number {
+    if (value === undefined || value === null || value === "") {
+      return fallback;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+      throw new BadRequestException(`${fieldName} must be a whole number`);
+    }
+    return parsed;
+  }
+
+  private parseNumber(value: unknown, fieldName: string): number | null {
+    if (value === undefined || value === null || value === "") {
+      return null;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      throw new BadRequestException(`${fieldName} must be a valid number`);
+    }
+    return parsed;
+  }
+
+  private parseDate(value: unknown, fieldName: string): Date | null {
+    const text = String(value ?? "").trim();
+    if (!text) {
+      return null;
+    }
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`${fieldName} must be a valid date`);
+    }
+    return parsed;
+  }
+
+  private async validateBranchScope(branchId: string | null, fieldName: string, user: UserScope) {
+    if (!branchId) {
+      return null;
+    }
+    const branch = await this.prisma.branch.findFirst({
+      where: {
+        id: branchId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!branch) {
+      throw new BadRequestException(`${fieldName} must reference a branch in your organization`);
+    }
+    if (user.branchId && user.branchId !== branchId) {
+      throw new BadRequestException(`${fieldName} must reference your branch scope`);
+    }
+    return branch;
+  }
+
+  private async validateItemScope(itemId: string, user: UserScope) {
+    const item = await this.prisma.item.findFirst({
+      where: {
+        id: itemId,
+        organization_id: user.organizationId,
+        deleted_at: null,
+        ...(user.branchId
+          ? {
+              OR: [{ branch_id: user.branchId }, { branch_id: null }]
+            }
+          : {})
+      }
+    });
+    if (!item) {
+      throw new BadRequestException("item_id must reference an item in your organization scope");
+    }
+    return item;
+  }
+
+  async createMovement(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+
+    const movementType = this.parseRequiredMovementType(body.movement_type ?? body.movementType);
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    const quantity = this.parseInteger(body.quantity, "quantity", 0);
+    const unit = this.parseOptionalString(body.unit) ?? "piece";
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    const sourceBranchId = this.parseOptionalUuid(body.source_branch_id ?? body.sourceBranchId, "source_branch_id");
+    const destinationBranchId = this.parseOptionalUuid(
+      body.destination_branch_id ?? body.destinationBranchId,
+      "destination_branch_id"
+    );
+
+    if (quantity < 1) {
+      throw new BadRequestException("quantity must be at least 1");
+    }
+    if (sourceBranchId && destinationBranchId && sourceBranchId === destinationBranchId) {
+      throw new BadRequestException("source_branch_id and destination_branch_id cannot be identical");
+    }
+
+    await this.validateItemScope(itemId, user);
+    await this.validateBranchScope(branchId, "branch_id", user);
+    await this.validateBranchScope(sourceBranchId, "source_branch_id", user);
+    await this.validateBranchScope(destinationBranchId, "destination_branch_id", user);
+
+    if (
+      user.branchId &&
+      ![branchId, sourceBranchId, destinationBranchId].filter(Boolean).includes(user.branchId)
+    ) {
+      throw new BadRequestException("Movement must include your branch scope");
+    }
+
+    const occurredAt = this.parseDate(body.occurred_at ?? body.occurredAt, "occurred_at") ?? new Date();
+    const created = await this.prisma.inventoryMovement.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        movement_type: movementType,
+        quantity,
+        unit,
+        source_branch_id: sourceBranchId,
+        destination_branch_id: destinationBranchId,
+        reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
+        reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
+        status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
+        notes: this.parseOptionalString(body.notes),
+        cost_impact: this.parseNumber(body.cost_impact ?? body.costImpact, "cost_impact"),
+        performed_by: user.id,
+        occurred_at: occurredAt
+      },
+      include: {
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        },
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    return created;
+  }
+
+  async listMovements(filters: MovementListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const movementType = this.parseOptionalMovementType(filters.movementType);
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException("from must be before to");
+    }
+
+    const where: Record<string, unknown> = {
+      organization_id: user.organizationId,
+      ...(filters.includeDeleted ? {} : { deleted_at: null })
+    };
+
+    if (movementType) {
+      where.movement_type = movementType;
+    }
+    if (itemId) {
+      where.item_id = itemId;
+    }
+    if (filters.status) {
+      where.status = filters.status.trim().toUpperCase();
+    }
+    if (fromDate || toDate) {
+      where.occurred_at = {
+        ...(fromDate ? { gte: fromDate } : {}),
+        ...(toDate ? { lte: toDate } : {})
+      };
+    }
+
+    if (user.branchId) {
+      where.OR = [
+        { branch_id: user.branchId },
+        { source_branch_id: user.branchId },
+        { destination_branch_id: user.branchId }
+      ];
+    }
+
+    return this.prisma.inventoryMovement.findMany({
+      where,
+      orderBy: { occurred_at: "desc" },
+      take: 100,
+      include: {
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        },
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
   }
 
   async dashboard(scope?: UserScope) {

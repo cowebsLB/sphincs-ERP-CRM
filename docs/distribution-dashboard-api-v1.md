@@ -5,6 +5,8 @@ Date: 2026-03-21
 ## Endpoint
 
 - `GET /api/v1/distribution/dashboard`
+- `GET /api/v1/distribution/movements`
+- `POST /api/v1/distribution/movements`
 
 ## Purpose
 
@@ -65,7 +67,42 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/movements` create/list endpoints (ledger writer + query).
-2. Add `/distribution/receipts` workflow APIs.
-3. Add `/distribution/transfers` workflow APIs.
-4. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
+1. Add `/distribution/receipts` workflow APIs.
+2. Add `/distribution/transfers` workflow APIs.
+3. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
+
+## Movement API Notes (V1.16.3)
+
+### `POST /api/v1/distribution/movements`
+
+Required fields:
+
+- `movement_type`
+- `item_id`
+- `quantity`
+
+Optional fields:
+
+- `unit`
+- `branch_id`
+- `source_branch_id`
+- `destination_branch_id`
+- `reference_type`
+- `reference_id`
+- `status`
+- `notes`
+- `cost_impact`
+- `occurred_at`
+
+Validation includes UUID integrity, positive quantity, movement-type enum checks, and organization/branch scope validation.
+
+### `GET /api/v1/distribution/movements`
+
+Supported query parameters:
+
+- `movementType`
+- `itemId`
+- `status`
+- `from`
+- `to`
+- `includeDeleted`

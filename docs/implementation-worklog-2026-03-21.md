@@ -435,3 +435,40 @@ Date: 2026-03-21
 ### Notes
 
 - This unblocks deployments where the migration history table still marks `20260321_distribution_db_foundation` as failed from earlier attempts.
+
+## Task: Distribution Movements API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented movement ledger APIs on top of the distribution module.
+- Added endpoint support for creating and listing inventory movements with scope-aware validation.
+
+### Changes
+
+- Updated controller routes in:
+  - `apps/core-api/src/erp/distribution/distribution.controller.ts`
+- Added service methods in:
+  - `apps/core-api/src/erp/distribution/distribution.service.ts`
+  - `createMovement(...)`
+  - `listMovements(...)`
+- Added validation for:
+  - required movement fields
+  - enum movement types
+  - UUID format checks
+  - quantity constraints
+  - organization + branch + item scope safety
+- Expanded tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated API docs:
+  - `docs/distribution-dashboard-api-v1.md`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `53/53` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Movement endpoints are now ready for UI integration and for follow-up workflows (receipts/transfers/adjustments) to post ledger events.

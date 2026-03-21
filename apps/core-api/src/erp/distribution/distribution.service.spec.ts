@@ -1,7 +1,10 @@
-import { NotFoundException } from "@nestjs/common";
+﻿import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { DistributionService } from "./distribution.service";
 
 describe("DistributionService", () => {
+  const BRANCH_1 = "11111111-1111-4111-8111-111111111111";
+  const BRANCH_2 = "22222222-2222-4222-8222-222222222222";
+
   const createPrismaMock = () => ({
     inventoryStock: {
       findMany: jest.fn().mockResolvedValue([
@@ -35,7 +38,8 @@ describe("DistributionService", () => {
             deleted_at: null
           }
         }
-      ])
+      ]),
+      updateMany: jest.fn()
     },
     goodsReceipt: {
       count: jest.fn().mockResolvedValue(4)
@@ -71,23 +75,34 @@ describe("DistributionService", () => {
           notes: "Transfer completed",
           occurred_at: new Date("2026-03-21T10:10:00.000Z"),
           item: { id: "item-1", name: "Widget A", sku: "W-A" },
-          source_branch_id: "branch-2",
-          destination_branch_id: "branch-1",
-          source_branch: { id: "branch-2", name: "North" },
-          destination_branch: { id: "branch-1", name: "Main" }
+          source_branch_id: BRANCH_2,
+          destination_branch_id: BRANCH_1,
+          source_branch: { id: BRANCH_2, name: "North" },
+          destination_branch: { id: BRANCH_1, name: "Main" }
         }
-      ])
+      ]),
+      create: jest.fn().mockResolvedValue({
+        id: "m2",
+        movement_type: "TRANSFER_OUT",
+        quantity: 5,
+        unit: "piece",
+        status: "POSTED"
+      })
     },
     branch: {
-      findMany: jest.fn().mockResolvedValue([{ id: "branch-1", name: "Main" }])
+      findMany: jest.fn().mockResolvedValue([{ id: BRANCH_1, name: "Main" }]),
+      findFirst: jest.fn().mockResolvedValue({ id: BRANCH_1, organization_id: "org-1", deleted_at: null })
+    },
+    item: {
+      findFirst: jest.fn().mockResolvedValue({ id: "item-1", organization_id: "org-1", branch_id: BRANCH_1 })
     },
     stockReturnLine: {
       findMany: jest.fn().mockResolvedValue([
         {
           quantity: 2,
           stock_return: {
-            source_branch_id: "branch-1",
-            destination_branch_id: "branch-2"
+            source_branch_id: BRANCH_1,
+            destination_branch_id: BRANCH_2
           }
         }
       ])
@@ -101,7 +116,7 @@ describe("DistributionService", () => {
     const result = await service.dashboard({
       id: "user-1",
       organizationId: "org-1",
-      branchId: "branch-1"
+      branchId: BRANCH_1
     });
 
     expect(result.metrics).toEqual(
@@ -121,10 +136,88 @@ describe("DistributionService", () => {
     expect(result.recent_inventory_activity).toHaveLength(1);
   });
 
+  it("creates movement records with branch-scoped validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createMovement(
+      {
+        movement_type: "TRANSFER_OUT",
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity: 5,
+        source_branch_id: BRANCH_1
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "TRANSFER_OUT",
+          quantity: 5,
+          organization_id: "org-1",
+          performed_by: "user-1"
+        })
+      })
+    );
+    expect(result.id).toBe("m2");
+  });
+
+  it("rejects movement create when quantity is invalid", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createMovement(
+        {
+          movement_type: "TRANSFER_OUT",
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity: 0,
+          source_branch_id: BRANCH_1
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("lists movements with scoped filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listMovements(
+      {
+        movementType: "TRANSFER_IN",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          movement_type: "TRANSFER_IN",
+          deleted_at: null
+        })
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
     await expect(service.dashboard(undefined)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
-

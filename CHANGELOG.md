@@ -7,7 +7,28 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.2` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.3` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.3 - 2026-03-21
+
+### Added
+
+- Distribution movement APIs:
+  - `GET /api/v1/distribution/movements`
+  - `POST /api/v1/distribution/movements`
+- Movement creation validation for:
+  - movement type enum
+  - UUID integrity
+  - quantity rules
+  - organization/branch/item scope safety
+- Movement list filtering support:
+  - `movementType`, `itemId`, `status`, `from`, `to`, `includeDeleted`
+
+### Changed
+
+- Distribution service now contains movement create/list logic in addition to dashboard aggregates.
+- Distribution controller now exposes dashboard + movement routes from a unified module.
+- System fallback version updated to `Beta V1.16.3`.
 
 ## Beta V1.16.2 - 2026-03-21
 
