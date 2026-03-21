@@ -257,4 +257,40 @@ export class DistributionController {
   createReturn(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReturn(body, req?.user);
   }
+
+  @Patch("returns/:returnId/receive")
+  receiveReturn(
+    @Param("returnId") returnId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReturn(returnId, { ...body, action: "RECEIVE" }, req?.user);
+  }
+
+  @Patch("returns/:returnId/inspect")
+  inspectReturn(
+    @Param("returnId") returnId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReturn(returnId, { ...body, action: "INSPECT" }, req?.user);
+  }
+
+  @Patch("returns/:returnId/complete")
+  completeReturn(
+    @Param("returnId") returnId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReturn(returnId, { ...body, action: "COMPLETE" }, req?.user);
+  }
+
+  @Patch("returns/:returnId/cancel")
+  cancelReturn(
+    @Param("returnId") returnId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReturn(returnId, { ...body, action: "CANCEL" }, req?.user);
+  }
 }

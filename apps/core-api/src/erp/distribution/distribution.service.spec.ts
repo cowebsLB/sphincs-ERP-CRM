@@ -164,10 +164,22 @@ describe("DistributionService", () => {
     },
     stockReturn: {
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "ret-1",
+        status: "DRAFT",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2
+      }),
       create: jest.fn().mockResolvedValue({
         id: "ret-1",
         return_number: "RET-20260321120000-ABCD",
         status: "DRAFT",
+        line_items: []
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "ret-1",
+        return_number: "RET-20260321120000-ABCD",
+        status: "RECEIVED",
         line_items: []
       })
     },
@@ -910,6 +922,93 @@ describe("DistributionService", () => {
             }
           ]
         },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("transitions return to RECEIVED from DRAFT", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionReturn(
+      "55555555-5555-4555-8555-555555555555",
+      { action: "RECEIVE" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "55555555-5555-4555-8555-555555555555",
+          organization_id: "org-1",
+          deleted_at: null
+        })
+      })
+    );
+    expect(prismaMock.stockReturn.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "RECEIVED",
+          processed_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("transitions return to COMPLETED from INSPECTED", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockReturn.findFirst.mockResolvedValue({
+      id: "ret-1",
+      status: "INSPECTED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionReturn(
+      "55555555-5555-4555-8555-555555555555",
+      { action: "COMPLETE" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_2
+      }
+    );
+
+    expect(prismaMock.stockReturn.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "COMPLETED",
+          processed_by: "user-1",
+          processed_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("rejects invalid return transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockReturn.findFirst.mockResolvedValue({
+      id: "ret-1",
+      status: "DRAFT",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionReturn(
+        "55555555-5555-4555-8555-555555555555",
+        { action: "COMPLETE" },
         {
           id: "user-1",
           organizationId: "org-1",

@@ -68,6 +68,7 @@ type ReturnListFilters = {
 
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
+type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
 
 @Injectable()
 export class DistributionService {
@@ -299,6 +300,28 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockReturnStatus).join(", ")}`);
     }
     return text as StockReturnStatus;
+  }
+
+  private parseReturnTransitionAction(value: unknown): ReturnTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("action is required");
+    }
+    if (!["RECEIVE", "INSPECT", "COMPLETE", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: RECEIVE, INSPECT, COMPLETE, CANCEL");
+    }
+    return text as ReturnTransitionAction;
+  }
+
+  private canTransitionReturn(fromStatus: StockReturnStatus, toStatus: StockReturnStatus): boolean {
+    const allowed: Record<StockReturnStatus, StockReturnStatus[]> = {
+      [StockReturnStatus.DRAFT]: [StockReturnStatus.RECEIVED, StockReturnStatus.CANCELLED],
+      [StockReturnStatus.RECEIVED]: [StockReturnStatus.INSPECTED, StockReturnStatus.CANCELLED],
+      [StockReturnStatus.INSPECTED]: [StockReturnStatus.COMPLETED, StockReturnStatus.CANCELLED],
+      [StockReturnStatus.COMPLETED]: [],
+      [StockReturnStatus.CANCELLED]: []
+    };
+    return allowed[fromStatus].includes(toStatus);
   }
 
   private parseOptionalStockReturnType(value: unknown): StockReturnType | undefined {
@@ -1571,6 +1594,93 @@ export class DistributionService {
         line_items: {
           create: lineItems
         }
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionReturn(
+    returnIdRaw: string,
+    body: Record<string, unknown>,
+    scope?: UserScope
+  ) {
+    const user = this.requireScope(scope);
+    const returnId = this.parseRequiredUuid(returnIdRaw, "returnId");
+    const action = this.parseReturnTransitionAction(body.action);
+    const notes = this.parseOptionalString(body.notes);
+
+    const stockReturn = await this.prisma.stockReturn.findFirst({
+      where: {
+        id: returnId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        status: true,
+        source_branch_id: true,
+        destination_branch_id: true
+      }
+    });
+    if (!stockReturn) {
+      throw new NotFoundException("Return not found");
+    }
+    if (!this.scopedBranchIds(user, stockReturn.source_branch_id, stockReturn.destination_branch_id)) {
+      throw new BadRequestException("Return is outside your branch scope");
+    }
+
+    const targetStatus =
+      action === "RECEIVE"
+        ? StockReturnStatus.RECEIVED
+        : action === "INSPECT"
+          ? StockReturnStatus.INSPECTED
+          : action === "COMPLETE"
+            ? StockReturnStatus.COMPLETED
+            : StockReturnStatus.CANCELLED;
+
+    if (!this.canTransitionReturn(stockReturn.status, targetStatus)) {
+      throw new BadRequestException(`Cannot transition return from ${stockReturn.status} to ${targetStatus}`);
+    }
+
+    return this.prisma.stockReturn.update({
+      where: { id: stockReturn.id },
+      data: {
+        status: targetStatus,
+        processed_by:
+          targetStatus === StockReturnStatus.INSPECTED || targetStatus === StockReturnStatus.COMPLETED
+            ? user.id
+            : undefined,
+        processed_date:
+          targetStatus === StockReturnStatus.RECEIVED ||
+          targetStatus === StockReturnStatus.INSPECTED ||
+          targetStatus === StockReturnStatus.COMPLETED
+            ? new Date()
+            : undefined,
+        notes: notes ?? undefined
       },
       include: {
         source_branch: {

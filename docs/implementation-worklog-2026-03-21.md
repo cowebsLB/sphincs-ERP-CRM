@@ -1,5 +1,35 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Return Lifecycle Actions (V1.16.11)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added return status transition action endpoints:
+  - `PATCH /api/v1/distribution/returns/:returnId/receive`
+  - `PATCH /api/v1/distribution/returns/:returnId/inspect`
+  - `PATCH /api/v1/distribution/returns/:returnId/complete`
+  - `PATCH /api/v1/distribution/returns/:returnId/cancel`
+- Added service-level return transition engine with:
+  - action parsing
+  - allowed-transition validation
+  - branch scope enforcement
+  - processing metadata stamping for operational traceability
+- Added unit test coverage for:
+  - valid transition to `RECEIVED`
+  - valid transition to `COMPLETED`
+  - invalid transition rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `77/77` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Return workflow status progression is now explicitly action-driven and guarded against invalid state jumps.
+
 ## Task: Distribution Dispatch Lifecycle Actions (V1.16.10)
 
 Date: 2026-03-21

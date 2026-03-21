@@ -27,6 +27,10 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
 - `GET /api/v1/distribution/returns`
 - `POST /api/v1/distribution/returns`
+- `PATCH /api/v1/distribution/returns/:returnId/receive`
+- `PATCH /api/v1/distribution/returns/:returnId/inspect`
+- `PATCH /api/v1/distribution/returns/:returnId/complete`
+- `PATCH /api/v1/distribution/returns/:returnId/cancel`
 
 ## Purpose
 
@@ -87,7 +91,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add return lifecycle action APIs (`received`, `inspected`, `completed`, `cancelled`).
+1. Add distribution reservation/allocation APIs for stock promise workflows.
 
 ## Movement API Notes (V1.16.3)
 
@@ -345,3 +349,22 @@ Supported query parameters:
 - `sourceBranchId`
 - `destinationBranchId`
 - `includeDeleted`
+
+## Return Lifecycle Actions (V1.16.11)
+
+### Endpoints
+
+- `PATCH /api/v1/distribution/returns/:returnId/receive`
+- `PATCH /api/v1/distribution/returns/:returnId/inspect`
+- `PATCH /api/v1/distribution/returns/:returnId/complete`
+- `PATCH /api/v1/distribution/returns/:returnId/cancel`
+
+### Behavior
+
+- Actions enforce strict status transitions:
+  - `DRAFT -> RECEIVED|CANCELLED`
+  - `RECEIVED -> INSPECTED|CANCELLED`
+  - `INSPECTED -> COMPLETED|CANCELLED`
+- Invalid transition attempts return `400 Bad Request`.
+- Branch scope is enforced using source/destination branch scope checks.
+- Processing fields are updated on lifecycle actions where applicable (`processed_by`, `processed_date`).

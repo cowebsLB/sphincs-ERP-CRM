@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.10` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.11` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.11 - 2026-03-21
+
+### Added
+
+- Return lifecycle action APIs:
+  - `PATCH /api/v1/distribution/returns/:returnId/receive`
+  - `PATCH /api/v1/distribution/returns/:returnId/inspect`
+  - `PATCH /api/v1/distribution/returns/:returnId/complete`
+  - `PATCH /api/v1/distribution/returns/:returnId/cancel`
+- Return transition guardrails:
+  - `DRAFT -> RECEIVED|CANCELLED`
+  - `RECEIVED -> INSPECTED|CANCELLED`
+  - `INSPECTED -> COMPLETED|CANCELLED`
+
+### Changed
+
+- Distribution service now enforces action-based return transition validation with branch-scope checks.
+- Return transitions now auto-stamp processing metadata (`processed_by`, `processed_date`) when applicable.
+- System fallback version updated to `Beta V1.16.11`.
 
 ## Beta V1.16.10 - 2026-03-21
 
