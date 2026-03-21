@@ -1,5 +1,32 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Reorder Rule APIs (V1.16.13)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reorder rule endpoints:
+  - `GET /api/v1/distribution/reorder-rules`
+  - `POST /api/v1/distribution/reorder-rules`
+- Added reorder rule service logic for:
+  - branch/item/activity filtering
+  - scoped reorder rule creation with supplier linkage validation
+  - non-negative/positive numeric guardrails for rule fields
+- Added unit tests for:
+  - reorder rule create success
+  - reorder rule list filtering
+  - invalid reorder quantity rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `83/83` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Reorder policy management is now exposed through the same distribution API surface as reservations and stock operations.
+
 ## Task: Distribution Reservation APIs (V1.16.12)
 
 Date: 2026-03-21

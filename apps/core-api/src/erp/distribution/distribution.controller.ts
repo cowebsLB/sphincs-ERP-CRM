@@ -317,4 +317,28 @@ export class DistributionController {
   createReservation(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReservation(body, req?.user);
   }
+
+  @Get("reorder-rules")
+  listReorderRules(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("isActive") isActive?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listReorderRules(
+      {
+        branchId,
+        itemId,
+        isActive: isActive === undefined ? undefined : isActive === "true",
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("reorder-rules")
+  createReorderRule(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createReorderRule(body, req?.user);
+  }
 }

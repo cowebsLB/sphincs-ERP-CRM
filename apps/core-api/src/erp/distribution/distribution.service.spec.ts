@@ -201,6 +201,14 @@ describe("DistributionService", () => {
         reserved_quantity: 3,
         status: "ACTIVE"
       })
+    },
+    reorderRule: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "rr-1",
+        reorder_quantity: 10,
+        is_active: true
+      })
     }
   });
 
@@ -1095,6 +1103,89 @@ describe("DistributionService", () => {
           branch_id: BRANCH_1,
           item_id: "33333333-3333-4333-8333-333333333333",
           reserved_quantity: 0
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates reorder rules with scoped validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createReorderRule(
+      {
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        preferred_supplier_id: "66666666-6666-4666-8666-666666666666",
+        minimum_stock: 5,
+        reorder_level: 12,
+        reorder_quantity: 10,
+        lead_time_days: 4,
+        is_active: true
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.reorderRule.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          reorder_quantity: 10,
+          is_active: true
+        })
+      })
+    );
+    expect(result.id).toBe("rr-1");
+  });
+
+  it("lists reorder rules with active filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listReorderRules(
+      {
+        isActive: true,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.reorderRule.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          is_active: true,
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects reorder rules with non-positive reorder_quantity", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReorderRule(
+        {
+          branch_id: BRANCH_1,
+          item_id: "33333333-3333-4333-8333-333333333333",
+          reorder_quantity: 0
         },
         {
           id: "user-1",

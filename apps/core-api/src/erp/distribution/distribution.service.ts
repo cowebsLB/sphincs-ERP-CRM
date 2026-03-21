@@ -74,6 +74,13 @@ type ReservationListFilters = {
   includeDeleted?: boolean;
 };
 
+type ReorderRuleListFilters = {
+  branchId?: string;
+  itemId?: string;
+  isActive?: boolean;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -1819,6 +1826,124 @@ export class DistributionService {
             id: true,
             name: true,
             sku: true
+          }
+        }
+      }
+    });
+  }
+
+  async listReorderRules(filters: ReorderRuleListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    return this.prisma.reorderRule.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(typeof filters.isActive === "boolean" ? { is_active: filters.isActive } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        },
+        preferred_supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createReorderRule(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    await this.validateItemScope(itemId, user);
+
+    const preferredSupplierId = this.parseOptionalUuid(
+      body.preferred_supplier_id ?? body.preferredSupplierId,
+      "preferred_supplier_id"
+    );
+    if (preferredSupplierId) {
+      await this.validateSupplierScope(preferredSupplierId, user);
+    }
+
+    const minimumStock = this.parseInteger(body.minimum_stock ?? body.minimumStock, "minimum_stock", 0);
+    const reorderLevel = this.parseInteger(body.reorder_level ?? body.reorderLevel, "reorder_level", 0);
+    const reorderQuantity = this.parseInteger(body.reorder_quantity ?? body.reorderQuantity, "reorder_quantity", 0);
+    const leadTimeDays = this.parseInteger(body.lead_time_days ?? body.leadTimeDays, "lead_time_days", 0);
+
+    if (minimumStock < 0 || reorderLevel < 0 || reorderQuantity < 0 || leadTimeDays < 0) {
+      throw new BadRequestException(
+        "minimum_stock, reorder_level, reorder_quantity, and lead_time_days cannot be negative"
+      );
+    }
+    if (reorderQuantity < 1) {
+      throw new BadRequestException("reorder_quantity must be at least 1");
+    }
+
+    return this.prisma.reorderRule.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        preferred_supplier_id: preferredSupplierId,
+        minimum_stock: minimumStock,
+        reorder_level: reorderLevel,
+        reorder_quantity: reorderQuantity,
+        lead_time_days: leadTimeDays,
+        is_active: this.parseBoolean(body.is_active ?? body.isActive, true)
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        },
+        preferred_supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
           }
         }
       }

@@ -33,6 +33,8 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/returns/:returnId/cancel`
 - `GET /api/v1/distribution/reservations`
 - `POST /api/v1/distribution/reservations`
+- `GET /api/v1/distribution/reorder-rules`
+- `POST /api/v1/distribution/reorder-rules`
 
 ## Purpose
 
@@ -93,7 +95,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add reorder rules and restocking recommendation APIs.
+1. Add restocking recommendation APIs derived from reorder rules and live stock.
 
 ## Movement API Notes (V1.16.3)
 
@@ -399,4 +401,33 @@ Supported query parameters:
 - `status`
 - `branchId`
 - `itemId`
+- `includeDeleted`
+
+## Reorder Rule API Notes (V1.16.13)
+
+### `POST /api/v1/distribution/reorder-rules`
+
+Required:
+
+- `item_id`
+- `reorder_quantity` (must be at least `1`)
+
+Optional:
+
+- `branch_id` (defaults to branch-scoped user branch when available)
+- `preferred_supplier_id`
+- `minimum_stock`
+- `reorder_level`
+- `lead_time_days`
+- `is_active`
+
+Validation includes non-negative numeric checks, positive reorder quantity enforcement, and organization/branch/item/supplier scope checks.
+
+### `GET /api/v1/distribution/reorder-rules`
+
+Supported query parameters:
+
+- `branchId`
+- `itemId`
+- `isActive`
 - `includeDeleted`

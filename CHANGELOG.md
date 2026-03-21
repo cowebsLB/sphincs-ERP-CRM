@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.12` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.13` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.13 - 2026-03-21
+
+### Added
+
+- Reorder rule APIs:
+  - `GET /api/v1/distribution/reorder-rules`
+  - `POST /api/v1/distribution/reorder-rules`
+- Reorder rule list filtering support:
+  - `branchId`, `itemId`, `isActive`, `includeDeleted`
+- Reorder rule create validation:
+  - required `item_id`
+  - non-negative stock/lead-time fields
+  - positive `reorder_quantity`
+  - supplier/branch/item scope checks
+
+### Changed
+
+- Distribution service now supports branch-scoped reorder rule reads/writes through the unified distribution API.
+- System fallback version updated to `Beta V1.16.13`.
 
 ## Beta V1.16.12 - 2026-03-21
 
