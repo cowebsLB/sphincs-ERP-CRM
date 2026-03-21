@@ -45,6 +45,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/stock-on-hand`
 - `GET /api/v1/distribution/reports/movements`
 - `GET /api/v1/distribution/reports/transfers`
+- `GET /api/v1/distribution/reports/adjustments`
 
 ## Purpose
 
@@ -115,7 +116,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add additional report endpoints (adjustment variance).
+1. Add advanced KPI/analytics rollups (supplier fulfillment, fast/slow movers, branch SLA metrics).
 
 ## Movement API Notes (V1.16.3)
 
@@ -572,3 +573,23 @@ Behavior:
   - `quantity_received_total`
   - `fill_rate_pct`
 - Includes a summary block with total quantities and grouped counts by status.
+
+### `GET /api/v1/distribution/reports/adjustments` (V1.16.22)
+
+Supported query parameters:
+
+- `status`
+- `adjustmentType`
+- `branchId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Returns adjustment rows with branch context and per-adjustment variance breakdown.
+- Includes a summary block with:
+  - net variance total
+  - increase total
+  - decrease total
+  - grouped adjustment counts by status

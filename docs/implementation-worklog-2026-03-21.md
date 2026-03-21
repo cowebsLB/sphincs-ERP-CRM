@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Adjustment Variance Report API (V1.16.22)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/adjustments`
+- Added report filters:
+  - `status`
+  - `adjustmentType`
+  - `branchId`
+  - `from`
+  - `to`
+  - `includeDeleted`
+- Added report output shape with:
+  - per-adjustment variance metrics
+  - aggregate totals and grouped status counts
+- Added unit test coverage for variance summary and row-level metric calculations.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `94/94` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This completes the core operational reporting set for stock, movements, transfers, and adjustments.
+
 ## Task: Distribution Transfer Performance Report API (V1.16.21)
 
 Date: 2026-03-21

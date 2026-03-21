@@ -1617,6 +1617,63 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds adjustment variance report with grouped totals", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockAdjustment.findMany.mockResolvedValue([
+      {
+        id: "adj-1",
+        adjustment_number: "ADJ-1001",
+        status: "APPLIED",
+        adjustment_type: "DECREASE",
+        reason: "damage",
+        branch_id: BRANCH_1,
+        created_at: new Date("2026-03-21T10:00:00.000Z"),
+        applied_at: new Date("2026-03-21T10:30:00.000Z"),
+        branch: { id: BRANCH_1, name: "Main" },
+        line_items: [{ variance: -3 }, { variance: 1 }]
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.adjustmentVarianceReport(
+      {
+        status: "APPLIED",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAdjustment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "APPLIED",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_adjustments: 1,
+        net_variance_total: -2,
+        increase_total: 1,
+        decrease_total: 3
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        adjustment_number: "ADJ-1001",
+        line_count: 2,
+        variance_total: -2
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

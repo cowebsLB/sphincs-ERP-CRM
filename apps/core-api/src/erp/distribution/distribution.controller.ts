@@ -544,4 +544,28 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/adjustments")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  adjustmentVarianceReport(
+    @Query("status") status?: string,
+    @Query("adjustmentType") adjustmentType?: string,
+    @Query("branchId") branchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.adjustmentVarianceReport(
+      {
+        status,
+        adjustmentType,
+        branchId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

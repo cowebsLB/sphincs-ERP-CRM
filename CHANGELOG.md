@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.21` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.22` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.22 - 2026-03-21
+
+### Added
+
+- Distribution adjustment variance report API:
+  - `GET /api/v1/distribution/reports/adjustments`
+- Report filters:
+  - `status`, `adjustmentType`, `branchId`, `from`, `to`, `includeDeleted`
+- Report payload now includes:
+  - per-adjustment variance metrics (`variance_total`, `increase_total`, `decrease_total`)
+  - aggregate summary with status grouping
+
+### Changed
+
+- Distribution reporting surface now includes stock, movement, transfer, and adjustment report endpoints.
+- System fallback version updated to `Beta V1.16.22`.
 
 ## Beta V1.16.21 - 2026-03-21
 

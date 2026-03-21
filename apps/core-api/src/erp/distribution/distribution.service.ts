@@ -122,6 +122,15 @@ type TransferReportFilters = {
   includeDeleted?: boolean;
 };
 
+type AdjustmentReportFilters = {
+  status?: string;
+  adjustmentType?: string;
+  branchId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -2552,6 +2561,88 @@ export class DistributionService {
       quantity_requested_total: reportRows.reduce((sum, row) => sum + row.quantity_requested_total, 0),
       quantity_sent_total: reportRows.reduce((sum, row) => sum + row.quantity_sent_total, 0),
       quantity_received_total: reportRows.reduce((sum, row) => sum + row.quantity_received_total, 0),
+      by_status: reportRows.reduce<Record<string, number>>((acc, row) => {
+        acc[row.status] = (acc[row.status] ?? 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return {
+      summary,
+      rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async adjustmentVarianceReport(filters: AdjustmentReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalStockAdjustmentStatus(filters.status);
+    const adjustmentType = this.parseOptionalStockAdjustmentType(filters.adjustmentType);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rows = await this.prisma.stockAdjustment.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(adjustmentType ? { adjustment_type: adjustmentType } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(fromDate || toDate
+          ? {
+              created_at: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        line_items: true
+      },
+      orderBy: { created_at: "desc" },
+      take: 300
+    });
+
+    const reportRows = rows.map((row) => {
+      const lineCount = row.line_items.length;
+      const varianceTotal = row.line_items.reduce((sum, line) => sum + line.variance, 0);
+      const increaseTotal = row.line_items
+        .filter((line) => line.variance > 0)
+        .reduce((sum, line) => sum + line.variance, 0);
+      const decreaseTotal = row.line_items
+        .filter((line) => line.variance < 0)
+        .reduce((sum, line) => sum + Math.abs(line.variance), 0);
+
+      return {
+        id: row.id,
+        adjustment_number: row.adjustment_number,
+        status: row.status,
+        adjustment_type: row.adjustment_type,
+        reason: row.reason,
+        branch_id: row.branch_id,
+        branch_name: row.branch.name,
+        line_count: lineCount,
+        variance_total: varianceTotal,
+        increase_total: increaseTotal,
+        decrease_total: decreaseTotal,
+        created_at: row.created_at,
+        applied_at: row.applied_at
+      };
+    });
+
+    const summary = {
+      total_adjustments: reportRows.length,
+      net_variance_total: reportRows.reduce((sum, row) => sum + row.variance_total, 0),
+      increase_total: reportRows.reduce((sum, row) => sum + row.increase_total, 0),
+      decrease_total: reportRows.reduce((sum, row) => sum + row.decrease_total, 0),
       by_status: reportRows.reduce<Record<string, number>>((acc, row) => {
         acc[row.status] = (acc[row.status] ?? 0) + 1;
         return acc;
