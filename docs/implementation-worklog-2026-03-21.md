@@ -307,3 +307,49 @@ Date: 2026-03-21
 ### Notes
 
 - This resolves the mismatch where users were already authenticated in ERP/CRM but landing still rendered the logged-out action state.
+
+## Task: Distribution DB-First Foundation
+
+Date: 2026-03-21
+
+### Scope
+
+- Shifted implementation strategy to DB-first for unified distribution domain.
+- Added core Prisma enums and models for stock, movement, receiving, transfer, adjustment, dispatch, return, reservation, reorder, and alerts.
+- Added a dedicated SQL migration scaffold for deployment.
+
+### Changes
+
+- Extended Prisma schema:
+  - new enums for consistent status systems and movement typing
+  - new models:
+    - `InventoryStock`
+    - `InventoryMovement`
+    - `GoodsReceipt`, `GoodsReceiptLine`
+    - `StockTransfer`, `StockTransferLine`
+    - `StockAdjustment`, `StockAdjustmentLine`
+    - `StockDispatch`, `StockDispatchLine`
+    - `StockReturn`, `StockReturnLine`
+    - `InventoryReservation`
+    - `ReorderRule`
+    - `StockAlert`
+- Extended core relations in:
+  - `Organization`
+  - `Branch`
+  - `Item`
+  - `Supplier`
+  - `PurchaseOrder`
+- Added migration:
+  - `apps/core-api/prisma/migrations/20260321_distribution_db_foundation/migration.sql`
+- Added design/implementation documentation:
+  - `docs/distribution-db-foundation-v1.md`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed.
+- `pnpm --filter @sphincs/core-api exec prisma validate` passed.
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This task delivers the data backbone only; service/controller/API wiring for distribution workflows is the next phase.

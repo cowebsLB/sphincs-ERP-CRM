@@ -46,46 +46,155 @@ enum SupplierStatus {
   BLACKLISTED
 }
 
-model Organization {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
-  deleted_at DateTime? @db.Timestamptz(6)
-  created_by String?  @db.Uuid
-  updated_by String?  @db.Uuid
+enum DistributionMovementType {
+  PURCHASE_RECEIPT
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUSTMENT_INCREASE
+  ADJUSTMENT_DECREASE
+  DISPATCH_ISSUE
+  RETURN_IN
+  RETURN_OUT
+  DAMAGED_WRITE_OFF
+  STOCK_CORRECTION
+}
 
-  branches       Branch[]
-  users          User[]
-  items          Item[]
-  suppliers      Supplier[]
-  purchase_orders PurchaseOrder[]
-  contacts       Contact[]
-  leads          Lead[]
-  opportunities  Opportunity[]
-  audit_logs     AuditLog[]
+enum GoodsReceiptStatus {
+  DRAFT
+  PARTIAL
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum StockTransferStatus {
+  DRAFT
+  REQUESTED
+  APPROVED
+  DISPATCHED
+  PARTIAL
+  COMPLETED
+  CANCELLED
+}
+
+enum DispatchStatus {
+  DRAFT
+  READY
+  PACKED
+  DISPATCHED
+  DELIVERED
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum StockAdjustmentStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  APPLIED
+  REVERSED
+}
+
+enum StockAdjustmentType {
+  INCREASE
+  DECREASE
+}
+
+enum StockReturnType {
+  SUPPLIER_RETURN
+  CUSTOMER_RETURN
+  INTERNAL_RETURN
+  TRANSFER_RETURN
+}
+
+enum StockReturnStatus {
+  DRAFT
+  RECEIVED
+  INSPECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum InventoryReservationStatus {
+  ACTIVE
+  RELEASED
+  EXPIRED
+  FULFILLED
+  CANCELLED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Organization {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_by String?   @db.Uuid
+  updated_by String?   @db.Uuid
+
+  branches               Branch[]
+  users                  User[]
+  items                  Item[]
+  suppliers              Supplier[]
+  purchase_orders        PurchaseOrder[]
+  contacts               Contact[]
+  leads                  Lead[]
+  opportunities          Opportunity[]
+  audit_logs             AuditLog[]
+  inventory_stocks       InventoryStock[]
+  inventory_movements    InventoryMovement[]
+  goods_receipts         GoodsReceipt[]
+  stock_transfers        StockTransfer[]
+  stock_adjustments      StockAdjustment[]
+  stock_dispatches       StockDispatch[]
+  stock_returns          StockReturn[]
+  inventory_reservations InventoryReservation[]
+  reorder_rules          ReorderRule[]
+  stock_alerts           StockAlert[]
 
   @@map("organizations")
 }
 
 model Branch {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String   @db.Uuid
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String    @db.Uuid
   name            String
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at      DateTime? @db.Timestamptz(6)
-  created_by      String?  @db.Uuid
-  updated_by      String?  @db.Uuid
+  created_by      String?   @db.Uuid
+  updated_by      String?   @db.Uuid
 
-  organization   Organization  @relation(fields: [organization_id], references: [id])
-  users          User[]
-  items          Item[]
-  suppliers      Supplier[]
-  purchase_orders PurchaseOrder[]
-  contacts       Contact[]
-  leads          Lead[]
-  opportunities  Opportunity[]
+  organization           Organization           @relation(fields: [organization_id], references: [id])
+  users                  User[]
+  items                  Item[]
+  suppliers              Supplier[]
+  purchase_orders        PurchaseOrder[]
+  contacts               Contact[]
+  leads                  Lead[]
+  opportunities          Opportunity[]
+  inventory_stocks       InventoryStock[]
+  inventory_movements    InventoryMovement[]
+  source_movements       InventoryMovement[]    @relation("InventoryMovementSourceBranch")
+  destination_movements  InventoryMovement[]    @relation("InventoryMovementDestinationBranch")
+  goods_receipts         GoodsReceipt[]
+  outgoing_transfers     StockTransfer[]        @relation("StockTransferSourceBranch")
+  incoming_transfers     StockTransfer[]        @relation("StockTransferDestinationBranch")
+  stock_adjustments      StockAdjustment[]
+  stock_dispatches       StockDispatch[]
+  source_returns         StockReturn[]          @relation("StockReturnSourceBranch")
+  destination_returns    StockReturn[]          @relation("StockReturnDestinationBranch")
+  inventory_reservations InventoryReservation[]
+  reorder_rules          ReorderRule[]
+  stock_alerts           StockAlert[]
 
   @@index([organization_id], map: "idx_branches_org")
   @@index([deleted_at], map: "idx_branches_deleted_at")
@@ -94,21 +203,21 @@ model Branch {
 }
 
 model User {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String   @db.Uuid
-  branch_id       String?  @db.Uuid
-  email           String   @unique
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String    @db.Uuid
+  branch_id       String?   @db.Uuid
+  email           String    @unique
   password_hash   String
-  status          String   @default("ACTIVE")
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  status          String    @default("ACTIVE")
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at      DateTime? @db.Timestamptz(6)
-  created_by      String?  @db.Uuid
-  updated_by      String?  @db.Uuid
+  created_by      String?   @db.Uuid
+  updated_by      String?   @db.Uuid
 
-  organization Organization @relation(fields: [organization_id], references: [id])
-  branch       Branch?      @relation(fields: [branch_id], references: [id])
-  user_roles   UserRole[]
+  organization   Organization   @relation(fields: [organization_id], references: [id])
+  branch         Branch?        @relation(fields: [branch_id], references: [id])
+  user_roles     UserRole[]
   refresh_tokens RefreshToken[]
 
   @@index([organization_id], map: "idx_users_org")
@@ -120,13 +229,13 @@ model User {
 }
 
 model RefreshToken {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  token_hash String   @unique
-  expires_at DateTime @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz(6)
   revoked_at DateTime? @db.Timestamptz(6)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -137,13 +246,13 @@ model RefreshToken {
 }
 
 model Role {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String   @unique
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String    @unique
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at DateTime? @db.Timestamptz(6)
-  created_by String?  @db.Uuid
-  updated_by String?  @db.Uuid
+  created_by String?   @db.Uuid
+  updated_by String?   @db.Uuid
 
   user_roles UserRole[]
 
@@ -153,14 +262,14 @@ model Role {
 }
 
 model UserRole {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  role_id    String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  role_id    String    @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at DateTime? @db.Timestamptz(6)
-  created_by String?  @db.Uuid
-  updated_by String?  @db.Uuid
+  created_by String?   @db.Uuid
+  updated_by String?   @db.Uuid
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   role Role @relation(fields: [role_id], references: [id])
@@ -173,45 +282,55 @@ model UserRole {
 }
 
 model Item {
-  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id   String     @db.Uuid
-  branch_id         String?    @db.Uuid
-  name              String
-  sku               String
-  description       String?    @db.Text
-  status            ItemStatus @default(ACTIVE)
-  cost_price        Decimal    @default(0) @db.Decimal(12, 2)
-  selling_price     Decimal    @default(0) @db.Decimal(12, 2)
-  currency          String     @default("USD")
-  track_inventory   Boolean    @default(true)
-  quantity_on_hand  Int        @default(0)
-  reorder_level     Int        @default(0)
-  max_stock_level   Int?
-  unit_of_measure   String     @default("piece")
-  category_id       String?
-  tags              String[]   @default([])
-  brand             String?
-  barcode           String?
-  is_service        Boolean    @default(false)
-  tax_rate          Decimal    @default(0) @db.Decimal(5, 2)
-  discountable      Boolean    @default(true)
-  created_at        DateTime   @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime   @updatedAt @db.Timestamptz(6)
-  deleted_at        DateTime?  @db.Timestamptz(6)
-  created_by        String?    @db.Uuid
-  updated_by        String?    @db.Uuid
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id  String     @db.Uuid
+  branch_id        String?    @db.Uuid
+  name             String
+  sku              String
+  description      String?    @db.Text
+  status           ItemStatus @default(ACTIVE)
+  cost_price       Decimal    @default(0) @db.Decimal(12, 2)
+  selling_price    Decimal    @default(0) @db.Decimal(12, 2)
+  currency         String     @default("USD")
+  track_inventory  Boolean    @default(true)
+  quantity_on_hand Int        @default(0)
+  reorder_level    Int        @default(0)
+  max_stock_level  Int?
+  unit_of_measure  String     @default("piece")
+  category_id      String?
+  tags             String[]   @default([])
+  brand            String?
+  barcode          String?
+  is_service       Boolean    @default(false)
+  tax_rate         Decimal    @default(0) @db.Decimal(5, 2)
+  discountable     Boolean    @default(true)
+  created_at       DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime   @updatedAt @db.Timestamptz(6)
+  deleted_at       DateTime?  @db.Timestamptz(6)
+  created_by       String?    @db.Uuid
+  updated_by       String?    @db.Uuid
 
-  organization      Organization          @relation(fields: [organization_id], references: [id])
-  branch            Branch?               @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  po_line_items     PurchaseOrderLineItem[]
+  organization           Organization            @relation(fields: [organization_id], references: [id])
+  branch                 Branch?                 @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  po_line_items          PurchaseOrderLineItem[]
+  inventory_stocks       InventoryStock[]
+  inventory_movements    InventoryMovement[]
+  goods_receipt_lines    GoodsReceiptLine[]
+  transfer_lines         StockTransferLine[]
+  adjustment_lines       StockAdjustmentLine[]
+  dispatch_lines         StockDispatchLine[]
+  return_lines           StockReturnLine[]
+  inventory_reservations InventoryReservation[]
+  reorder_rules          ReorderRule[]
+  stock_alerts           StockAlert[]
 
+  @@unique([organization_id, sku], map: "uq_items_org_sku")
   @@index([organization_id], map: "idx_items_org")
   @@index([branch_id], map: "idx_items_branch")
   @@index([status], map: "idx_items_status")
   @@index([category_id], map: "idx_items_category")
   @@index([deleted_at], map: "idx_items_deleted_at")
   @@index([created_at], map: "idx_items_created_at")
-  @@unique([organization_id, sku], map: "uq_items_org_sku")
   @@index([organization_id, deleted_at, created_at], map: "idx_items_org_deleted_created")
   @@index([organization_id, branch_id, deleted_at, created_at], map: "idx_items_org_branch_deleted_created")
   @@map("items")
@@ -251,51 +370,54 @@ model Supplier {
   created_by         String?        @db.Uuid
   updated_by         String?        @db.Uuid
 
-  organization       Organization   @relation(fields: [organization_id], references: [id])
-  branch             Branch?        @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  purchase_orders    PurchaseOrder[]
+  organization    Organization    @relation(fields: [organization_id], references: [id])
+  branch          Branch?         @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  purchase_orders PurchaseOrder[]
+  goods_receipts  GoodsReceipt[]
+  reorder_rules   ReorderRule[]
 
+  @@unique([organization_id, supplier_code], map: "uq_suppliers_org_supplier_code")
   @@index([organization_id], map: "idx_suppliers_org")
   @@index([branch_id], map: "idx_suppliers_branch")
   @@index([status], map: "idx_suppliers_status")
   @@index([deleted_at], map: "idx_suppliers_deleted_at")
   @@index([created_at], map: "idx_suppliers_created_at")
-  @@unique([organization_id, supplier_code], map: "uq_suppliers_org_supplier_code")
   @@index([organization_id, deleted_at, created_at], map: "idx_suppliers_org_deleted_created")
   @@map("suppliers")
 }
 
 model PurchaseOrder {
-  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id        String                @db.Uuid
-  branch_id              String?               @db.Uuid
-  po_number              String                @unique
-  supplier_id            String?               @db.Uuid
-  status                 PurchaseOrderStatus   @default(DRAFT)
-  order_date             DateTime              @default(now()) @db.Timestamptz(6)
-  expected_delivery_date DateTime?             @db.Timestamptz(6)
+  id                     String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id        String              @db.Uuid
+  branch_id              String?             @db.Uuid
+  po_number              String              @unique
+  supplier_id            String?             @db.Uuid
+  status                 PurchaseOrderStatus @default(DRAFT)
+  order_date             DateTime            @default(now()) @db.Timestamptz(6)
+  expected_delivery_date DateTime?           @db.Timestamptz(6)
   payment_terms          String?
-  subtotal               Float                 @default(0)
-  total_tax              Float                 @default(0)
-  total_discount         Float                 @default(0)
-  grand_total            Float                 @default(0)
-  payment_status         PaymentStatus         @default(UNPAID)
+  subtotal               Float               @default(0)
+  total_tax              Float               @default(0)
+  total_discount         Float               @default(0)
+  grand_total            Float               @default(0)
+  payment_status         PaymentStatus       @default(UNPAID)
   notes                  String?
   shipping_address       String?
   shipping_method        String?
   tracking_number        String?
-  approved_by            String?               @db.Uuid
-  approved_at            DateTime?             @db.Timestamptz(6)
-  created_at             DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime              @updatedAt @db.Timestamptz(6)
-  deleted_at             DateTime?             @db.Timestamptz(6)
-  created_by             String?               @db.Uuid
-  updated_by             String?               @db.Uuid
+  approved_by            String?             @db.Uuid
+  approved_at            DateTime?           @db.Timestamptz(6)
+  created_at             DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime            @updatedAt @db.Timestamptz(6)
+  deleted_at             DateTime?           @db.Timestamptz(6)
+  created_by             String?             @db.Uuid
+  updated_by             String?             @db.Uuid
 
-  organization           Organization          @relation(fields: [organization_id], references: [id])
-  branch                 Branch?               @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  supplier               Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
-  line_items             PurchaseOrderLineItem[]
+  organization   Organization            @relation(fields: [organization_id], references: [id])
+  branch         Branch?                 @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  supplier       Supplier?               @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  line_items     PurchaseOrderLineItem[]
+  goods_receipts GoodsReceipt[]
 
   @@index([organization_id], map: "idx_purchase_orders_org")
   @@index([branch_id], map: "idx_purchase_orders_branch")
@@ -307,18 +429,18 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderLineItem {
-  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  purchase_order_id String        @db.Uuid
-  item_id           String?       @db.Uuid
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchase_order_id String   @db.Uuid
+  item_id           String?  @db.Uuid
   description       String?
-  quantity          Int           @default(1)
-  unit_cost         Float         @default(0)
-  tax_rate          Float         @default(0)
-  discount          Float         @default(0)
-  line_total        Float         @default(0)
-  received_quantity Int           @default(0)
-  created_at        DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime      @updatedAt @db.Timestamptz(6)
+  quantity          Int      @default(1)
+  unit_cost         Float    @default(0)
+  tax_rate          Float    @default(0)
+  discount          Float    @default(0)
+  line_total        Float    @default(0)
+  received_quantity Int      @default(0)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @updatedAt @db.Timestamptz(6)
 
   purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
   item           Item?         @relation(fields: [item_id], references: [id], onDelete: SetNull)
@@ -329,20 +451,20 @@ model PurchaseOrderLineItem {
 }
 
 model Contact {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String   @db.Uuid
-  branch_id       String?  @db.Uuid
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String    @db.Uuid
+  branch_id       String?   @db.Uuid
   full_name       String
   email           String?
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at      DateTime? @db.Timestamptz(6)
-  created_by      String?  @db.Uuid
-  updated_by      String?  @db.Uuid
+  created_by      String?   @db.Uuid
+  updated_by      String?   @db.Uuid
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  branch          Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  leads           Lead[]
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  leads        Lead[]
 
   @@index([organization_id], map: "idx_contacts_org")
   @@index([branch_id], map: "idx_contacts_branch")
@@ -364,10 +486,10 @@ model Lead {
   created_by      String?    @db.Uuid
   updated_by      String?    @db.Uuid
 
-  organization    Organization  @relation(fields: [organization_id], references: [id])
-  branch          Branch?       @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  contact         Contact?      @relation(fields: [contact_id], references: [id], onDelete: SetNull)
-  opportunities   Opportunity[]
+  organization  Organization  @relation(fields: [organization_id], references: [id])
+  branch        Branch?       @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  contact       Contact?      @relation(fields: [contact_id], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
 
   @@index([organization_id], map: "idx_leads_org")
   @@index([branch_id], map: "idx_leads_branch")
@@ -390,9 +512,9 @@ model Opportunity {
   created_by      String?           @db.Uuid
   updated_by      String?           @db.Uuid
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  branch          Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
-  lead            Lead?        @relation(fields: [lead_id], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  lead         Lead?        @relation(fields: [lead_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_opportunities_org")
   @@index([branch_id], map: "idx_opportunities_branch")
@@ -403,22 +525,424 @@ model Opportunity {
   @@map("opportunities")
 }
 
-model AuditLog {
+model InventoryStock {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id     String    @db.Uuid
+  branch_id           String    @db.Uuid
+  item_id             String    @db.Uuid
+  quantity_on_hand    Int       @default(0)
+  reserved_quantity   Int       @default(0)
+  available_quantity  Int       @default(0)
+  in_transit_quantity Int       @default(0)
+  incoming_quantity   Int       @default(0)
+  damaged_quantity    Int       @default(0)
+  stock_valuation     Decimal   @default(0) @db.Decimal(14, 2)
+  last_movement_at    DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at          DateTime? @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  item         Item         @relation(fields: [item_id], references: [id])
+
+  @@unique([organization_id, branch_id, item_id], map: "uq_inventory_stocks_org_branch_item")
+  @@index([organization_id], map: "idx_inventory_stocks_org")
+  @@index([branch_id], map: "idx_inventory_stocks_branch")
+  @@index([item_id], map: "idx_inventory_stocks_item")
+  @@index([deleted_at], map: "idx_inventory_stocks_deleted_at")
+  @@map("inventory_stocks")
+}
+
+model InventoryMovement {
+  id                    String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id       String                   @db.Uuid
+  branch_id             String?                  @db.Uuid
+  item_id               String                   @db.Uuid
+  movement_type         DistributionMovementType
+  quantity              Int
+  unit                  String                   @default("piece")
+  source_branch_id      String?                  @db.Uuid
+  destination_branch_id String?                  @db.Uuid
+  reference_type        String?
+  reference_id          String?                  @db.Uuid
+  status                String                   @default("POSTED")
+  notes                 String?
+  cost_impact           Decimal?                 @db.Decimal(12, 2)
+  performed_by          String?                  @db.Uuid
+  occurred_at           DateTime                 @default(now()) @db.Timestamptz(6)
+  created_at            DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                 @updatedAt @db.Timestamptz(6)
+  deleted_at            DateTime?                @db.Timestamptz(6)
+
+  organization       Organization @relation(fields: [organization_id], references: [id])
+  branch             Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  item               Item         @relation(fields: [item_id], references: [id])
+  source_branch      Branch?      @relation("InventoryMovementSourceBranch", fields: [source_branch_id], references: [id], onDelete: SetNull)
+  destination_branch Branch?      @relation("InventoryMovementDestinationBranch", fields: [destination_branch_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id], map: "idx_inventory_movements_org")
+  @@index([branch_id], map: "idx_inventory_movements_branch")
+  @@index([item_id], map: "idx_inventory_movements_item")
+  @@index([movement_type], map: "idx_inventory_movements_type")
+  @@index([occurred_at], map: "idx_inventory_movements_occurred_at")
+  @@index([deleted_at], map: "idx_inventory_movements_deleted_at")
+  @@map("inventory_movements")
+}
+
+model GoodsReceipt {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String             @db.Uuid
+  branch_id         String             @db.Uuid
+  supplier_id       String?            @db.Uuid
+  purchase_order_id String?            @db.Uuid
+  receipt_number    String
+  status            GoodsReceiptStatus @default(DRAFT)
+  received_date     DateTime?          @db.Timestamptz(6)
+  received_by       String?            @db.Uuid
+  notes             String?
+  attachments       Json?
+  created_at        DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime           @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime?          @db.Timestamptz(6)
+
+  organization   Organization       @relation(fields: [organization_id], references: [id])
+  branch         Branch             @relation(fields: [branch_id], references: [id])
+  supplier       Supplier?          @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  purchase_order PurchaseOrder?     @relation(fields: [purchase_order_id], references: [id], onDelete: SetNull)
+  line_items     GoodsReceiptLine[]
+
+  @@unique([organization_id, receipt_number], map: "uq_goods_receipts_org_number")
+  @@index([organization_id], map: "idx_goods_receipts_org")
+  @@index([branch_id], map: "idx_goods_receipts_branch")
+  @@index([supplier_id], map: "idx_goods_receipts_supplier")
+  @@index([purchase_order_id], map: "idx_goods_receipts_po")
+  @@index([status], map: "idx_goods_receipts_status")
+  @@index([deleted_at], map: "idx_goods_receipts_deleted_at")
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptLine {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  goods_receipt_id String   @db.Uuid
+  item_id          String   @db.Uuid
+  ordered_qty      Int      @default(0)
+  received_qty     Int      @default(0)
+  remaining_qty    Int      @default(0)
+  rejected_qty     Int      @default(0)
+  notes            String?
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @updatedAt @db.Timestamptz(6)
+
+  goods_receipt GoodsReceipt @relation(fields: [goods_receipt_id], references: [id], onDelete: Cascade)
+  item          Item         @relation(fields: [item_id], references: [id])
+
+  @@index([goods_receipt_id], map: "idx_goods_receipt_lines_receipt")
+  @@index([item_id], map: "idx_goods_receipt_lines_item")
+  @@map("goods_receipt_lines")
+}
+
+model StockTransfer {
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id       String              @db.Uuid
+  transfer_number       String
+  source_branch_id      String              @db.Uuid
+  destination_branch_id String              @db.Uuid
+  status                StockTransferStatus @default(DRAFT)
+  requested_by          String?             @db.Uuid
+  approved_by           String?             @db.Uuid
+  created_date          DateTime            @default(now()) @db.Timestamptz(6)
+  dispatched_date       DateTime?           @db.Timestamptz(6)
+  received_date         DateTime?           @db.Timestamptz(6)
+  status_history        Json?
+  notes                 String?
+  created_at            DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime            @updatedAt @db.Timestamptz(6)
+  deleted_at            DateTime?           @db.Timestamptz(6)
+
+  organization       Organization        @relation(fields: [organization_id], references: [id])
+  source_branch      Branch              @relation("StockTransferSourceBranch", fields: [source_branch_id], references: [id])
+  destination_branch Branch              @relation("StockTransferDestinationBranch", fields: [destination_branch_id], references: [id])
+  line_items         StockTransferLine[]
+
+  @@unique([organization_id, transfer_number], map: "uq_stock_transfers_org_number")
+  @@index([organization_id], map: "idx_stock_transfers_org")
+  @@index([source_branch_id], map: "idx_stock_transfers_source_branch")
+  @@index([destination_branch_id], map: "idx_stock_transfers_destination_branch")
+  @@index([status], map: "idx_stock_transfers_status")
+  @@index([deleted_at], map: "idx_stock_transfers_deleted_at")
+  @@map("stock_transfers")
+}
+
+model StockTransferLine {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stock_transfer_id  String   @db.Uuid
+  item_id            String   @db.Uuid
+  quantity_requested Int      @default(0)
+  quantity_sent      Int      @default(0)
+  quantity_received  Int      @default(0)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @updatedAt @db.Timestamptz(6)
+
+  stock_transfer StockTransfer @relation(fields: [stock_transfer_id], references: [id], onDelete: Cascade)
+  item           Item          @relation(fields: [item_id], references: [id])
+
+  @@index([stock_transfer_id], map: "idx_stock_transfer_lines_transfer")
+  @@index([item_id], map: "idx_stock_transfer_lines_item")
+  @@map("stock_transfer_lines")
+}
+
+model StockAdjustment {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String                @db.Uuid
+  branch_id         String                @db.Uuid
+  adjustment_number String
+  status            StockAdjustmentStatus @default(DRAFT)
+  adjustment_type   StockAdjustmentType
+  reason            String
+  approved_by       String?               @db.Uuid
+  created_by_user   String?               @db.Uuid
+  applied_at        DateTime?             @db.Timestamptz(6)
+  notes             String?
+  supporting_file   String?
+  created_at        DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime              @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime?             @db.Timestamptz(6)
+
+  organization Organization          @relation(fields: [organization_id], references: [id])
+  branch       Branch                @relation(fields: [branch_id], references: [id])
+  line_items   StockAdjustmentLine[]
+
+  @@unique([organization_id, adjustment_number], map: "uq_stock_adjustments_org_number")
+  @@index([organization_id], map: "idx_stock_adjustments_org")
+  @@index([branch_id], map: "idx_stock_adjustments_branch")
+  @@index([status], map: "idx_stock_adjustments_status")
+  @@index([deleted_at], map: "idx_stock_adjustments_deleted_at")
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentLine {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stock_adjustment_id String   @db.Uuid
+  item_id             String   @db.Uuid
+  previous_qty        Int      @default(0)
+  adjusted_qty        Int      @default(0)
+  variance            Int      @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @updatedAt @db.Timestamptz(6)
+
+  stock_adjustment StockAdjustment @relation(fields: [stock_adjustment_id], references: [id], onDelete: Cascade)
+  item             Item            @relation(fields: [item_id], references: [id])
+
+  @@index([stock_adjustment_id], map: "idx_stock_adjustment_lines_adjustment")
+  @@index([item_id], map: "idx_stock_adjustment_lines_item")
+  @@map("stock_adjustment_lines")
+}
+
+model StockDispatch {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String         @db.Uuid
+  branch_id         String         @db.Uuid
+  dispatch_number   String
+  destination       String
+  status            DispatchStatus @default(DRAFT)
+  dispatch_date     DateTime?      @db.Timestamptz(6)
+  packed_by         String?        @db.Uuid
+  dispatched_by     String?        @db.Uuid
+  carrier_info      String?
+  tracking_info     String?
+  proof_of_dispatch String?
+  notes             String?
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime?      @db.Timestamptz(6)
+
+  organization Organization        @relation(fields: [organization_id], references: [id])
+  branch       Branch              @relation(fields: [branch_id], references: [id])
+  line_items   StockDispatchLine[]
+
+  @@unique([organization_id, dispatch_number], map: "uq_stock_dispatches_org_number")
+  @@index([organization_id], map: "idx_stock_dispatches_org")
+  @@index([branch_id], map: "idx_stock_dispatches_branch")
+  @@index([status], map: "idx_stock_dispatches_status")
+  @@index([deleted_at], map: "idx_stock_dispatches_deleted_at")
+  @@map("stock_dispatches")
+}
+
+model StockDispatchLine {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stock_dispatch_id String   @db.Uuid
+  item_id           String   @db.Uuid
+  quantity          Int      @default(0)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @updatedAt @db.Timestamptz(6)
+
+  stock_dispatch StockDispatch @relation(fields: [stock_dispatch_id], references: [id], onDelete: Cascade)
+  item           Item          @relation(fields: [item_id], references: [id])
+
+  @@index([stock_dispatch_id], map: "idx_stock_dispatch_lines_dispatch")
+  @@index([item_id], map: "idx_stock_dispatch_lines_item")
+  @@map("stock_dispatch_lines")
+}
+
+model StockReturn {
+  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id       String            @db.Uuid
+  return_number         String
+  return_type           StockReturnType
+  status                StockReturnStatus @default(DRAFT)
+  linked_source_type    String?
+  linked_source_id      String?           @db.Uuid
+  source_branch_id      String?           @db.Uuid
+  destination_branch_id String?           @db.Uuid
+  reason                String?
+  condition_notes       String?
+  restock               Boolean           @default(true)
+  damaged               Boolean           @default(false)
+  processed_by          String?           @db.Uuid
+  processed_date        DateTime?         @db.Timestamptz(6)
+  notes                 String?
+  created_at            DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime          @updatedAt @db.Timestamptz(6)
+  deleted_at            DateTime?         @db.Timestamptz(6)
+
+  organization       Organization      @relation(fields: [organization_id], references: [id])
+  source_branch      Branch?           @relation("StockReturnSourceBranch", fields: [source_branch_id], references: [id], onDelete: SetNull)
+  destination_branch Branch?           @relation("StockReturnDestinationBranch", fields: [destination_branch_id], references: [id], onDelete: SetNull)
+  line_items         StockReturnLine[]
+
+  @@unique([organization_id, return_number], map: "uq_stock_returns_org_number")
+  @@index([organization_id], map: "idx_stock_returns_org")
+  @@index([source_branch_id], map: "idx_stock_returns_source_branch")
+  @@index([destination_branch_id], map: "idx_stock_returns_destination_branch")
+  @@index([status], map: "idx_stock_returns_status")
+  @@index([deleted_at], map: "idx_stock_returns_deleted_at")
+  @@map("stock_returns")
+}
+
+model StockReturnLine {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String?  @db.Uuid
-  user_id         String?  @db.Uuid
+  stock_return_id String   @db.Uuid
+  item_id         String   @db.Uuid
+  quantity        Int      @default(0)
+  condition       String?
+  restock         Boolean  @default(true)
+  damaged         Boolean  @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+
+  stock_return StockReturn @relation(fields: [stock_return_id], references: [id], onDelete: Cascade)
+  item         Item        @relation(fields: [item_id], references: [id])
+
+  @@index([stock_return_id], map: "idx_stock_return_lines_return")
+  @@index([item_id], map: "idx_stock_return_lines_item")
+  @@map("stock_return_lines")
+}
+
+model InventoryReservation {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String                     @db.Uuid
+  branch_id         String                     @db.Uuid
+  item_id           String                     @db.Uuid
+  reserved_quantity Int                        @default(0)
+  reference_type    String?
+  reference_id      String?                    @db.Uuid
+  reserved_by       String?                    @db.Uuid
+  reserved_date     DateTime                   @default(now()) @db.Timestamptz(6)
+  expires_at        DateTime?                  @db.Timestamptz(6)
+  status            InventoryReservationStatus @default(ACTIVE)
+  notes             String?
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime                   @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime?                  @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  item         Item         @relation(fields: [item_id], references: [id])
+
+  @@index([organization_id], map: "idx_inventory_reservations_org")
+  @@index([branch_id], map: "idx_inventory_reservations_branch")
+  @@index([item_id], map: "idx_inventory_reservations_item")
+  @@index([status], map: "idx_inventory_reservations_status")
+  @@index([deleted_at], map: "idx_inventory_reservations_deleted_at")
+  @@map("inventory_reservations")
+}
+
+model ReorderRule {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id       String    @db.Uuid
+  branch_id             String    @db.Uuid
+  item_id               String    @db.Uuid
+  preferred_supplier_id String?   @db.Uuid
+  minimum_stock         Int       @default(0)
+  reorder_level         Int       @default(0)
+  reorder_quantity      Int       @default(0)
+  lead_time_days        Int       @default(0)
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at            DateTime? @db.Timestamptz(6)
+
+  organization       Organization @relation(fields: [organization_id], references: [id])
+  branch             Branch       @relation(fields: [branch_id], references: [id])
+  item               Item         @relation(fields: [item_id], references: [id])
+  preferred_supplier Supplier?    @relation(fields: [preferred_supplier_id], references: [id], onDelete: SetNull)
+
+  @@unique([organization_id, branch_id, item_id], map: "uq_reorder_rules_org_branch_item")
+  @@index([organization_id], map: "idx_reorder_rules_org")
+  @@index([branch_id], map: "idx_reorder_rules_branch")
+  @@index([item_id], map: "idx_reorder_rules_item")
+  @@index([preferred_supplier_id], map: "idx_reorder_rules_supplier")
+  @@index([deleted_at], map: "idx_reorder_rules_deleted_at")
+  @@map("reorder_rules")
+}
+
+model StockAlert {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String        @db.Uuid
+  branch_id       String?       @db.Uuid
+  item_id         String?       @db.Uuid
+  alert_type      String
+  severity        AlertSeverity @default(MEDIUM)
+  title           String
+  message         String
+  status          String        @default("OPEN")
+  metadata        Json?
+  detected_at     DateTime      @default(now()) @db.Timestamptz(6)
+  resolved_at     DateTime?     @db.Timestamptz(6)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?     @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  item         Item?        @relation(fields: [item_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id], map: "idx_stock_alerts_org")
+  @@index([branch_id], map: "idx_stock_alerts_branch")
+  @@index([item_id], map: "idx_stock_alerts_item")
+  @@index([severity], map: "idx_stock_alerts_severity")
+  @@index([status], map: "idx_stock_alerts_status")
+  @@index([deleted_at], map: "idx_stock_alerts_deleted_at")
+  @@map("stock_alerts")
+}
+
+model AuditLog {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String?   @db.Uuid
+  user_id         String?   @db.Uuid
   action          String
   entity_type     String
   entity_id       String?
   metadata        Json?
-  timestamp       DateTime @default(now()) @db.Timestamptz(6)
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+  timestamp       DateTime  @default(now()) @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
   deleted_at      DateTime? @db.Timestamptz(6)
-  created_by      String?  @db.Uuid
-  updated_by      String?  @db.Uuid
+  created_by      String?   @db.Uuid
+  updated_by      String?   @db.Uuid
 
-  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_audit_logs_org")
   @@index([user_id], map: "idx_audit_logs_user")

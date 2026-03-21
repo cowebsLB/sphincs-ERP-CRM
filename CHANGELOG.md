@@ -7,7 +7,31 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.15.0` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.0` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.0 - 2026-03-21
+
+### Added
+
+- Distribution database foundation in Prisma with new inventory operations tables:
+  - `inventory_stocks`
+  - `inventory_movements`
+  - `goods_receipts` + `goods_receipt_lines`
+  - `stock_transfers` + `stock_transfer_lines`
+  - `stock_adjustments` + `stock_adjustment_lines`
+  - `stock_dispatches` + `stock_dispatch_lines`
+  - `stock_returns` + `stock_return_lines`
+  - `inventory_reservations`
+  - `reorder_rules`
+  - `stock_alerts`
+- New distribution status and workflow enums for movement, receiving, transfer, dispatch, adjustment, return, reservation, and alert severity.
+- Migration scaffold for DB-first rollout:
+  - `apps/core-api/prisma/migrations/20260321_distribution_db_foundation/migration.sql`
+
+### Changed
+
+- Extended core entity relations (`Organization`, `Branch`, `Item`, `Supplier`, `PurchaseOrder`) to include distribution data graph links.
+- Updated system fallback version to `Beta V1.16.0` to reflect the new DB milestone.
 
 ## Beta V1.15.0 - 2026-03-21
 
