@@ -80,7 +80,7 @@ Beta V3 is complete only when all of these are true:
 
 ## 9) Immediate Execution Order
 
-- [ ] Map and document required new foreign keys.
+- [x] Map and document required new foreign keys.
 - [ ] Apply the relational backbone in safe migration order.
 - [ ] Add automated tenant-safety coverage.
 - [ ] Implement the first supported CRM-to-ERP handoff.
