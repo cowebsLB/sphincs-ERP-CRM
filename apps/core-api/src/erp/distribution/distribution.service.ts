@@ -3,6 +3,8 @@ import {
   DispatchStatus,
   DistributionMovementType,
   GoodsReceiptStatus,
+  StockAdjustmentStatus,
+  StockAdjustmentType,
   StockTransferStatus
 } from "@prisma/client";
 import { PrismaService } from "../../prisma.service";
@@ -38,6 +40,13 @@ type TransferListFilters = {
   status?: string;
   sourceBranchId?: string;
   destinationBranchId?: string;
+  includeDeleted?: boolean;
+};
+
+type AdjustmentListFilters = {
+  status?: string;
+  adjustmentType?: string;
+  branchId?: string;
   includeDeleted?: boolean;
 };
 
@@ -99,6 +108,14 @@ export class DistributionService {
     return text ? text : null;
   }
 
+  private parseRequiredString(value: unknown, fieldName: string): string {
+    const text = String(value ?? "").trim();
+    if (!text) {
+      throw new BadRequestException(`${fieldName} is required`);
+    }
+    return text;
+  }
+
   private parseRequiredMovementType(value: unknown): DistributionMovementType {
     const text = String(value ?? "").trim().toUpperCase();
     if (!text) {
@@ -141,6 +158,30 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockTransferStatus).join(", ")}`);
     }
     return text as StockTransferStatus;
+  }
+
+  private parseOptionalStockAdjustmentStatus(value: unknown): StockAdjustmentStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(StockAdjustmentStatus).includes(text as StockAdjustmentStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(StockAdjustmentStatus).join(", ")}`);
+    }
+    return text as StockAdjustmentStatus;
+  }
+
+  private parseOptionalStockAdjustmentType(value: unknown): StockAdjustmentType | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(StockAdjustmentType).includes(text as StockAdjustmentType)) {
+      throw new BadRequestException(
+        `adjustment_type must be one of: ${Object.values(StockAdjustmentType).join(", ")}`
+      );
+    }
+    return text as StockAdjustmentType;
   }
 
   private parseInteger(value: unknown, fieldName: string, fallback: number): number {
@@ -387,6 +428,41 @@ export class DistributionService {
         quantity_requested: quantityRequested,
         quantity_sent: quantitySent,
         quantity_received: quantityReceived
+      };
+    });
+  }
+
+  private parseAdjustmentLineItems(value: unknown, adjustmentType: StockAdjustmentType) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const previousQty = this.parseInteger(row.previous_qty ?? row.previousQty, `line_items[${index}].previous_qty`, 0);
+      const adjustedQty = this.parseInteger(row.adjusted_qty ?? row.adjustedQty, `line_items[${index}].adjusted_qty`, 0);
+      const providedVariance = this.parseInteger(row.variance, `line_items[${index}].variance`, adjustedQty - previousQty);
+      const expectedVariance = adjustedQty - previousQty;
+
+      if (providedVariance !== expectedVariance) {
+        throw new BadRequestException(`line_items[${index}].variance must equal adjusted_qty - previous_qty`);
+      }
+      if (adjustmentType === StockAdjustmentType.INCREASE && providedVariance < 0) {
+        throw new BadRequestException(`line_items[${index}] must increase stock for INCREASE adjustment type`);
+      }
+      if (adjustmentType === StockAdjustmentType.DECREASE && providedVariance > 0) {
+        throw new BadRequestException(`line_items[${index}] must decrease stock for DECREASE adjustment type`);
+      }
+
+      return {
+        item_id: itemId,
+        previous_qty: previousQty,
+        adjusted_qty: adjustedQty,
+        variance: providedVariance
       };
     });
   }
@@ -778,6 +854,113 @@ export class DistributionService {
           }
         },
         destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async listAdjustments(filters: AdjustmentListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalStockAdjustmentStatus(filters.status);
+    const adjustmentType = this.parseOptionalStockAdjustmentType(filters.adjustmentType);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    return this.prisma.stockAdjustment.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(adjustmentType ? { adjustment_type: adjustmentType } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createAdjustment(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const adjustmentType = this.parseOptionalStockAdjustmentType(body.adjustment_type ?? body.adjustmentType);
+    if (!adjustmentType) {
+      throw new BadRequestException("adjustment_type is required");
+    }
+    const lineItems = this.parseAdjustmentLineItems(body.line_items ?? body.lineItems, adjustmentType);
+    for (const lineItem of lineItems) {
+      await this.validateItemScope(lineItem.item_id, user);
+    }
+
+    const adjustmentNumber =
+      this.parseOptionalString(body.adjustment_number ?? body.adjustmentNumber) ??
+      `ADJ-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+    const status = this.parseOptionalStockAdjustmentStatus(body.status) ?? StockAdjustmentStatus.DRAFT;
+
+    return this.prisma.stockAdjustment.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        adjustment_number: adjustmentNumber,
+        status,
+        adjustment_type: adjustmentType,
+        reason: this.parseRequiredString(body.reason, "reason"),
+        approved_by: this.parseOptionalUuid(body.approved_by ?? body.approvedBy, "approved_by"),
+        created_by_user: user.id,
+        applied_at: this.parseDate(body.applied_at ?? body.appliedAt, "applied_at"),
+        notes: this.parseOptionalString(body.notes),
+        supporting_file: this.parseOptionalString(body.supporting_file ?? body.supportingFile),
+        line_items: {
+          create: lineItems
+        }
+      },
+      include: {
+        branch: {
           select: {
             id: true,
             name: true

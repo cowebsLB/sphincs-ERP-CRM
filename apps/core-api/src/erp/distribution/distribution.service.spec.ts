@@ -64,6 +64,15 @@ describe("DistributionService", () => {
     stockDispatch: {
       count: jest.fn().mockResolvedValue(2)
     },
+    stockAdjustment: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "adj-1",
+        adjustment_number: "ADJ-20260321120000-ABCD",
+        status: "DRAFT",
+        line_items: []
+      })
+    },
     stockAlert: {
       findMany: jest.fn().mockResolvedValue([
         {
@@ -409,6 +418,102 @@ describe("DistributionService", () => {
             {
               item_id: "33333333-3333-4333-8333-333333333333",
               quantity_requested: 10
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates stock adjustments with line validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createAdjustment(
+      {
+        branch_id: BRANCH_1,
+        adjustment_type: "DECREASE",
+        reason: "damage",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            previous_qty: 20,
+            adjusted_qty: 15,
+            variance: -5
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAdjustment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          adjustment_type: "DECREASE",
+          reason: "damage"
+        })
+      })
+    );
+    expect(result.id).toBe("adj-1");
+  });
+
+  it("lists adjustments with filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listAdjustments(
+      {
+        status: "APPROVED",
+        adjustmentType: "DECREASE",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAdjustment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "APPROVED",
+          adjustment_type: "DECREASE",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects adjustments when variance does not match qty delta", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createAdjustment(
+        {
+          branch_id: BRANCH_1,
+          adjustment_type: "DECREASE",
+          reason: "damage",
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              previous_qty: 20,
+              adjusted_qty: 15,
+              variance: -3
             }
           ]
         },

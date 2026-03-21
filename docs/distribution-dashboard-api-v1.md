@@ -11,6 +11,8 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/receipts`
 - `GET /api/v1/distribution/transfers`
 - `POST /api/v1/distribution/transfers`
+- `GET /api/v1/distribution/adjustments`
+- `POST /api/v1/distribution/adjustments`
 
 ## Purpose
 
@@ -71,7 +73,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
+1. Add `/distribution/dispatches`, `/returns` APIs.
 
 ## Movement API Notes (V1.16.3)
 
@@ -180,4 +182,38 @@ Supported query parameters:
 - `status`
 - `sourceBranchId`
 - `destinationBranchId`
+- `includeDeleted`
+
+## Adjustment API Notes (V1.16.6)
+
+### `POST /api/v1/distribution/adjustments`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `adjustment_type` (`INCREASE` or `DECREASE`)
+- `reason`
+- `line_items[]`
+
+Each adjustment line supports:
+
+- `item_id`
+- `previous_qty`
+- `adjusted_qty`
+- `variance`
+
+Validation includes:
+
+- `variance` must match `adjusted_qty - previous_qty`
+- `INCREASE` lines cannot produce negative variance
+- `DECREASE` lines cannot produce positive variance
+- linked branch/item scope validation
+
+### `GET /api/v1/distribution/adjustments`
+
+Supported query parameters:
+
+- `status`
+- `adjustmentType`
+- `branchId`
 - `includeDeleted`

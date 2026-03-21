@@ -95,4 +95,28 @@ export class DistributionController {
   createTransfer(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createTransfer(body, req?.user);
   }
+
+  @Get("adjustments")
+  listAdjustments(
+    @Query("status") status?: string,
+    @Query("adjustmentType") adjustmentType?: string,
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listAdjustments(
+      {
+        status,
+        adjustmentType,
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("adjustments")
+  createAdjustment(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createAdjustment(body, req?.user);
+  }
 }

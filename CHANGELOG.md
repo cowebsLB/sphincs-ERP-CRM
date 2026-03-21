@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.5` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.6` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.6 - 2026-03-21
+
+### Added
+
+- Distribution adjustment APIs:
+  - `GET /api/v1/distribution/adjustments`
+  - `POST /api/v1/distribution/adjustments`
+- Adjustment validation support:
+  - `adjustment_type` + `status` enum checks
+  - line-level variance consistency (`variance = adjusted_qty - previous_qty`)
+  - directional validation by adjustment type (`INCREASE` / `DECREASE`)
+  - organization/branch/item scope checks
+- Adjustment list filtering:
+  - `status`, `adjustmentType`, `branchId`, `includeDeleted`
+
+### Changed
+
+- Distribution controller/service now include adjustment workflows on top of dashboard, movements, receipts, and transfers.
+- System fallback version updated to `Beta V1.16.6`.
 
 ## Beta V1.16.5 - 2026-03-21
 

@@ -545,3 +545,37 @@ Date: 2026-03-21
   - movements
   - receipts
   - transfers
+
+## Task: Distribution Adjustments API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented stock adjustment APIs for inventory correction workflows.
+
+### Changes
+
+- Added controller routes:
+  - `GET /api/v1/distribution/adjustments`
+  - `POST /api/v1/distribution/adjustments`
+- Added service methods:
+  - `listAdjustments(...)`
+  - `createAdjustment(...)`
+- Added adjustment validation for:
+  - `adjustment_type` and `status` enums
+  - line variance math consistency
+  - directional variance rules by adjustment type
+  - organization/branch/item scope safety
+- Added/expanded unit tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated distribution API docs for adjustment endpoints.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `62/62` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Adjustment APIs now provide the correction path required for real-world stock mismatches between expected and counted quantities.
