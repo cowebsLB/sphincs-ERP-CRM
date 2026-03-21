@@ -472,3 +472,40 @@ Date: 2026-03-21
 ### Notes
 
 - Movement endpoints are now ready for UI integration and for follow-up workflows (receipts/transfers/adjustments) to post ledger events.
+
+## Task: Distribution Receipts API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented goods-receipt APIs in the distribution module with line-level validation and partial-receipt behavior.
+
+### Changes
+
+- Added controller routes:
+  - `GET /api/v1/distribution/receipts`
+  - `POST /api/v1/distribution/receipts`
+- Added service methods:
+  - `listReceipts(...)`
+  - `createReceipt(...)`
+- Added receipt domain validation for:
+  - line item quantity constraints
+  - valid status enum parsing
+  - organization/branch/item/supplier/purchase-order scope
+  - branch-aware access control
+- Added/expanded tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated distribution API documentation with receipt endpoint contracts.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `56/56` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Receipt status is auto-derived when not provided:
+  - no received qty -> `DRAFT`
+  - partial received -> `PARTIAL`
+  - fully received -> `RECEIVED`

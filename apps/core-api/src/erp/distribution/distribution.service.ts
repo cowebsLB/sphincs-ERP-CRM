@@ -27,6 +27,13 @@ type MovementListFilters = {
   includeDeleted?: boolean;
 };
 
+type ReceiptListFilters = {
+  status?: string;
+  supplierId?: string;
+  branchId?: string;
+  includeDeleted?: boolean;
+};
+
 @Injectable()
 export class DistributionService {
   constructor(private readonly prisma: PrismaService) {}
@@ -107,6 +114,17 @@ export class DistributionService {
     return text as DistributionMovementType;
   }
 
+  private parseOptionalGoodsReceiptStatus(value: unknown): GoodsReceiptStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(GoodsReceiptStatus).includes(text as GoodsReceiptStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(GoodsReceiptStatus).join(", ")}`);
+    }
+    return text as GoodsReceiptStatus;
+  }
+
   private parseInteger(value: unknown, fieldName: string, fallback: number): number {
     if (value === undefined || value === null || value === "") {
       return fallback;
@@ -178,6 +196,115 @@ export class DistributionService {
       throw new BadRequestException("item_id must reference an item in your organization scope");
     }
     return item;
+  }
+
+  private async validateSupplierScope(supplierId: string | null, user: UserScope) {
+    if (!supplierId) {
+      return null;
+    }
+    const supplier = await this.prisma.supplier.findFirst({
+      where: {
+        id: supplierId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!supplier) {
+      throw new BadRequestException("supplier_id must reference a supplier in your organization");
+    }
+    if (user.branchId && supplier.branch_id && supplier.branch_id !== user.branchId) {
+      throw new BadRequestException("supplier_id must reference your branch scope");
+    }
+    return supplier;
+  }
+
+  private async validatePurchaseOrderScope(purchaseOrderId: string | null, user: UserScope) {
+    if (!purchaseOrderId) {
+      return null;
+    }
+    const po = await this.prisma.purchaseOrder.findFirst({
+      where: {
+        id: purchaseOrderId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!po) {
+      throw new BadRequestException("purchase_order_id must reference a purchase order in your organization");
+    }
+    if (user.branchId && po.branch_id && po.branch_id !== user.branchId) {
+      throw new BadRequestException("purchase_order_id must reference your branch scope");
+    }
+    return po;
+  }
+
+  private parseReceiptLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const orderedQty = this.parseInteger(row.ordered_qty ?? row.orderedQty, `line_items[${index}].ordered_qty`, 0);
+      const receivedQty = this.parseInteger(
+        row.received_qty ?? row.receivedQty,
+        `line_items[${index}].received_qty`,
+        0
+      );
+      const rejectedQty = this.parseInteger(
+        row.rejected_qty ?? row.rejectedQty,
+        `line_items[${index}].rejected_qty`,
+        0
+      );
+      if (orderedQty < 0 || receivedQty < 0 || rejectedQty < 0) {
+        throw new BadRequestException(`line_items[${index}] quantities cannot be negative`);
+      }
+      if (receivedQty + rejectedQty > orderedQty) {
+        throw new BadRequestException(
+          `line_items[${index}] received_qty + rejected_qty cannot exceed ordered_qty`
+        );
+      }
+      const remainingQty = this.parseInteger(
+        row.remaining_qty ?? row.remainingQty,
+        `line_items[${index}].remaining_qty`,
+        Math.max(orderedQty - receivedQty - rejectedQty, 0)
+      );
+      if (remainingQty < 0) {
+        throw new BadRequestException(`line_items[${index}].remaining_qty cannot be negative`);
+      }
+      return {
+        item_id: itemId,
+        ordered_qty: orderedQty,
+        received_qty: receivedQty,
+        remaining_qty: remainingQty,
+        rejected_qty: rejectedQty,
+        notes: this.parseOptionalString(row.notes)
+      };
+    });
+  }
+
+  private deriveGoodsReceiptStatus(
+    requestedStatus: GoodsReceiptStatus | undefined,
+    lineItems: Array<{ ordered_qty: number; received_qty: number; remaining_qty: number }>
+  ): GoodsReceiptStatus {
+    if (requestedStatus) {
+      return requestedStatus;
+    }
+    const totalOrdered = lineItems.reduce((sum, row) => sum + row.ordered_qty, 0);
+    const totalReceived = lineItems.reduce((sum, row) => sum + row.received_qty, 0);
+    const totalRemaining = lineItems.reduce((sum, row) => sum + row.remaining_qty, 0);
+
+    if (totalReceived <= 0) {
+      return GoodsReceiptStatus.DRAFT;
+    }
+    if (totalRemaining <= 0 || totalReceived >= totalOrdered) {
+      return GoodsReceiptStatus.RECEIVED;
+    }
+    return GoodsReceiptStatus.PARTIAL;
   }
 
   async createMovement(body: Record<string, unknown>, scope?: UserScope) {
@@ -322,6 +449,116 @@ export class DistributionService {
             name: true
           }
         }
+      }
+    });
+  }
+
+  async listReceipts(filters: ReceiptListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalGoodsReceiptStatus(filters.status);
+    const supplierId = filters.supplierId ? this.parseRequiredUuid(filters.supplierId, "supplierId") : undefined;
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+
+    return this.prisma.goodsReceipt.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(supplierId ? { supplier_id: supplierId } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
+          }
+        },
+        purchase_order: {
+          select: {
+            id: true,
+            po_number: true,
+            status: true
+          }
+        },
+        line_items: true
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createReceipt(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const supplierId = this.parseOptionalUuid(body.supplier_id ?? body.supplierId, "supplier_id");
+    const purchaseOrderId = this.parseOptionalUuid(
+      body.purchase_order_id ?? body.purchaseOrderId,
+      "purchase_order_id"
+    );
+
+    await this.validateSupplierScope(supplierId, user);
+    await this.validatePurchaseOrderScope(purchaseOrderId, user);
+
+    const lineItems = this.parseReceiptLineItems(body.line_items ?? body.lineItems);
+    for (const lineItem of lineItems) {
+      await this.validateItemScope(lineItem.item_id, user);
+    }
+
+    const requestedStatus = this.parseOptionalGoodsReceiptStatus(body.status);
+    const status = this.deriveGoodsReceiptStatus(requestedStatus, lineItems);
+    const receiptNumber =
+      this.parseOptionalString(body.receipt_number ?? body.receiptNumber) ??
+      `GR-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+
+    return this.prisma.goodsReceipt.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        supplier_id: supplierId,
+        purchase_order_id: purchaseOrderId,
+        receipt_number: receiptNumber,
+        status,
+        received_date: this.parseDate(body.received_date ?? body.receivedDate, "received_date"),
+        received_by: user.id,
+        notes: this.parseOptionalString(body.notes),
+        attachments: (body.attachments as object | null | undefined) ?? undefined,
+        line_items: {
+          create: lineItems
+        }
+      },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
+          }
+        },
+        purchase_order: {
+          select: {
+            id: true,
+            po_number: true
+          }
+        },
+        line_items: true
       }
     });
   }

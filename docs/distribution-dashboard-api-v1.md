@@ -7,6 +7,8 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/dashboard`
 - `GET /api/v1/distribution/movements`
 - `POST /api/v1/distribution/movements`
+- `GET /api/v1/distribution/receipts`
+- `POST /api/v1/distribution/receipts`
 
 ## Purpose
 
@@ -67,9 +69,8 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/receipts` workflow APIs.
-2. Add `/distribution/transfers` workflow APIs.
-3. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
+1. Add `/distribution/transfers` workflow APIs.
+2. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
 
 ## Movement API Notes (V1.16.3)
 
@@ -105,4 +106,43 @@ Supported query parameters:
 - `status`
 - `from`
 - `to`
+- `includeDeleted`
+
+## Receipt API Notes (V1.16.4)
+
+### `POST /api/v1/distribution/receipts`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `line_items[]` with at least one line
+
+Each line supports:
+
+- `item_id`
+- `ordered_qty`
+- `received_qty`
+- `rejected_qty`
+- `remaining_qty` (optional, derived when omitted)
+- `notes`
+
+Optional header fields:
+
+- `receipt_number`
+- `status` (auto-derived if omitted)
+- `supplier_id`
+- `purchase_order_id`
+- `received_date`
+- `notes`
+- `attachments`
+
+Validation prevents invalid quantity math (for example `received_qty + rejected_qty > ordered_qty`).
+
+### `GET /api/v1/distribution/receipts`
+
+Supported query parameters:
+
+- `status`
+- `supplierId`
+- `branchId`
 - `includeDeleted`

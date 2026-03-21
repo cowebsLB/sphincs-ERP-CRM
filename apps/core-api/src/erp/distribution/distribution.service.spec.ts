@@ -42,7 +42,14 @@ describe("DistributionService", () => {
       updateMany: jest.fn()
     },
     goodsReceipt: {
-      count: jest.fn().mockResolvedValue(4)
+      count: jest.fn().mockResolvedValue(4),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "gr-1",
+        receipt_number: "GR-20260321120000-ABCD",
+        status: "PARTIAL",
+        line_items: []
+      })
     },
     stockTransfer: {
       count: jest.fn().mockResolvedValue(3)
@@ -95,6 +102,12 @@ describe("DistributionService", () => {
     },
     item: {
       findFirst: jest.fn().mockResolvedValue({ id: "item-1", organization_id: "org-1", branch_id: BRANCH_1 })
+    },
+    supplier: {
+      findFirst: jest.fn().mockResolvedValue({ id: "sup-1", organization_id: "org-1", branch_id: BRANCH_1 })
+    },
+    purchaseOrder: {
+      findFirst: jest.fn().mockResolvedValue({ id: "po-1", organization_id: "org-1", branch_id: BRANCH_1 })
     },
     stockReturnLine: {
       findMany: jest.fn().mockResolvedValue([
@@ -213,6 +226,97 @@ describe("DistributionService", () => {
         })
       })
     );
+  });
+
+  it("creates goods receipts with partial status when quantities are incomplete", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createReceipt(
+      {
+        branch_id: BRANCH_1,
+        supplier_id: "11111111-1111-4111-8111-111111111111",
+        purchase_order_id: "22222222-2222-4222-8222-222222222222",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            ordered_qty: 10,
+            received_qty: 6,
+            rejected_qty: 1
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.goodsReceipt.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          status: "PARTIAL"
+        })
+      })
+    );
+    expect(result.id).toBe("gr-1");
+  });
+
+  it("lists receipts with status filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listReceipts(
+      {
+        status: "PARTIAL",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.goodsReceipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "PARTIAL",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects receipt lines when received and rejected exceed ordered qty", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReceipt(
+        {
+          branch_id: BRANCH_1,
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              ordered_qty: 10,
+              received_qty: 8,
+              rejected_qty: 3
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it("enforces user scope for dashboard access", async () => {

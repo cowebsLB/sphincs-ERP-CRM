@@ -47,4 +47,28 @@ export class DistributionController {
   createMovement(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createMovement(body, req?.user);
   }
+
+  @Get("receipts")
+  listReceipts(
+    @Query("status") status?: string,
+    @Query("supplierId") supplierId?: string,
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listReceipts(
+      {
+        status,
+        supplierId,
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("receipts")
+  createReceipt(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createReceipt(body, req?.user);
+  }
 }

@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.3` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.4` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.4 - 2026-03-21
+
+### Added
+
+- Distribution receipt APIs:
+  - `GET /api/v1/distribution/receipts`
+  - `POST /api/v1/distribution/receipts`
+- Receipt create validation and partial-receipt support:
+  - line-level ordered/received/rejected/remaining quantity rules
+  - auto-derived status (`DRAFT`, `PARTIAL`, `RECEIVED`) when status is not provided
+  - organization/branch/item/supplier/purchase-order scope checks
+- Receipt list filtering support:
+  - `status`, `supplierId`, `branchId`, `includeDeleted`
+
+### Changed
+
+- Distribution controller/service now include receipts in addition to dashboard and movement APIs.
+- System fallback version updated to `Beta V1.16.4`.
 
 ## Beta V1.16.3 - 2026-03-21
 
