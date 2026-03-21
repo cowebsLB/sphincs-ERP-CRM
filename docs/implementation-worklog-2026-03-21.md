@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Transfer Performance Report API (V1.16.21)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/transfers`
+- Added report filters:
+  - `status`
+  - `sourceBranchId`
+  - `destinationBranchId`
+  - `from`
+  - `to`
+  - `includeDeleted`
+- Added report output shape with:
+  - per-transfer fulfillment metrics
+  - grouped status summary totals
+- Added unit test coverage for transfer report summary and fill-rate calculations.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `93/93` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This provides a dedicated transfer-performance lens for branch logistics monitoring and KPI views.
+
 ## Task: Distribution Movement History Report API (V1.16.20)
 
 Date: 2026-03-21

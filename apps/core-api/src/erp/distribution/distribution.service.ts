@@ -113,6 +113,15 @@ type MovementReportFilters = {
   includeDeleted?: boolean;
 };
 
+type TransferReportFilters = {
+  status?: string;
+  sourceBranchId?: string;
+  destinationBranchId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -2461,6 +2470,97 @@ export class DistributionService {
     return {
       summary,
       rows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async transferPerformanceReport(filters: TransferReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalStockTransferStatus(filters.status);
+    const sourceBranchId = filters.sourceBranchId
+      ? this.parseRequiredUuid(filters.sourceBranchId, "sourceBranchId")
+      : undefined;
+    const destinationBranchId = filters.destinationBranchId
+      ? this.parseRequiredUuid(filters.destinationBranchId, "destinationBranchId")
+      : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (sourceBranchId) {
+      await this.validateBranchInOrganization(sourceBranchId, "sourceBranchId", user);
+    }
+    if (destinationBranchId) {
+      await this.validateBranchInOrganization(destinationBranchId, "destinationBranchId", user);
+    }
+
+    const rows = await this.prisma.stockTransfer.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(sourceBranchId ? { source_branch_id: sourceBranchId } : {}),
+        ...(destinationBranchId ? { destination_branch_id: destinationBranchId } : {}),
+        ...(fromDate || toDate
+          ? {
+              created_date: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(user.branchId
+          ? {
+              OR: [{ source_branch_id: user.branchId }, { destination_branch_id: user.branchId }]
+            }
+          : {})
+      },
+      include: {
+        source_branch: { select: { id: true, name: true } },
+        destination_branch: { select: { id: true, name: true } },
+        line_items: true
+      },
+      orderBy: { created_date: "desc" },
+      take: 300
+    });
+
+    const reportRows = rows.map((row) => {
+      const qtyRequested = row.line_items.reduce((sum, line) => sum + line.quantity_requested, 0);
+      const qtySent = row.line_items.reduce((sum, line) => sum + line.quantity_sent, 0);
+      const qtyReceived = row.line_items.reduce((sum, line) => sum + line.quantity_received, 0);
+      const fillRatePct = qtyRequested > 0 ? Number(((qtyReceived / qtyRequested) * 100).toFixed(2)) : 0;
+      return {
+        id: row.id,
+        transfer_number: row.transfer_number,
+        status: row.status,
+        source_branch_id: row.source_branch_id,
+        source_branch_name: row.source_branch.name,
+        destination_branch_id: row.destination_branch_id,
+        destination_branch_name: row.destination_branch.name,
+        created_date: row.created_date,
+        dispatched_date: row.dispatched_date,
+        received_date: row.received_date,
+        line_count: row.line_items.length,
+        quantity_requested_total: qtyRequested,
+        quantity_sent_total: qtySent,
+        quantity_received_total: qtyReceived,
+        fill_rate_pct: fillRatePct
+      };
+    });
+
+    const summary = {
+      total_transfers: reportRows.length,
+      quantity_requested_total: reportRows.reduce((sum, row) => sum + row.quantity_requested_total, 0),
+      quantity_sent_total: reportRows.reduce((sum, row) => sum + row.quantity_sent_total, 0),
+      quantity_received_total: reportRows.reduce((sum, row) => sum + row.quantity_received_total, 0),
+      by_status: reportRows.reduce<Record<string, number>>((acc, row) => {
+        acc[row.status] = (acc[row.status] ?? 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return {
+      summary,
+      rows: reportRows,
       generated_at: new Date().toISOString()
     };
   }

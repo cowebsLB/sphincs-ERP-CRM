@@ -520,4 +520,28 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/transfers")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  transferPerformanceReport(
+    @Query("status") status?: string,
+    @Query("sourceBranchId") sourceBranchId?: string,
+    @Query("destinationBranchId") destinationBranchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transferPerformanceReport(
+      {
+        status,
+        sourceBranchId,
+        destinationBranchId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

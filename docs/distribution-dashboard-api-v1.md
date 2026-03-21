@@ -44,6 +44,7 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
 - `GET /api/v1/distribution/reports/stock-on-hand`
 - `GET /api/v1/distribution/reports/movements`
+- `GET /api/v1/distribution/reports/transfers`
 
 ## Purpose
 
@@ -114,7 +115,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add additional report endpoints (transfer performance, adjustment variance).
+1. Add additional report endpoints (adjustment variance).
 
 ## Movement API Notes (V1.16.3)
 
@@ -550,3 +551,24 @@ Behavior:
   - total movement count
   - total moved quantity
   - grouped movement counts by movement type
+
+### `GET /api/v1/distribution/reports/transfers` (V1.16.21)
+
+Supported query parameters:
+
+- `status`
+- `sourceBranchId`
+- `destinationBranchId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Returns transfer rows with source/destination branch context.
+- Includes fulfillment metrics per transfer:
+  - `quantity_requested_total`
+  - `quantity_sent_total`
+  - `quantity_received_total`
+  - `fill_rate_pct`
+- Includes a summary block with total quantities and grouped counts by status.

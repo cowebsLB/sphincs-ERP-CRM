@@ -1557,6 +1557,66 @@ describe("DistributionService", () => {
     expect(result.summary.by_type.TRANSFER_IN).toBe(1);
   });
 
+  it("builds transfer performance report with fill-rate totals", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findMany.mockResolvedValue([
+      {
+        id: "tr-1",
+        transfer_number: "TR-1001",
+        status: "DISPATCHED",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        created_date: new Date("2026-03-21T10:00:00.000Z"),
+        dispatched_date: new Date("2026-03-21T11:00:00.000Z"),
+        received_date: null,
+        source_branch: { id: BRANCH_1, name: "Main" },
+        destination_branch: { id: BRANCH_2, name: "North" },
+        line_items: [
+          { quantity_requested: 10, quantity_sent: 8, quantity_received: 6 },
+          { quantity_requested: 4, quantity_sent: 4, quantity_received: 4 }
+        ]
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transferPerformanceReport(
+      {
+        status: "DISPATCHED",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "DISPATCHED",
+          deleted_at: null
+        })
+      })
+    );
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_transfers: 1,
+        quantity_requested_total: 14,
+        quantity_sent_total: 12,
+        quantity_received_total: 10
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        transfer_number: "TR-1001",
+        line_count: 2,
+        fill_rate_pct: 71.43
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.20` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.21` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.21 - 2026-03-21
+
+### Added
+
+- Distribution transfer performance report API:
+  - `GET /api/v1/distribution/reports/transfers`
+- Report filters:
+  - `status`, `sourceBranchId`, `destinationBranchId`, `from`, `to`, `includeDeleted`
+- Report payload now includes:
+  - per-transfer fulfillment metrics (`quantity_requested_total`, `quantity_sent_total`, `quantity_received_total`, `fill_rate_pct`)
+  - aggregate summary with status grouping
+
+### Changed
+
+- Distribution reports now cover stock-on-hand, movement history, and transfer performance slices.
+- System fallback version updated to `Beta V1.16.21`.
 
 ## Beta V1.16.20 - 2026-03-21
 
