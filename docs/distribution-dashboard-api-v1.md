@@ -40,6 +40,8 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reorder-rules`
 - `POST /api/v1/distribution/reorder-rules`
 - `GET /api/v1/distribution/restocking-suggestions`
+- `GET /api/v1/distribution/alerts`
+- `PATCH /api/v1/distribution/alerts/:alertId/resolve`
 
 ## Purpose
 
@@ -65,6 +67,8 @@ As of `Beta V1.16.16`, roles are enforced at method level:
 - Approval-sensitive endpoints (for example transfer/adjustment approvals): restricted to elevated operational roles.
 
 As of `Beta V1.16.17`, transition operations also write audit events (`audit_logs`) for improved traceability.
+
+As of `Beta V1.16.18`, alert resolution is treated as an approval-sensitive action role.
 
 ## Response Shape
 
@@ -485,3 +489,25 @@ Behavior:
   - `suggested_order_quantity`
   - `needs_restock`
 - By default, rules that do not currently need restocking are excluded unless `includeZero=true`.
+
+## Alerts API Notes (V1.16.18)
+
+### `GET /api/v1/distribution/alerts`
+
+Supported query parameters:
+
+- `status`
+- `severity`
+- `branchId`
+- `includeDeleted`
+
+### `PATCH /api/v1/distribution/alerts/:alertId/resolve`
+
+Optional body fields:
+
+- `resolution_note`
+
+Behavior:
+
+- Resolves an open alert within scope by setting status to `RESOLVED`.
+- Stamps resolution metadata and writes a corresponding audit event.

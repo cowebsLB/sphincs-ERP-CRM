@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Alerts Inbox + Resolve APIs (V1.16.18)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added alert operations endpoints:
+  - `GET /api/v1/distribution/alerts`
+  - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
+- Added filter support for alert listing:
+  - `status`
+  - `severity`
+  - `branchId`
+  - `includeDeleted`
+- Added scoped alert resolution behavior:
+  - updates status to `RESOLVED`
+  - stamps resolution metadata
+  - writes audit event (`DISTRIBUTION_ALERT_RESOLVED`)
+- Added unit tests for alert listing and alert resolution behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `90/90` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This extends alerts from dashboard-only visibility to operational handling and closure APIs.
+
 ## Task: Distribution Transition Audit Trail Events (V1.16.17)
 
 Date: 2026-03-21

@@ -444,4 +444,34 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("alerts")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listAlerts(
+    @Query("status") status?: string,
+    @Query("severity") severity?: string,
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listAlerts(
+      {
+        status,
+        severity,
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Patch("alerts/:alertId/resolve")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
+  resolveAlert(
+    @Param("alertId") alertId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.resolveAlert(alertId, body, req?.user);
+  }
 }

@@ -1,5 +1,6 @@
 ﻿import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  AlertSeverity,
   DispatchStatus,
   DistributionMovementType,
   GoodsReceiptStatus,
@@ -85,6 +86,13 @@ type RestockingSuggestionFilters = {
   branchId?: string;
   includeInactive?: boolean;
   includeZero?: boolean;
+  includeDeleted?: boolean;
+};
+
+type AlertListFilters = {
+  status?: string;
+  severity?: string;
+  branchId?: string;
   includeDeleted?: boolean;
 };
 
@@ -366,6 +374,17 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockReturnStatus).join(", ")}`);
     }
     return text as StockReturnStatus;
+  }
+
+  private parseOptionalAlertSeverity(value: unknown): AlertSeverity | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(AlertSeverity).includes(text as AlertSeverity)) {
+      throw new BadRequestException(`severity must be one of: ${Object.values(AlertSeverity).join(", ")}`);
+    }
+    return text as AlertSeverity;
   }
 
   private parseOptionalInventoryReservationStatus(value: unknown): InventoryReservationStatus | undefined {
@@ -2193,6 +2212,81 @@ export class DistributionService {
     });
 
     return filters.includeZero ? suggestions : suggestions.filter((row) => row.needs_restock);
+  }
+
+  async listAlerts(filters: AlertListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    const severity = this.parseOptionalAlertSeverity(filters.severity);
+
+    return this.prisma.stockAlert.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(filters.status ? { status: String(filters.status).trim().toUpperCase() } : {}),
+        ...(severity ? { severity } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      orderBy: [{ severity: "desc" }, { detected_at: "desc" }],
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } }
+      },
+      take: 100
+    });
+  }
+
+  async resolveAlert(alertIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const alertId = this.parseRequiredUuid(alertIdRaw, "alertId");
+    const resolutionNote = this.parseOptionalString(body.resolution_note ?? body.resolutionNote);
+
+    const alert = await this.prisma.stockAlert.findFirst({
+      where: {
+        id: alertId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!alert) {
+      throw new NotFoundException("Alert not found");
+    }
+    if (user.branchId && alert.branch_id && alert.branch_id !== user.branchId) {
+      throw new BadRequestException("Alert is outside your branch scope");
+    }
+
+    const updated = await this.prisma.stockAlert.update({
+      where: { id: alert.id },
+      data: {
+        status: "RESOLVED",
+        resolved_at: new Date(),
+        metadata: {
+          resolution_note: resolutionNote ?? null,
+          resolved_by: user.id,
+          resolved_at: new Date().toISOString(),
+          previous_status: alert.status
+        }
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } }
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_ALERT_RESOLVED", "stock_alert", updated.id, {
+      from_status: alert.status,
+      to_status: "RESOLVED"
+    });
+    return updated;
   }
 
   async dashboard(scope?: UserScope) {

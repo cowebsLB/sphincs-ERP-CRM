@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.17` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.18` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.18 - 2026-03-21
+
+### Added
+
+- Alerts & exceptions APIs:
+  - `GET /api/v1/distribution/alerts`
+  - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
+- Alert list filtering support:
+  - `status`, `severity`, `branchId`, `includeDeleted`
+- Scoped alert resolution flow with audit event:
+  - marks alert as `RESOLVED`
+  - stamps `resolved_at`
+  - writes `DISTRIBUTION_ALERT_RESOLVED` to `audit_logs`
+
+### Changed
+
+- Distribution service now exposes operational alert inbox behavior beyond dashboard snapshots.
+- System fallback version updated to `Beta V1.16.18`.
 
 ## Beta V1.16.17 - 2026-03-21
 

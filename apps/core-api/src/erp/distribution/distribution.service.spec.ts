@@ -129,7 +129,18 @@ describe("DistributionService", () => {
           branch: { id: "branch-1", name: "Main" },
           item: { id: "item-1", name: "Widget A", sku: "W-A" }
         }
-      ])
+      ]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "a1",
+        branch_id: BRANCH_1,
+        status: "OPEN"
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "a1",
+        status: "RESOLVED",
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A" }
+      })
     },
     inventoryMovement: {
       findMany: jest.fn().mockResolvedValue([
@@ -1406,6 +1417,70 @@ describe("DistributionService", () => {
         needs_restock: false
       })
     );
+  });
+
+  it("lists alerts with severity filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listAlerts(
+      {
+        severity: "HIGH",
+        status: "OPEN",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAlert.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          severity: "HIGH",
+          status: "OPEN",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("resolves alerts within scoped branch and writes audit", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.resolveAlert(
+      "88888888-8888-4888-8888-888888888888",
+      { resolution_note: "Issue fixed" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockAlert.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "RESOLVED",
+          resolved_at: expect.any(Date)
+        })
+      })
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_ALERT_RESOLVED",
+          entity_type: "stock_alert",
+          user_id: "user-1"
+        })
+      })
+    );
+    expect(result.id).toBe("a1");
   });
 
   it("enforces user scope for dashboard access", async () => {
