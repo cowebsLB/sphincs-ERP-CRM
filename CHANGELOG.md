@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.12.1` - current active beta snapshot as of 2026-03-21
+- `Beta V1.12.2` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.12.2 - 2026-03-21
+
+### Fixed
+
+- Resolved CI e2e regression in `test_core_api` where purchase-order create flow returned `500` due to missing mocked Prisma delegates.
+- Added `supplier.findFirst` and `item.findFirst` support in the core-api e2e Prisma mock so relation-scope validations execute correctly in CI.
 
 ## Beta V1.12.1 - 2026-03-21
 

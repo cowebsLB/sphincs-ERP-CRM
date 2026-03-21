@@ -209,6 +209,35 @@ describe("Auth + ERP smoke (e2e)", () => {
       })
     },
     item: {
+      findFirst: jest.fn(
+        async ({
+          where
+        }: {
+          where?: { id?: string; organization_id?: string; deleted_at?: null };
+        }) => {
+          const seedItem = {
+            id: "33333333-3333-4333-8333-333333333333",
+            organization_id: adminUser.organization_id,
+            branch_id: adminUser.branch_id,
+            name: "Seed Item",
+            sku: "ITEM-001",
+            deleted_at: null
+          };
+          if (!where) {
+            return seedItem;
+          }
+          if (where.id && where.id !== seedItem.id) {
+            return null;
+          }
+          if (where.organization_id && where.organization_id !== seedItem.organization_id) {
+            return null;
+          }
+          if (where.deleted_at === null && seedItem.deleted_at !== null) {
+            return null;
+          }
+          return seedItem;
+        }
+      ),
       findMany: jest.fn(async () => [
         {
           id: "33333333-3333-4333-8333-333333333333",
@@ -230,6 +259,36 @@ describe("Auth + ERP smoke (e2e)", () => {
       }))
     },
     supplier: {
+      findFirst: jest.fn(
+        async ({
+          where
+        }: {
+          where?: { id?: string; organization_id?: string; deleted_at?: null };
+        }) => {
+          const seedSupplier = {
+            id: "66666666-6666-4666-8666-666666666666",
+            organization_id: adminUser.organization_id,
+            branch_id: adminUser.branch_id,
+            name: "Seed Supplier",
+            supplier_code: "SUP-001",
+            status: "ACTIVE",
+            deleted_at: null
+          };
+          if (!where) {
+            return seedSupplier;
+          }
+          if (where.id && where.id !== seedSupplier.id) {
+            return null;
+          }
+          if (where.organization_id && where.organization_id !== seedSupplier.organization_id) {
+            return null;
+          }
+          if (where.deleted_at === null && seedSupplier.deleted_at !== null) {
+            return null;
+          }
+          return seedSupplier;
+        }
+      ),
       findMany: jest.fn(async () => [
         {
           id: "66666666-6666-4666-8666-666666666666",

@@ -59,3 +59,22 @@ Date: 2026-03-21
 ### Notes
 
 - DB foreign keys guarantee existence; these guard checks enforce tenant and branch compatibility at the business-logic layer.
+
+## Task: CI E2E Fix - Prisma Mock Relation Delegates
+
+Date: 2026-03-21
+
+### Scope
+
+- Fixed `test_core_api` e2e failure caused by missing Prisma delegate methods in the e2e mock after adding relation-scope guards.
+- Added `findFirst` implementations for mocked `supplier` and `item` delegates in `auth-items.e2e-spec.ts`.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test:e2e` passed (`1/1` suite, `6/6` tests).
+- `pnpm --filter @sphincs/core-api test` passed (`11/11` suites, `44/44` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This is a test-harness compatibility fix; application runtime behavior is unchanged.
