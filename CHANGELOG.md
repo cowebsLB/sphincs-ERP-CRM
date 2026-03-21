@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.16` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.17` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.17 - 2026-03-21
+
+### Added
+
+- Distribution transition audit logging for high-risk workflows:
+  - transfer lifecycle transitions
+  - dispatch lifecycle transitions
+  - return lifecycle transitions
+  - adjustment lifecycle transitions
+- Audit events are written to `audit_logs` with:
+  - actor (`user_id`)
+  - organization scope
+  - entity type/id
+  - transition metadata (`action`, `from_status`, `to_status`)
+
+### Changed
+
+- Distribution service now records explicit audit events after successful transition mutations to strengthen traceability.
+- System fallback version updated to `Beta V1.16.17`.
 
 ## Beta V1.16.16 - 2026-03-21
 

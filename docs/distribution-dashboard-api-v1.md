@@ -64,6 +64,8 @@ As of `Beta V1.16.16`, roles are enforced at method level:
 - Write endpoints (`POST`/most `PATCH`): exclude read-only auditors.
 - Approval-sensitive endpoints (for example transfer/adjustment approvals): restricted to elevated operational roles.
 
+As of `Beta V1.16.17`, transition operations also write audit events (`audit_logs`) for improved traceability.
+
 ## Response Shape
 
 Returns:

@@ -207,6 +207,11 @@ describe("DistributionService", () => {
         }
       ])
     },
+    auditLog: {
+      create: jest.fn().mockResolvedValue({
+        id: "audit-1"
+      })
+    },
     inventoryReservation: {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockResolvedValue({
@@ -539,6 +544,15 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           status: "REQUESTED",
           requested_by: "user-1"
+        })
+      })
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_TRANSFER_TRANSITION",
+          entity_type: "stock_transfer",
+          user_id: "user-1"
         })
       })
     );

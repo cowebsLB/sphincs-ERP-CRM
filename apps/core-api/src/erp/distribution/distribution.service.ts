@@ -107,6 +107,27 @@ export class DistributionService {
     return scope;
   }
 
+  private async recordAuditEvent(
+    user: UserScope,
+    action: string,
+    entityType: string,
+    entityId: string,
+    metadata: Record<string, unknown>
+  ) {
+    await this.prisma.auditLog.create({
+      data: {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        metadata: metadata as any,
+        created_by: user.id,
+        updated_by: user.id
+      }
+    });
+  }
+
   private withScopedBranchFilter<T extends Record<string, unknown>>(scope: UserScope, base: T): T {
     if (!scope.branchId) {
       return base;
@@ -1194,7 +1215,7 @@ export class DistributionService {
       );
     }
 
-    return this.prisma.stockTransfer.update({
+    const updated = await this.prisma.stockTransfer.update({
       where: { id: transfer.id },
       data: {
         status: targetStatus,
@@ -1234,6 +1255,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_TRANSFER_TRANSITION", "stock_transfer", updated.id, {
+      action,
+      from_status: transfer.status,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listAdjustments(filters: AdjustmentListFilters, scope?: UserScope) {
@@ -1385,7 +1412,7 @@ export class DistributionService {
       );
     }
 
-    return this.prisma.stockAdjustment.update({
+    const updated = await this.prisma.stockAdjustment.update({
       where: { id: adjustment.id },
       data: {
         status: targetStatus,
@@ -1416,6 +1443,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_ADJUSTMENT_TRANSITION", "stock_adjustment", updated.id, {
+      action,
+      from_status: adjustment.status,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listDispatches(filters: DispatchListFilters, scope?: UserScope) {
@@ -1570,7 +1603,7 @@ export class DistributionService {
       );
     }
 
-    return this.prisma.stockDispatch.update({
+    const updated = await this.prisma.stockDispatch.update({
       where: { id: dispatch.id },
       data: {
         status: targetStatus,
@@ -1605,6 +1638,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_DISPATCH_TRANSITION", "stock_dispatch", updated.id, {
+      action,
+      from_status: dispatch.status,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listReturns(filters: ReturnListFilters, scope?: UserScope) {
@@ -1797,7 +1836,7 @@ export class DistributionService {
       throw new BadRequestException(`Cannot transition return from ${stockReturn.status} to ${targetStatus}`);
     }
 
-    return this.prisma.stockReturn.update({
+    const updated = await this.prisma.stockReturn.update({
       where: { id: stockReturn.id },
       data: {
         status: targetStatus,
@@ -1839,6 +1878,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_RETURN_TRANSITION", "stock_return", updated.id, {
+      action,
+      from_status: stockReturn.status,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listReservations(filters: ReservationListFilters, scope?: UserScope) {

@@ -1,5 +1,32 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Transition Audit Trail Events (V1.16.17)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added audit event persistence in distribution transition workflows:
+  - transfer transitions
+  - dispatch transitions
+  - return transitions
+  - adjustment transitions
+- Added service-level helper for consistent audit writes to `audit_logs`.
+- Included transition metadata in audit payload:
+  - action
+  - previous status
+  - next status
+- Extended distribution service tests to assert audit event write behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `88/88` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Audit records are written only after successful transitions, ensuring logs reflect committed state changes.
+
 ## Task: Distribution Method-Level RBAC Hardening (V1.16.16)
 
 Date: 2026-03-21
