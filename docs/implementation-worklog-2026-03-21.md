@@ -170,3 +170,140 @@ Date: 2026-03-21
 ### Notes
 
 - Hero background is implemented with a replaceable CSS variable so custom images can be dropped in later.
+
+## Task: Landing Content Alignment To Official SPHINCS Expansion
+
+Date: 2026-03-21
+
+### Scope
+
+- Updated landing storytelling content to match the official SPHINCS expansion:
+  - `S` System
+  - `P` Platform
+  - `H` Hub
+  - `I` Integration
+  - `N` Network
+  - `C` Cloud
+  - `S` Suite
+
+### Changes
+
+- Expanded narrative blocks and copy to reflect full acronym meaning.
+- Added missing N/C/S feature sections for complete sequence continuity.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Landing Visual Palette Revert To Existing Brand Scheme
+
+Date: 2026-03-21
+
+### Scope
+
+- Restored the previously established dark-gold palette while preserving the redesigned layout and motion system.
+
+### Changes
+
+- Reverted landing theme tokens/colors to existing approved brand direction.
+- Kept premium glassmorphism, section rhythm, and interaction patterns intact.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Landing Acronym Visibility And Section Label Refinement
+
+Date: 2026-03-21
+
+### Scope
+
+- Improved visibility of the full SPHINCS acronym on the page and aligned section labels to exact wording.
+
+### Changes
+
+- Added an acronym chip row to make all letters visible in the hero area.
+- Corrected/standardized section labels:
+  - `S | System`
+  - `P | Platform`
+  - `H | Hub`
+  - `I | Integration`
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Landing Scroll Feel Tuning (Snap Softening)
+
+Date: 2026-03-21
+
+### Scope
+
+- Tuned scroll snapping behavior to feel smoother and less abrupt.
+
+### Changes
+
+- Softened section lock behavior and transition feel for more natural guided scrolling.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Hero Composition Shift From Logo-First To Text-First
+
+Date: 2026-03-21
+
+### Scope
+
+- Replaced hero logo-first emphasis with a textual welcome-led composition.
+
+### Changes
+
+- Updated hero content hierarchy to prioritize message clarity over logo prominence.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Hero Brand Statement Update
+
+Date: 2026-03-21
+
+### Scope
+
+- Updated hero headline to the final brand statement requested by product direction.
+
+### Changes
+
+- Set primary headline to:
+  - `SPHINCS - Where Your Business Comes Together`
+- Kept supporting expansion line for acronym context.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+## Task: Landing Auth State Sync (Login -> Dashboard)
+
+Date: 2026-03-21
+
+### Scope
+
+- Fixed landing header auth-state detection so logged-in users see `Dashboard` instead of `Login`.
+- Synced landing auth checks with the shared session storage used by ERP/CRM apps.
+
+### Changes
+
+- Updated `apps/web-home/index.html` auth script to read session payload from:
+  - `localStorage["sphincs.session"]`
+  - legacy fallbacks: `sphincs.erp.session`, `sphincs.crm.session`
+- Added safe JSON parsing and `accessToken` presence validation before considering session as authenticated.
+- Updated logout behavior to clear shared session keys in addition to legacy token keys.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This resolves the mismatch where users were already authenticated in ERP/CRM but landing still rendered the logged-out action state.
