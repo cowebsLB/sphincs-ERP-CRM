@@ -7,7 +7,29 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.0` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.1` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.1 - 2026-03-21
+
+### Added
+
+- New distribution dashboard backend module:
+  - `GET /api/v1/distribution/dashboard`
+- New NestJS module wiring for distribution domain:
+  - `DistributionModule`
+  - `DistributionController`
+  - `DistributionService`
+- New service test coverage for dashboard metric aggregation and scope enforcement:
+  - `src/erp/distribution/distribution.service.spec.ts`
+
+### Changed
+
+- `AppModule` now includes `DistributionModule`.
+- System fallback version updated to `Beta V1.16.1`.
+
+### Notes
+
+- This release is the first API layer above the Distribution DB foundation (`Beta V1.16.0`).
 
 ## Beta V1.16.0 - 2026-03-21
 

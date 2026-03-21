@@ -1,0 +1,130 @@
+import { NotFoundException } from "@nestjs/common";
+import { DistributionService } from "./distribution.service";
+
+describe("DistributionService", () => {
+  const createPrismaMock = () => ({
+    inventoryStock: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          branch_id: "branch-1",
+          quantity_on_hand: 12,
+          in_transit_quantity: 3,
+          incoming_quantity: 5,
+          damaged_quantity: 1,
+          last_movement_at: new Date("2026-03-21T10:00:00.000Z"),
+          item: {
+            name: "Widget A",
+            sku: "W-A",
+            reorder_level: 20,
+            track_inventory: true,
+            deleted_at: null
+          }
+        },
+        {
+          branch_id: "branch-1",
+          quantity_on_hand: 0,
+          in_transit_quantity: 0,
+          incoming_quantity: 2,
+          damaged_quantity: 0,
+          last_movement_at: new Date("2026-03-21T09:00:00.000Z"),
+          item: {
+            name: "Widget B",
+            sku: "W-B",
+            reorder_level: 5,
+            track_inventory: true,
+            deleted_at: null
+          }
+        }
+      ])
+    },
+    goodsReceipt: {
+      count: jest.fn().mockResolvedValue(4)
+    },
+    stockTransfer: {
+      count: jest.fn().mockResolvedValue(3)
+    },
+    stockDispatch: {
+      count: jest.fn().mockResolvedValue(2)
+    },
+    stockAlert: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          id: "a1",
+          alert_type: "LOW_STOCK",
+          severity: "HIGH",
+          title: "Low stock on W-A",
+          message: "Reorder recommended",
+          detected_at: new Date("2026-03-21T08:00:00.000Z"),
+          branch: { id: "branch-1", name: "Main" },
+          item: { id: "item-1", name: "Widget A", sku: "W-A" }
+        }
+      ])
+    },
+    inventoryMovement: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          id: "m1",
+          movement_type: "TRANSFER_IN",
+          quantity: 10,
+          unit: "piece",
+          status: "POSTED",
+          notes: "Transfer completed",
+          occurred_at: new Date("2026-03-21T10:10:00.000Z"),
+          item: { id: "item-1", name: "Widget A", sku: "W-A" },
+          source_branch_id: "branch-2",
+          destination_branch_id: "branch-1",
+          source_branch: { id: "branch-2", name: "North" },
+          destination_branch: { id: "branch-1", name: "Main" }
+        }
+      ])
+    },
+    branch: {
+      findMany: jest.fn().mockResolvedValue([{ id: "branch-1", name: "Main" }])
+    },
+    stockReturnLine: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          quantity: 2,
+          stock_return: {
+            source_branch_id: "branch-1",
+            destination_branch_id: "branch-2"
+          }
+        }
+      ])
+    }
+  });
+
+  it("builds distribution dashboard metrics from scoped data", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.dashboard({
+      id: "user-1",
+      organizationId: "org-1",
+      branchId: "branch-1"
+    });
+
+    expect(result.metrics).toEqual(
+      expect.arrayContaining([
+        { label: "total_stock_on_hand", value: 12 },
+        { label: "low_stock_items", value: 1 },
+        { label: "out_of_stock_items", value: 1 },
+        { label: "incoming_stock", value: 7 },
+        { label: "pending_receipts", value: 4 },
+        { label: "pending_transfers", value: 3 },
+        { label: "pending_dispatches", value: 2 },
+        { label: "damaged_returned_stock", value: 3 }
+      ])
+    );
+    expect(result.branch_stock_summary).toHaveLength(1);
+    expect(result.alerts_and_exceptions).toHaveLength(1);
+    expect(result.recent_inventory_activity).toHaveLength(1);
+  });
+
+  it("enforces user scope for dashboard access", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+    await expect(service.dashboard(undefined)).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+

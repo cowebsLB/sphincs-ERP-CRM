@@ -37,6 +37,7 @@ This is the canonical entry point for all project documentation.
 - [CRM To ERP Handoff (Beta V3)](./crm-to-erp-handoff-v3.md)
 - [CRM Lead To Opportunity Transition (Beta V3)](./crm-lead-to-opportunity-transition-v3.md)
 - [Distribution DB Foundation (V1)](./distribution-db-foundation-v1.md)
+- [Distribution Dashboard API (V1)](./distribution-dashboard-api-v1.md)
 - [Beta V4 Checklist](./beta-v4-checklist.md)
 - [Beta V5 Checklist](./beta-v5-checklist.md)
 - [Beta V6 Checklist](./beta-v6-checklist.md)

@@ -353,3 +353,35 @@ Date: 2026-03-21
 ### Notes
 
 - This task delivers the data backbone only; service/controller/API wiring for distribution workflows is the next phase.
+
+## Task: Distribution Dashboard API V1
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented the first backend API slice on top of the new distribution schema.
+- Added a dashboard endpoint that aggregates operational metrics and branch/activity/alert summaries.
+
+### Changes
+
+- Added distribution module files:
+  - `apps/core-api/src/erp/distribution/distribution.module.ts`
+  - `apps/core-api/src/erp/distribution/distribution.controller.ts`
+  - `apps/core-api/src/erp/distribution/distribution.service.ts`
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Registered `DistributionModule` in `AppModule`.
+- Added endpoint:
+  - `GET /api/v1/distribution/dashboard`
+- Added API documentation:
+  - `docs/distribution-dashboard-api-v1.md`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `50/50` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Branch-scoped users receive branch-scoped dashboard aggregates.
+- This is the first service layer above the DB foundation and unlocks receiving/transfer workflow APIs next.

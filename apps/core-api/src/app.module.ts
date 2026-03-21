@@ -9,6 +9,7 @@ import { BranchesModule } from "./core/branches/branches.module";
 import { ItemsModule } from "./erp/items/items.module";
 import { PurchasingModule } from "./erp/purchasing/purchasing.module";
 import { SuppliersModule } from "./erp/suppliers/suppliers.module";
+import { DistributionModule } from "./erp/distribution/distribution.module";
 import { ContactsModule } from "./crm/contacts/contacts.module";
 import { LeadsModule } from "./crm/leads/leads.module";
 import { OpportunitiesModule } from "./crm/opportunities/opportunities.module";
@@ -33,6 +34,7 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
     ItemsModule,
     PurchasingModule,
     SuppliersModule,
+    DistributionModule,
     ContactsModule,
     LeadsModule,
     OpportunitiesModule,
