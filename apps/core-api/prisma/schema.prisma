@@ -55,8 +55,15 @@ model Organization {
   created_by String?  @db.Uuid
   updated_by String?  @db.Uuid
 
-  branches Branch[]
-  users    User[]
+  branches       Branch[]
+  users          User[]
+  items          Item[]
+  suppliers      Supplier[]
+  purchase_orders PurchaseOrder[]
+  contacts       Contact[]
+  leads          Lead[]
+  opportunities  Opportunity[]
+  audit_logs     AuditLog[]
 
   @@map("organizations")
 }
@@ -71,8 +78,14 @@ model Branch {
   created_by      String?  @db.Uuid
   updated_by      String?  @db.Uuid
 
-  organization Organization @relation(fields: [organization_id], references: [id])
-  users        User[]
+  organization   Organization  @relation(fields: [organization_id], references: [id])
+  users          User[]
+  items          Item[]
+  suppliers      Supplier[]
+  purchase_orders PurchaseOrder[]
+  contacts       Contact[]
+  leads          Lead[]
+  opportunities  Opportunity[]
 
   @@index([organization_id], map: "idx_branches_org")
   @@index([deleted_at], map: "idx_branches_deleted_at")
@@ -188,6 +201,10 @@ model Item {
   created_by        String?    @db.Uuid
   updated_by        String?    @db.Uuid
 
+  organization      Organization          @relation(fields: [organization_id], references: [id])
+  branch            Branch?               @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  po_line_items     PurchaseOrderLineItem[]
+
   @@index([organization_id], map: "idx_items_org")
   @@index([branch_id], map: "idx_items_branch")
   @@index([status], map: "idx_items_status")
@@ -234,6 +251,10 @@ model Supplier {
   created_by         String?        @db.Uuid
   updated_by         String?        @db.Uuid
 
+  organization       Organization   @relation(fields: [organization_id], references: [id])
+  branch             Branch?        @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  purchase_orders    PurchaseOrder[]
+
   @@index([organization_id], map: "idx_suppliers_org")
   @@index([branch_id], map: "idx_suppliers_branch")
   @@index([status], map: "idx_suppliers_status")
@@ -271,7 +292,10 @@ model PurchaseOrder {
   created_by             String?               @db.Uuid
   updated_by             String?               @db.Uuid
 
-  line_items PurchaseOrderLineItem[]
+  organization           Organization          @relation(fields: [organization_id], references: [id])
+  branch                 Branch?               @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  supplier               Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  line_items             PurchaseOrderLineItem[]
 
   @@index([organization_id], map: "idx_purchase_orders_org")
   @@index([branch_id], map: "idx_purchase_orders_branch")
@@ -297,6 +321,7 @@ model PurchaseOrderLineItem {
   updated_at        DateTime      @updatedAt @db.Timestamptz(6)
 
   purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+  item           Item?         @relation(fields: [item_id], references: [id], onDelete: SetNull)
 
   @@index([purchase_order_id], map: "idx_po_line_items_po")
   @@index([item_id], map: "idx_po_line_items_item")
@@ -314,6 +339,10 @@ model Contact {
   deleted_at      DateTime? @db.Timestamptz(6)
   created_by      String?  @db.Uuid
   updated_by      String?  @db.Uuid
+
+  organization    Organization @relation(fields: [organization_id], references: [id])
+  branch          Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  leads           Lead[]
 
   @@index([organization_id], map: "idx_contacts_org")
   @@index([branch_id], map: "idx_contacts_branch")
@@ -335,6 +364,11 @@ model Lead {
   created_by      String?    @db.Uuid
   updated_by      String?    @db.Uuid
 
+  organization    Organization  @relation(fields: [organization_id], references: [id])
+  branch          Branch?       @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  contact         Contact?      @relation(fields: [contact_id], references: [id], onDelete: SetNull)
+  opportunities   Opportunity[]
+
   @@index([organization_id], map: "idx_leads_org")
   @@index([branch_id], map: "idx_leads_branch")
   @@index([status], map: "idx_leads_status")
@@ -355,6 +389,10 @@ model Opportunity {
   deleted_at      DateTime?         @db.Timestamptz(6)
   created_by      String?           @db.Uuid
   updated_by      String?           @db.Uuid
+
+  organization    Organization @relation(fields: [organization_id], references: [id])
+  branch          Branch?      @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  lead            Lead?        @relation(fields: [lead_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_opportunities_org")
   @@index([branch_id], map: "idx_opportunities_branch")
@@ -379,6 +417,8 @@ model AuditLog {
   deleted_at      DateTime? @db.Timestamptz(6)
   created_by      String?  @db.Uuid
   updated_by      String?  @db.Uuid
+
+  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_audit_logs_org")
   @@index([user_id], map: "idx_audit_logs_user")

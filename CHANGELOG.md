@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.11.11` - current active beta snapshot as of 2026-03-20
+- `Beta V1.12.0` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.12.0 - 2026-03-21
+
+### Added
+
+- Beta V3 relational backbone migration scaffolding with DB-level foreign keys for:
+  - `purchase_orders.supplier_id -> suppliers.id`
+  - `purchase_order_line_items.item_id -> items.id`
+  - `leads.contact_id -> contacts.id`
+  - `opportunities.lead_id -> leads.id`
+- Organization foreign keys across core ERP/CRM business tables and optional audit-log organization linkage.
+- Branch foreign keys across branch-aware ERP/CRM business tables.
+
+### Changed
+
+- Prisma schema now declares explicit relations for V3 backbone entities (including organization and branch links) so application models match DB constraints.
+- Migration flow now includes defensive pre-constraint cleanup and integrity checks before enforcing new non-null organization foreign keys.
 
 ## Beta V1.11.11 - 2026-03-20
 

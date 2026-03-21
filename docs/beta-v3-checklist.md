@@ -12,14 +12,14 @@ If Beta V2 makes the current platform usable, Beta V3 makes it structurally trus
 
 ## 1) Relational Backbone
 
-- [ ] Add a real foreign key from `purchase_orders.supplier_id` to `suppliers.id`.
-- [ ] Add a real foreign key from `purchase_order_line_items.item_id` to `items.id`.
-- [ ] Add a real foreign key from `leads.contact_id` to `contacts.id`.
-- [ ] Add a real foreign key from `opportunities.lead_id` to `leads.id`.
-- [ ] Add organization foreign keys across ERP business tables where lifecycle rules allow them.
-- [ ] Add organization foreign keys across CRM business tables where lifecycle rules allow them.
-- [ ] Add branch foreign keys across branch-aware business tables where lifecycle rules allow them.
-- [ ] Document any business tables that intentionally stay app-level rather than DB-enforced.
+- [x] Add a real foreign key from `purchase_orders.supplier_id` to `suppliers.id`.
+- [x] Add a real foreign key from `purchase_order_line_items.item_id` to `items.id`.
+- [x] Add a real foreign key from `leads.contact_id` to `contacts.id`.
+- [x] Add a real foreign key from `opportunities.lead_id` to `leads.id`.
+- [x] Add organization foreign keys across ERP business tables where lifecycle rules allow them.
+- [x] Add organization foreign keys across CRM business tables where lifecycle rules allow them.
+- [x] Add branch foreign keys across branch-aware business tables where lifecycle rules allow them.
+- [x] Document any business tables that intentionally stay app-level rather than DB-enforced.
 
 ## 2) Tenant And Branch Integrity
 
@@ -81,7 +81,7 @@ Beta V3 is complete only when all of these are true:
 ## 9) Immediate Execution Order
 
 - [x] Map and document required new foreign keys.
-- [ ] Apply the relational backbone in safe migration order.
+- [x] Apply the relational backbone in safe migration order.
 - [ ] Add automated tenant-safety coverage.
 - [ ] Implement the first supported CRM-to-ERP handoff.
 - [ ] Update docs and relationship diagrams before closing Beta V3.
