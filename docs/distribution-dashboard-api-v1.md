@@ -58,6 +58,12 @@ Role-gated via `@Roles(...)` on controller:
 
 Branch-scoped users automatically receive branch-scoped aggregates.
 
+As of `Beta V1.16.16`, roles are enforced at method level:
+
+- Read endpoints: allow read-only auditors.
+- Write endpoints (`POST`/most `PATCH`): exclude read-only auditors.
+- Approval-sensitive endpoints (for example transfer/adjustment approvals): restricted to elevated operational roles.
+
 ## Response Shape
 
 Returns:

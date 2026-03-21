@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.15` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.16` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.16 - 2026-03-21
+
+### Added
+
+- Method-level RBAC enforcement for distribution controller endpoints:
+  - read-only access preserved for view endpoints
+  - write-only access enforced for create/transition endpoints
+  - approval-only access enforced for sensitive approve/apply/reverse actions
+
+### Changed
+
+- Distribution endpoint roles are now explicitly declared per route to prevent read-only roles from mutating operational data.
+- High-risk actions (for example transfer/adjustment approvals) now require elevated roles (`Admin`, `ERP Manager`, `Branch Manager`).
+- System fallback version updated to `Beta V1.16.16`.
 
 ## Beta V1.16.15 - 2026-03-21
 

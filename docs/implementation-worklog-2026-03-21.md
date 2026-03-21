@@ -1,5 +1,27 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Method-Level RBAC Hardening (V1.16.16)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added explicit method-level `@Roles(...)` declarations across distribution endpoints.
+- Split role access by operation category:
+  - read routes allow read-only auditor access
+  - write routes require operational roles
+  - approval-sensitive routes require elevated approval roles
+- Preserved existing service behavior while tightening endpoint authorization boundaries.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `88/88` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This task addresses permission granularity without schema changes and reduces risk of accidental data mutation by read-only roles.
+
 ## Task: Distribution Adjustment Lifecycle Actions (V1.16.15)
 
 Date: 2026-03-21

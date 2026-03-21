@@ -10,17 +10,31 @@ type AuthenticatedRequest = {
   };
 };
 
+const DISTRIBUTION_READ_ROLES = [
+  "Admin",
+  "ERP Manager",
+  "Staff",
+  "Warehouse Staff",
+  "Branch Manager",
+  "Read-Only Auditor"
+] as const;
+
+const DISTRIBUTION_WRITE_ROLES = ["Admin", "ERP Manager", "Staff", "Warehouse Staff", "Branch Manager"] as const;
+const DISTRIBUTION_APPROVAL_ROLES = ["Admin", "ERP Manager", "Branch Manager"] as const;
+
 @Controller("distribution")
 @Roles("Admin", "ERP Manager", "Staff", "Warehouse Staff", "Branch Manager", "Read-Only Auditor")
 export class DistributionController {
   constructor(private readonly distributionService: DistributionService) {}
 
   @Get("dashboard")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   dashboard(@Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.dashboard(req?.user);
   }
 
   @Get("movements")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listMovements(
     @Query("movementType") movementType?: string,
     @Query("itemId") itemId?: string,
@@ -44,11 +58,13 @@ export class DistributionController {
   }
 
   @Post("movements")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createMovement(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createMovement(body, req?.user);
   }
 
   @Get("receipts")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listReceipts(
     @Query("status") status?: string,
     @Query("supplierId") supplierId?: string,
@@ -68,11 +84,13 @@ export class DistributionController {
   }
 
   @Post("receipts")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createReceipt(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReceipt(body, req?.user);
   }
 
   @Get("transfers")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listTransfers(
     @Query("status") status?: string,
     @Query("sourceBranchId") sourceBranchId?: string,
@@ -92,11 +110,13 @@ export class DistributionController {
   }
 
   @Post("transfers")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createTransfer(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createTransfer(body, req?.user);
   }
 
   @Patch("transfers/:transferId/request")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   requestTransfer(
     @Param("transferId") transferId: string,
     @Body() body: Record<string, unknown>,
@@ -106,6 +126,7 @@ export class DistributionController {
   }
 
   @Patch("transfers/:transferId/approve")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
   approveTransfer(
     @Param("transferId") transferId: string,
     @Body() body: Record<string, unknown>,
@@ -115,6 +136,7 @@ export class DistributionController {
   }
 
   @Patch("transfers/:transferId/dispatch")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   dispatchTransfer(
     @Param("transferId") transferId: string,
     @Body() body: Record<string, unknown>,
@@ -124,6 +146,7 @@ export class DistributionController {
   }
 
   @Patch("transfers/:transferId/receive")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   receiveTransfer(
     @Param("transferId") transferId: string,
     @Body() body: Record<string, unknown>,
@@ -133,6 +156,7 @@ export class DistributionController {
   }
 
   @Get("adjustments")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listAdjustments(
     @Query("status") status?: string,
     @Query("adjustmentType") adjustmentType?: string,
@@ -152,11 +176,13 @@ export class DistributionController {
   }
 
   @Post("adjustments")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createAdjustment(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createAdjustment(body, req?.user);
   }
 
   @Patch("adjustments/:adjustmentId/submit")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   submitAdjustment(
     @Param("adjustmentId") adjustmentId: string,
     @Body() body: Record<string, unknown>,
@@ -166,6 +192,7 @@ export class DistributionController {
   }
 
   @Patch("adjustments/:adjustmentId/approve")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
   approveAdjustment(
     @Param("adjustmentId") adjustmentId: string,
     @Body() body: Record<string, unknown>,
@@ -175,6 +202,7 @@ export class DistributionController {
   }
 
   @Patch("adjustments/:adjustmentId/apply")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
   applyAdjustment(
     @Param("adjustmentId") adjustmentId: string,
     @Body() body: Record<string, unknown>,
@@ -184,6 +212,7 @@ export class DistributionController {
   }
 
   @Patch("adjustments/:adjustmentId/reverse")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
   reverseAdjustment(
     @Param("adjustmentId") adjustmentId: string,
     @Body() body: Record<string, unknown>,
@@ -193,6 +222,7 @@ export class DistributionController {
   }
 
   @Get("dispatches")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listDispatches(
     @Query("status") status?: string,
     @Query("branchId") branchId?: string,
@@ -210,11 +240,13 @@ export class DistributionController {
   }
 
   @Post("dispatches")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createDispatch(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createDispatch(body, req?.user);
   }
 
   @Patch("dispatches/:dispatchId/ready")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   markDispatchReady(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -224,6 +256,7 @@ export class DistributionController {
   }
 
   @Patch("dispatches/:dispatchId/pack")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   packDispatch(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -233,6 +266,7 @@ export class DistributionController {
   }
 
   @Patch("dispatches/:dispatchId/dispatch")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   markDispatchDispatched(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -242,6 +276,7 @@ export class DistributionController {
   }
 
   @Patch("dispatches/:dispatchId/deliver")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   deliverDispatch(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -251,6 +286,7 @@ export class DistributionController {
   }
 
   @Patch("dispatches/:dispatchId/fail")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   failDispatch(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -260,6 +296,7 @@ export class DistributionController {
   }
 
   @Patch("dispatches/:dispatchId/return")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   returnDispatch(
     @Param("dispatchId") dispatchId: string,
     @Body() body: Record<string, unknown>,
@@ -269,6 +306,7 @@ export class DistributionController {
   }
 
   @Get("returns")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listReturns(
     @Query("status") status?: string,
     @Query("returnType") returnType?: string,
@@ -290,11 +328,13 @@ export class DistributionController {
   }
 
   @Post("returns")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createReturn(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReturn(body, req?.user);
   }
 
   @Patch("returns/:returnId/receive")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   receiveReturn(
     @Param("returnId") returnId: string,
     @Body() body: Record<string, unknown>,
@@ -304,6 +344,7 @@ export class DistributionController {
   }
 
   @Patch("returns/:returnId/inspect")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   inspectReturn(
     @Param("returnId") returnId: string,
     @Body() body: Record<string, unknown>,
@@ -313,6 +354,7 @@ export class DistributionController {
   }
 
   @Patch("returns/:returnId/complete")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   completeReturn(
     @Param("returnId") returnId: string,
     @Body() body: Record<string, unknown>,
@@ -322,6 +364,7 @@ export class DistributionController {
   }
 
   @Patch("returns/:returnId/cancel")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   cancelReturn(
     @Param("returnId") returnId: string,
     @Body() body: Record<string, unknown>,
@@ -331,6 +374,7 @@ export class DistributionController {
   }
 
   @Get("reservations")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listReservations(
     @Query("status") status?: string,
     @Query("branchId") branchId?: string,
@@ -350,11 +394,13 @@ export class DistributionController {
   }
 
   @Post("reservations")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createReservation(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReservation(body, req?.user);
   }
 
   @Get("reorder-rules")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listReorderRules(
     @Query("branchId") branchId?: string,
     @Query("itemId") itemId?: string,
@@ -374,11 +420,13 @@ export class DistributionController {
   }
 
   @Post("reorder-rules")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
   createReorderRule(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReorderRule(body, req?.user);
   }
 
   @Get("restocking-suggestions")
+  @Roles(...DISTRIBUTION_READ_ROLES)
   listRestockingSuggestions(
     @Query("branchId") branchId?: string,
     @Query("includeInactive") includeInactive?: string,
