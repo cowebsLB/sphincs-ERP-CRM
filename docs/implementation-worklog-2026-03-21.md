@@ -123,3 +123,25 @@ Date: 2026-03-21
 ### Notes
 
 - Production will show the updated value after deploy and environment refresh.
+
+## Task: Beta V3 Lead Transition + Business Audit Events
+
+Date: 2026-03-21
+
+### Scope
+
+- Added explicit lead-to-opportunity conversion endpoint:
+  - `POST /api/v1/crm/leads/:id/convert-to-opportunity`
+- Added transactional lead conversion flow:
+  - lead status -> `CONVERTED`
+  - new linked opportunity -> `OPEN`
+- Added business audit records for:
+  - lead conversion (`CRM_LEAD_CONVERTED_TO_OPPORTUNITY`)
+  - opportunity handoff to ERP purchase order (`CRM_OPPORTUNITY_HANDOFF_TO_ERP_PO`)
+- Added unit + e2e coverage for lead conversion path.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`11/11` suites, `48/48` tests).
+- `pnpm --filter @sphincs/core-api test:e2e` passed (`1/1` suite, `8/8` tests).
+- `pnpm build` passed at workspace level.

@@ -30,6 +30,15 @@ export class LeadsController {
     return this.leadsService.update(id, body, req?.user);
   }
 
+  @Post(":id/convert-to-opportunity")
+  convertToOpportunity(
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.leadsService.convertToOpportunity(id, body, req?.user);
+  }
+
   @Post(":id/restore")
   restore(@Param("id") id: string, @Body() _body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.leadsService.restore(id, req?.user);

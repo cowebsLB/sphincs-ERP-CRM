@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.13.1` - current active beta snapshot as of 2026-03-21
+- `Beta V1.14.0` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.14.0 - 2026-03-21
+
+### Added
+
+- Lead conversion workflow endpoint:
+  - `POST /api/v1/crm/leads/:id/convert-to-opportunity`
+- Transactional conversion behavior from CRM lead to CRM opportunity (`CONVERTED` + `OPEN`).
+- Business-level audit events for:
+  - lead conversion (`CRM_LEAD_CONVERTED_TO_OPPORTUNITY`)
+  - opportunity to ERP purchase-order handoff (`CRM_OPPORTUNITY_HANDOFF_TO_ERP_PO`)
+- Additional e2e coverage for lead conversion path.
+
+### Changed
+
+- Beta V3 workflow docs/checklist updated for transition safety and cross-module audit progress.
+- System fallback version updated to `Beta V1.14.0` for consistent runtime reporting.
 
 ## Beta V1.13.1 - 2026-03-21
 

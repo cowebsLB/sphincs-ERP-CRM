@@ -34,9 +34,9 @@ If Beta V2 makes the current platform usable, Beta V3 makes it structurally trus
 
 - [x] Define the first supported CRM-to-ERP operational handoff.
 - [x] Document when an opportunity should trigger ERP-side follow-up versus remain CRM-only.
-- [ ] Add a safe business-state transition path from lead to opportunity.
-- [ ] Add an explicit "won" or downstream operational-ready opportunity flow.
-- [ ] Log cross-module workflow transitions in audit history.
+- [x] Add a safe business-state transition path from lead to opportunity.
+- [x] Add an explicit "won" or downstream operational-ready opportunity flow.
+- [x] Log cross-module workflow transitions in audit history.
 - [ ] Ensure the UI explains the relationship between CRM pipeline state and ERP action state.
 
 ## 4) Relationship-Aware UX

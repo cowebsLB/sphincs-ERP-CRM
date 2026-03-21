@@ -329,6 +329,15 @@ describe("Auth + ERP smoke (e2e)", () => {
       }))
     },
     opportunity: {
+      create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+        id: "99999999-9999-4999-8999-999999999999",
+        organization_id: String(data.organization_id ?? adminUser.organization_id),
+        branch_id: String(data.branch_id ?? adminUser.branch_id),
+        lead_id: String(data.lead_id ?? ""),
+        status: String(data.status ?? "OPEN"),
+        created_by: String(data.created_by ?? adminUser.id),
+        deleted_at: null
+      })),
       findFirst: jest.fn(
         async ({
           where
@@ -368,11 +377,55 @@ describe("Auth + ERP smoke (e2e)", () => {
         }
       )
     },
+    lead: {
+      findFirst: jest.fn(
+        async ({
+          where
+        }: {
+          where?: {
+            id?: string;
+            organization_id?: string;
+            created_by?: string;
+            deleted_at?: null;
+          };
+        }) => {
+          const convertibleLead = {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            organization_id: adminUser.organization_id,
+            branch_id: adminUser.branch_id,
+            status: "QUALIFIED",
+            created_by: adminUser.id,
+            deleted_at: null
+          };
+          if (!where) {
+            return convertibleLead;
+          }
+          if (where.id && where.id !== convertibleLead.id) {
+            return null;
+          }
+          if (where.organization_id && where.organization_id !== convertibleLead.organization_id) {
+            return null;
+          }
+          if (where.created_by && where.created_by !== convertibleLead.created_by) {
+            return null;
+          }
+          if (where.deleted_at === null && convertibleLead.deleted_at !== null) {
+            return null;
+          }
+          return convertibleLead;
+        }
+      ),
+      update: jest.fn(async ({ where }: { where: { id: string } }) => ({
+        id: where.id,
+        status: "CONVERTED"
+      }))
+    },
     auditLog: {
       create: jest.fn(async () => ({
         id: "44444444-4444-4444-4444-444444444444"
       }))
-    }
+    },
+    $transaction: jest.fn(async (cb: (tx: unknown) => unknown) => cb(mockPrisma as unknown))
   };
 
   const originalAccessSecret = process.env.JWT_ACCESS_SECRET;
@@ -640,5 +693,22 @@ describe("Auth + ERP smoke (e2e)", () => {
 
     expect(handoff.body.status).toBe("DRAFT");
     expect(Array.isArray(handoff.body.line_items)).toBe(true);
+  });
+
+  it("converts a qualified lead into an open opportunity", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+    const token = login.body.accessToken as string;
+
+    const conversion = await request(app.getHttpServer())
+      .post("/api/v1/crm/leads/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/convert-to-opportunity")
+      .set("Authorization", `Bearer ${token}`)
+      .send({})
+      .expect(201);
+
+    expect(conversion.body.lead.status).toBe("CONVERTED");
+    expect(conversion.body.opportunity.status).toBe("OPEN");
   });
 });

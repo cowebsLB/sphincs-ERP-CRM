@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma.service";
 import { PurchasingService } from "../../erp/purchasing/purchasing.service";
+import { AuditService } from "../../audit/audit.service";
 
 export type OpportunityStatus = "OPEN" | "WON" | "LOST";
 type UserScope = {
@@ -13,7 +14,8 @@ type UserScope = {
 export class OpportunitiesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly purchasingService: PurchasingService
+    private readonly purchasingService: PurchasingService,
+    private readonly auditService: AuditService
   ) {}
   private readonly uuidPattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -215,6 +217,22 @@ export class OpportunitiesService {
       line_items: lineItems
     };
 
-    return this.purchasingService.create(handoffPayload, user);
+    const purchaseOrder = await this.purchasingService.create(handoffPayload, user);
+
+    await this.auditService.record({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: "CRM_OPPORTUNITY_HANDOFF_TO_ERP_PO",
+      entityType: "crm_opportunity",
+      entityId: opportunity.id,
+      metadata: {
+        opportunityId: opportunity.id,
+        leadId: opportunity.lead_id,
+        purchaseOrderId: purchaseOrder?.id ?? null,
+        purchaseOrderStatus: purchaseOrder?.status ?? null
+      }
+    });
+
+    return purchaseOrder;
   }
 }

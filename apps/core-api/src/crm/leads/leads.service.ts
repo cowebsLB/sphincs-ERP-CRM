@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma.service";
+import { AuditService } from "../../audit/audit.service";
+import { Prisma } from "@prisma/client";
 
 export type LeadStatus = "NEW" | "QUALIFIED" | "DISQUALIFIED" | "CONVERTED";
 type UserScope = {
@@ -10,7 +12,10 @@ type UserScope = {
 
 @Injectable()
 export class LeadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService
+  ) {}
   private readonly uuidPattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   private readonly validStatuses: LeadStatus[] = ["NEW", "QUALIFIED", "DISQUALIFIED", "CONVERTED"];
@@ -163,5 +168,77 @@ export class LeadsService {
         updated_by: user.id
       }
     });
+  }
+
+  async convertToOpportunity(id: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const lead = await this.prisma.lead.findFirst({
+      where: {
+        id,
+        organization_id: user.organizationId,
+        created_by: user.id,
+        deleted_at: null
+      }
+    });
+
+    if (!lead) {
+      throw new NotFoundException("Lead not found");
+    }
+
+    if (lead.status === "DISQUALIFIED") {
+      throw new BadRequestException("Disqualified leads cannot be converted to opportunities");
+    }
+
+    if (lead.status === "CONVERTED") {
+      throw new BadRequestException("Lead is already converted");
+    }
+
+    const openingStatusRaw = String(body.opportunity_status ?? "OPEN").trim().toUpperCase();
+    if (openingStatusRaw !== "OPEN") {
+      throw new BadRequestException("opportunity_status must be OPEN on lead conversion");
+    }
+
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updatedLead = await tx.lead.update({
+        where: { id: lead.id },
+        data: {
+          status: "CONVERTED",
+          updated_by: user.id
+        }
+      });
+
+      const opportunity = await tx.opportunity.create({
+        data: {
+          organization_id: user.organizationId,
+          branch_id: user.branchId ?? null,
+          lead_id: lead.id,
+          status: "OPEN",
+          created_by: user.id,
+          updated_by: user.id
+        }
+      });
+
+      return {
+        lead: updatedLead,
+        opportunity
+      };
+    });
+
+    await this.auditService.record({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: "CRM_LEAD_CONVERTED_TO_OPPORTUNITY",
+      entityType: "crm_lead",
+      entityId: lead.id,
+      metadata: {
+        leadId: lead.id,
+        opportunityId: result.opportunity.id,
+        previousLeadStatus: lead.status,
+        newLeadStatus: "CONVERTED",
+        opportunityStatus: "OPEN"
+      }
+    });
+
+    return result;
   }
 }

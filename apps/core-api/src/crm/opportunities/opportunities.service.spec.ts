@@ -4,6 +4,9 @@ describe("OpportunitiesService", () => {
   const purchasingServiceMock = {
     create: jest.fn()
   };
+  const auditServiceMock = {
+    record: jest.fn()
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -22,11 +25,12 @@ describe("OpportunitiesService", () => {
         })
       }
     };
-    const serviceWithDeps = new OpportunitiesService(
+    const service = new OpportunitiesService(
       prismaMock as never,
-      purchasingServiceMock as never
+      purchasingServiceMock as never,
+      auditServiceMock as never
     );
-    const opportunity = await serviceWithDeps.create(
+    const opportunity = await service.create(
       {},
       { id: "user-1", organizationId: "org-1", branchId: "branch-1" }
     );
@@ -43,7 +47,11 @@ describe("OpportunitiesService", () => {
         findMany: jest.fn().mockResolvedValue([])
       }
     };
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
     await service.findAll(false, {
       id: "user-1",
       organizationId: "org-1",
@@ -69,7 +77,11 @@ describe("OpportunitiesService", () => {
         create: jest.fn()
       }
     };
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
 
     await expect(
       service.create(
@@ -91,7 +103,11 @@ describe("OpportunitiesService", () => {
         create: jest.fn()
       }
     };
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
 
     await expect(
       service.create(
@@ -115,7 +131,11 @@ describe("OpportunitiesService", () => {
         update: jest.fn()
       }
     };
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
 
     await expect(
       service.update(
@@ -147,7 +167,11 @@ describe("OpportunitiesService", () => {
       status: "DRAFT"
     });
 
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
     const result = await service.createPurchaseOrderHandoff(
       "opp-1",
       {
@@ -165,6 +189,13 @@ describe("OpportunitiesService", () => {
         notes: expect.stringContaining("CRM handoff from opportunity opp-1")
       }),
       { id: "user-1", organizationId: "org-1", branchId: "branch-1" }
+    );
+    expect(auditServiceMock.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "CRM_OPPORTUNITY_HANDOFF_TO_ERP_PO",
+        entityType: "crm_opportunity",
+        entityId: "opp-1"
+      })
     );
     expect(result.status).toBe("DRAFT");
   });
@@ -185,7 +216,11 @@ describe("OpportunitiesService", () => {
         findFirst: jest.fn()
       }
     };
-    const service = new OpportunitiesService(prismaMock as never, purchasingServiceMock as never);
+    const service = new OpportunitiesService(
+      prismaMock as never,
+      purchasingServiceMock as never,
+      auditServiceMock as never
+    );
 
     await expect(
       service.createPurchaseOrderHandoff(
