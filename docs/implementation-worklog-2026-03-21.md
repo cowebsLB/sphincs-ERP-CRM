@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Stock-On-Hand Report API (V1.16.19)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/stock-on-hand`
+- Added report filters:
+  - `branchId`
+  - `itemId`
+  - `lowOnly`
+  - `outOnly`
+  - `includeDeleted`
+- Added report output shape with:
+  - row-level stock metrics
+  - low/out-of-stock flags
+  - aggregate summary totals
+- Added unit test coverage for report summary generation and low-stock filtering behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `91/91` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This introduces a dedicated reporting surface and keeps dashboard payloads focused on triage summaries.
+
 ## Task: Distribution Alerts Inbox + Resolve APIs (V1.16.18)
 
 Date: 2026-03-21

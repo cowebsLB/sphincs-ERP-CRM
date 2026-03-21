@@ -42,6 +42,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/restocking-suggestions`
 - `GET /api/v1/distribution/alerts`
 - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
+- `GET /api/v1/distribution/reports/stock-on-hand`
 
 ## Purpose
 
@@ -112,7 +113,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add role-specific permission gates per distribution action (approve/apply/reverse/dispatch).
+1. Add additional report endpoints (movement history, transfer performance, adjustment variance).
 
 ## Movement API Notes (V1.16.3)
 
@@ -511,3 +512,21 @@ Behavior:
 
 - Resolves an open alert within scope by setting status to `RESOLVED`.
 - Stamps resolution metadata and writes a corresponding audit event.
+
+## Reports API Notes (V1.16.19)
+
+### `GET /api/v1/distribution/reports/stock-on-hand`
+
+Supported query parameters:
+
+- `branchId`
+- `itemId`
+- `lowOnly`
+- `outOnly`
+- `includeDeleted`
+
+Behavior:
+
+- Returns report rows with item/branch stock visibility fields.
+- Includes computed flags per row (`low_stock`, `out_of_stock`).
+- Includes a `summary` block with total rows/quantities and low/out-of-stock counts.

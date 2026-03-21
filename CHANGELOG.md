@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.18` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.19` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.19 - 2026-03-21
+
+### Added
+
+- Distribution report API:
+  - `GET /api/v1/distribution/reports/stock-on-hand`
+- Report filters:
+  - `branchId`, `itemId`, `lowOnly`, `outOnly`, `includeDeleted`
+- Report payload now includes:
+  - row-level stock visibility (`quantity_on_hand`, `available_quantity`, `low_stock`, `out_of_stock`)
+  - aggregate summary totals
+
+### Changed
+
+- Distribution service now provides dedicated stock-on-hand reporting separate from dashboard and operational APIs.
+- System fallback version updated to `Beta V1.16.19`.
 
 ## Beta V1.16.18 - 2026-03-21
 

@@ -1483,6 +1483,46 @@ describe("DistributionService", () => {
     expect(result.id).toBe("a1");
   });
 
+  it("builds stock-on-hand report summary and applies low-stock filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.stockOnHandReport(
+      {
+        lowOnly: true,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryStock.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_rows: 1,
+        low_stock_count: 1
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        item_name: "Widget A",
+        low_stock: true,
+        out_of_stock: false
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

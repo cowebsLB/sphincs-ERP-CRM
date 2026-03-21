@@ -96,6 +96,14 @@ type AlertListFilters = {
   includeDeleted?: boolean;
 };
 
+type StockOnHandReportFilters = {
+  branchId?: string;
+  itemId?: string;
+  lowOnly?: boolean;
+  outOnly?: boolean;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -2287,6 +2295,94 @@ export class DistributionService {
       to_status: "RESOLVED"
     });
     return updated;
+  }
+
+  async stockOnHandReport(filters: StockOnHandReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    const stocks = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            reorder_level: true
+          }
+        },
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: [{ branch_id: "asc" }, { item_id: "asc" }],
+      take: 500
+    });
+
+    const rows = stocks
+      .map((row) => {
+        const quantityOnHand = row.quantity_on_hand ?? 0;
+        const reservedQuantity = row.reserved_quantity ?? 0;
+        const availableQuantity = row.available_quantity ?? quantityOnHand - reservedQuantity;
+        const inTransitQuantity = row.in_transit_quantity ?? 0;
+        const incomingQuantity = row.incoming_quantity ?? 0;
+        const damagedQuantity = row.damaged_quantity ?? 0;
+        const reorderLevel = row.item.reorder_level ?? 0;
+        const outOfStock = quantityOnHand <= 0;
+        const lowStock = !outOfStock && reorderLevel > 0 && quantityOnHand <= reorderLevel;
+
+        return {
+          branch_id: row.branch_id,
+          branch_name: row.branch?.name ?? null,
+          item_id: row.item_id,
+          item_name: row.item.name,
+          sku: row.item.sku,
+          quantity_on_hand: quantityOnHand,
+          reserved_quantity: reservedQuantity,
+          available_quantity: availableQuantity,
+          in_transit_quantity: inTransitQuantity,
+          incoming_quantity: incomingQuantity,
+          damaged_quantity: damagedQuantity,
+          reorder_level: reorderLevel,
+          low_stock: lowStock,
+          out_of_stock: outOfStock,
+          last_movement_at: row.last_movement_at
+        };
+      })
+      .filter((row) => (filters.lowOnly ? row.low_stock : true))
+      .filter((row) => (filters.outOnly ? row.out_of_stock : true));
+
+    const summary = {
+      total_rows: rows.length,
+      total_quantity_on_hand: rows.reduce((sum, row) => sum + row.quantity_on_hand, 0),
+      total_available_quantity: rows.reduce((sum, row) => sum + row.available_quantity, 0),
+      low_stock_count: rows.filter((row) => row.low_stock).length,
+      out_of_stock_count: rows.filter((row) => row.out_of_stock).length
+    };
+
+    return {
+      summary,
+      rows,
+      generated_at: new Date().toISOString()
+    };
   }
 
   async dashboard(scope?: UserScope) {

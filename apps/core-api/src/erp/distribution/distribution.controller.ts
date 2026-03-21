@@ -474,4 +474,26 @@ export class DistributionController {
   ): unknown {
     return this.distributionService.resolveAlert(alertId, body, req?.user);
   }
+
+  @Get("reports/stock-on-hand")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  stockOnHandReport(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("lowOnly") lowOnly?: string,
+    @Query("outOnly") outOnly?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.stockOnHandReport(
+      {
+        branchId,
+        itemId,
+        lowOnly: lowOnly === "true",
+        outOnly: outOnly === "true",
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }
