@@ -7,7 +7,14 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.13.0` - current active beta snapshot as of 2026-03-21
+- `Beta V1.13.1` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.13.1 - 2026-03-21
+
+### Changed
+
+- Synced version surfaces to `Beta V1.13.0` for consistency between docs, API fallback response, and backend env templates.
+- Updated `/system/info` fallback version in backend to avoid stale default reporting.
 
 ## Beta V1.13.0 - 2026-03-21
 

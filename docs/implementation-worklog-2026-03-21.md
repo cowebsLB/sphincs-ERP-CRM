@@ -101,3 +101,25 @@ Date: 2026-03-21
 ### Notes
 
 - The first handoff is intentionally minimal and production-safe: opportunity -> draft purchase order.
+
+## Task: Version Surface Sync To Beta V1.13.0
+
+Date: 2026-03-21
+
+### Scope
+
+- Synced runtime/version surfaces so API status and docs align with current release line.
+
+### Changes
+
+- Updated system API fallback version in backend:
+  - `apps/core-api/src/system/system.controller.ts`
+- Updated local and example env version value:
+  - `apps/core-api/.env`
+  - `apps/core-api/.env.example`
+- Updated root project overview version:
+  - `index.md`
+
+### Notes
+
+- Production will show the updated value after deploy and environment refresh.
