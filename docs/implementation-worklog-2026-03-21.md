@@ -40,3 +40,22 @@ Date: 2026-03-21
 
 - Migration includes pre-constraint cleanup for nullable relation fields (`supplier_id`, `item_id`, `contact_id`, `lead_id`) and nullable branch/org references where applicable.
 - Migration includes required-organization integrity checks before adding non-null organization foreign keys.
+
+## Task: Beta V3 Step 3 - Tenant And Branch Safety Coverage
+
+Date: 2026-03-21
+
+### Scope
+
+- Added service-level relation scope guards in ERP purchasing, CRM leads, and CRM opportunities flows.
+- Guard logic now rejects relation links that are outside the requester's organization or incompatible with the requester's branch scope.
+- Added regression tests for both create and update relation-linking paths.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`11/11` suites, `44/44` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- DB foreign keys guarantee existence; these guard checks enforce tenant and branch compatibility at the business-logic layer.

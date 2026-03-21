@@ -271,9 +271,69 @@ export class PurchasingService {
     };
   }
 
-  create(body: Record<string, unknown>, scope?: UserScope) {
+  private async validateSupplierScope(supplierId: string | null, user: UserScope) {
+    if (!supplierId) {
+      return;
+    }
+
+    const supplier = await this.prisma.supplier.findFirst({
+      where: {
+        id: supplierId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true
+      }
+    });
+
+    if (!supplier) {
+      throw new BadRequestException("supplier_id must reference a supplier in your organization");
+    }
+
+    if (user.branchId && supplier.branch_id && supplier.branch_id !== user.branchId) {
+      throw new BadRequestException("supplier_id must reference a supplier in your branch");
+    }
+  }
+
+  private async validateLineItemScopes(lineItems: PurchaseOrderLineItemInput[], user: UserScope) {
+    for (const [index, lineItem] of lineItems.entries()) {
+      if (!lineItem.item_id) {
+        continue;
+      }
+
+      const item = await this.prisma.item.findFirst({
+        where: {
+          id: lineItem.item_id,
+          organization_id: user.organizationId,
+          deleted_at: null
+        },
+        select: {
+          id: true,
+          branch_id: true
+        }
+      });
+
+      if (!item) {
+        throw new BadRequestException(
+          `line_items[${index}].item_id must reference an item in your organization`
+        );
+      }
+
+      if (user.branchId && item.branch_id && item.branch_id !== user.branchId) {
+        throw new BadRequestException(
+          `line_items[${index}].item_id must reference an item in your branch`
+        );
+      }
+    }
+  }
+
+  async create(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
     const payload = this.buildPurchaseOrderData(body, user);
+    await this.validateSupplierScope(payload.data.supplier_id, user);
+    await this.validateLineItemScopes(payload.lineItems, user);
     return this.prisma.purchaseOrder.create({
       data: {
         ...payload.data,
@@ -331,6 +391,8 @@ export class PurchasingService {
       user,
       existing
     );
+    await this.validateSupplierScope(payload.data.supplier_id, user);
+    await this.validateLineItemScopes(payload.lineItems, user);
 
     return this.prisma.purchaseOrder.update({
       where: { id },

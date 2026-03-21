@@ -70,13 +70,42 @@ export class LeadsService {
     return text as LeadStatus;
   }
 
-  create(body: Record<string, unknown>, scope?: UserScope) {
+  private async validateContactScope(contactId: string | null, user: UserScope) {
+    if (!contactId) {
+      return;
+    }
+
+    const contact = await this.prisma.contact.findFirst({
+      where: {
+        id: contactId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true
+      }
+    });
+
+    if (!contact) {
+      throw new BadRequestException("contact_id must reference a contact in your organization");
+    }
+
+    if (user.branchId && contact.branch_id && contact.branch_id !== user.branchId) {
+      throw new BadRequestException("contact_id must reference a contact in your branch");
+    }
+  }
+
+  async create(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
+    const contactId = this.parseOptionalUuid(body.contact_id, "contact_id");
+    await this.validateContactScope(contactId, user);
+
     return this.prisma.lead.create({
       data: {
         organization_id: user.organizationId,
         branch_id: user.branchId ?? null,
-        contact_id: this.parseOptionalUuid(body.contact_id, "contact_id"),
+        contact_id: contactId,
         status: this.parseCreateStatus(body.status),
         created_by: user.id,
         updated_by: user.id
@@ -97,11 +126,17 @@ export class LeadsService {
       throw new NotFoundException("Lead not found");
     }
 
+    const contactId =
+      body.contact_id === undefined ? undefined : this.parseOptionalUuid(body.contact_id, "contact_id");
+
+    if (contactId !== undefined) {
+      await this.validateContactScope(contactId, user);
+    }
+
     return this.prisma.lead.update({
       where: { id },
       data: {
-        contact_id:
-          body.contact_id === undefined ? undefined : this.parseOptionalUuid(body.contact_id, "contact_id"),
+        contact_id: contactId,
         status: this.parseUpdateStatus(body.status),
         deleted_at: body.deleted_at === undefined ? undefined : (body.deleted_at as Date | null),
         updated_by: user.id

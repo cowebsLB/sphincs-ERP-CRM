@@ -23,12 +23,12 @@ If Beta V2 makes the current platform usable, Beta V3 makes it structurally trus
 
 ## 2) Tenant And Branch Integrity
 
-- [ ] Verify that organization scoping is enforced consistently in ERP read paths.
-- [ ] Verify that organization scoping is enforced consistently in CRM read paths.
-- [ ] Verify that create and update paths cannot link records across tenants.
-- [ ] Verify that branch-scoped records cannot point to branches from another organization.
-- [ ] Add automated tests for cross-tenant relation rejection.
-- [ ] Add automated tests for cross-branch relation rejection where relevant.
+- [x] Verify that organization scoping is enforced consistently in ERP read paths.
+- [x] Verify that organization scoping is enforced consistently in CRM read paths.
+- [x] Verify that create and update paths cannot link records across tenants.
+- [x] Verify that branch-scoped records cannot point to branches from another organization.
+- [x] Add automated tests for cross-tenant relation rejection.
+- [x] Add automated tests for cross-branch relation rejection where relevant.
 
 ## 3) CRM To ERP Workflow Connection
 
@@ -82,6 +82,6 @@ Beta V3 is complete only when all of these are true:
 
 - [x] Map and document required new foreign keys.
 - [x] Apply the relational backbone in safe migration order.
-- [ ] Add automated tenant-safety coverage.
+- [x] Add automated tenant-safety coverage.
 - [ ] Implement the first supported CRM-to-ERP handoff.
 - [ ] Update docs and relationship diagrams before closing Beta V3.

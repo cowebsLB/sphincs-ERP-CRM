@@ -70,13 +70,42 @@ export class OpportunitiesService {
     return text as OpportunityStatus;
   }
 
-  create(body: Record<string, unknown>, scope?: UserScope) {
+  private async validateLeadScope(leadId: string | null, user: UserScope) {
+    if (!leadId) {
+      return;
+    }
+
+    const lead = await this.prisma.lead.findFirst({
+      where: {
+        id: leadId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true
+      }
+    });
+
+    if (!lead) {
+      throw new BadRequestException("lead_id must reference a lead in your organization");
+    }
+
+    if (user.branchId && lead.branch_id && lead.branch_id !== user.branchId) {
+      throw new BadRequestException("lead_id must reference a lead in your branch");
+    }
+  }
+
+  async create(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
+    const leadId = this.parseOptionalUuid(body.lead_id, "lead_id");
+    await this.validateLeadScope(leadId, user);
+
     return this.prisma.opportunity.create({
       data: {
         organization_id: user.organizationId,
         branch_id: user.branchId ?? null,
-        lead_id: this.parseOptionalUuid(body.lead_id, "lead_id"),
+        lead_id: leadId,
         status: this.parseCreateStatus(body.status),
         created_by: user.id,
         updated_by: user.id
@@ -97,10 +126,15 @@ export class OpportunitiesService {
       throw new NotFoundException("Opportunity not found");
     }
 
+    const leadId = body.lead_id === undefined ? undefined : this.parseOptionalUuid(body.lead_id, "lead_id");
+    if (leadId !== undefined) {
+      await this.validateLeadScope(leadId, user);
+    }
+
     return this.prisma.opportunity.update({
       where: { id },
       data: {
-        lead_id: body.lead_id === undefined ? undefined : this.parseOptionalUuid(body.lead_id, "lead_id"),
+        lead_id: leadId,
         status: this.parseUpdateStatus(body.status),
         deleted_at: body.deleted_at === undefined ? undefined : (body.deleted_at as Date | null),
         updated_by: user.id

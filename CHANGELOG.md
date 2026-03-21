@@ -7,7 +7,23 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.12.0` - current active beta snapshot as of 2026-03-21
+- `Beta V1.12.1` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.12.1 - 2026-03-21
+
+### Added
+
+- Automated tenant/branch safety coverage for relation-linking flows in:
+  - ERP purchasing
+  - CRM leads
+  - CRM opportunities
+- New unit coverage for cross-tenant and cross-branch relation rejection on both create and update paths.
+
+### Changed
+
+- Purchasing service now validates `supplier_id` and `line_items[].item_id` against the caller's organization and branch scope before write operations.
+- Leads service now validates `contact_id` relation scope before create/update.
+- Opportunities service now validates `lead_id` relation scope before create/update.
 
 ## Beta V1.12.0 - 2026-03-21
 
