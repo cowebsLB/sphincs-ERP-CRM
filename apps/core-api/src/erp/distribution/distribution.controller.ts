@@ -496,4 +496,28 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/movements")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  movementHistoryReport(
+    @Query("movementType") movementType?: string,
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.movementHistoryReport(
+      {
+        movementType,
+        branchId,
+        itemId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

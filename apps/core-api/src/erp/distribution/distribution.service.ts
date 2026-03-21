@@ -104,6 +104,15 @@ type StockOnHandReportFilters = {
   includeDeleted?: boolean;
 };
 
+type MovementReportFilters = {
+  movementType?: string;
+  branchId?: string;
+  itemId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -2376,6 +2385,77 @@ export class DistributionService {
       total_available_quantity: rows.reduce((sum, row) => sum + row.available_quantity, 0),
       low_stock_count: rows.filter((row) => row.low_stock).length,
       out_of_stock_count: rows.filter((row) => row.out_of_stock).length
+    };
+
+    return {
+      summary,
+      rows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async movementHistoryReport(filters: MovementReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const movementType = this.parseOptionalMovementType(filters.movementType);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    const rows = await this.prisma.inventoryMovement.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(movementType ? { movement_type: movementType } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(fromDate || toDate
+          ? {
+              occurred_at: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(branchId
+          ? {
+              OR: [{ branch_id: branchId }, { source_branch_id: branchId }, { destination_branch_id: branchId }]
+            }
+          : {}),
+        ...(user.branchId
+          ? {
+              OR: [
+                { branch_id: user.branchId },
+                { source_branch_id: user.branchId },
+                { destination_branch_id: user.branchId }
+              ]
+            }
+          : {})
+      },
+      include: {
+        item: { select: { id: true, name: true, sku: true } },
+        branch: { select: { id: true, name: true } },
+        source_branch: { select: { id: true, name: true } },
+        destination_branch: { select: { id: true, name: true } }
+      },
+      orderBy: { occurred_at: "desc" },
+      take: 500
+    });
+
+    const summary = {
+      total_movements: rows.length,
+      total_quantity: rows.reduce((sum, row) => sum + row.quantity, 0),
+      by_type: rows.reduce<Record<string, number>>((acc, row) => {
+        const key = row.movement_type;
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {})
     };
 
     return {

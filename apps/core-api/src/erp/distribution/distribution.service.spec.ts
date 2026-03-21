@@ -1523,6 +1523,40 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds movement history report with summary totals", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.movementHistoryReport(
+      {
+        movementType: "TRANSFER_IN",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          movement_type: "TRANSFER_IN",
+          deleted_at: null
+        })
+      })
+    );
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_movements: 1,
+        total_quantity: 10
+      })
+    );
+    expect(result.summary.by_type.TRANSFER_IN).toBe(1);
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

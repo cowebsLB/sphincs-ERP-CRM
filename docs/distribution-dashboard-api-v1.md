@@ -43,6 +43,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/alerts`
 - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
 - `GET /api/v1/distribution/reports/stock-on-hand`
+- `GET /api/v1/distribution/reports/movements`
 
 ## Purpose
 
@@ -113,7 +114,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add additional report endpoints (movement history, transfer performance, adjustment variance).
+1. Add additional report endpoints (transfer performance, adjustment variance).
 
 ## Movement API Notes (V1.16.3)
 
@@ -530,3 +531,22 @@ Behavior:
 - Returns report rows with item/branch stock visibility fields.
 - Includes computed flags per row (`low_stock`, `out_of_stock`).
 - Includes a `summary` block with total rows/quantities and low/out-of-stock counts.
+
+### `GET /api/v1/distribution/reports/movements` (V1.16.20)
+
+Supported query parameters:
+
+- `movementType`
+- `branchId`
+- `itemId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Returns movement history rows sorted by newest occurrence first.
+- Includes a `summary` block with:
+  - total movement count
+  - total moved quantity
+  - grouped movement counts by movement type

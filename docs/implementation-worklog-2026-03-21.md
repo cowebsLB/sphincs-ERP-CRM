@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Movement History Report API (V1.16.20)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/movements`
+- Added report filters:
+  - `movementType`
+  - `branchId`
+  - `itemId`
+  - `from`
+  - `to`
+  - `includeDeleted`
+- Added report output shape with:
+  - movement rows including branch/item context
+  - aggregate summary totals and by-type grouping
+- Added unit test coverage for summary generation and movement type filtering.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `92/92` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This extends the reporting surface for operations teams that need trace-level movement analysis beyond dashboard cards.
+
 ## Task: Distribution Stock-On-Hand Report API (V1.16.19)
 
 Date: 2026-03-21

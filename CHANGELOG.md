@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.19` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.20` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.20 - 2026-03-21
+
+### Added
+
+- Distribution movement report API:
+  - `GET /api/v1/distribution/reports/movements`
+- Report filters:
+  - `movementType`, `branchId`, `itemId`, `from`, `to`, `includeDeleted`
+- Report payload now includes:
+  - movement rows with branch/item context
+  - aggregate summary (`total_movements`, `total_quantity`, `by_type`)
+
+### Changed
+
+- Distribution reporting surface now includes both stock-on-hand and movement history outputs.
+- System fallback version updated to `Beta V1.16.20`.
 
 ## Beta V1.16.19 - 2026-03-21
 
