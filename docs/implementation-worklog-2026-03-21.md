@@ -145,3 +145,28 @@ Date: 2026-03-21
 - `pnpm --filter @sphincs/core-api test` passed (`11/11` suites, `48/48` tests).
 - `pnpm --filter @sphincs/core-api test:e2e` passed (`1/1` suite, `8/8` tests).
 - `pnpm build` passed at workspace level.
+
+## Task: Landing Page UI/UX Redesign (Web Home)
+
+Date: 2026-03-21
+
+### Scope
+
+- Rebuilt `apps/web-home/index.html` with a premium landing experience:
+  - sticky glassmorphic navbar
+  - hero-first immersive section with prominent logo
+  - smooth snap-scroll section locking
+  - alternating zig-zag storytelling sections
+  - responsive desktop/tablet/mobile behavior
+- Added auth-aware header actions:
+  - logged-out state -> Login button
+  - logged-in state -> Dashboard button + profile dropdown
+- Added section reveal motion and polished transitions.
+
+### Validation
+
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Hero background is implemented with a replaceable CSS variable so custom images can be dropped in later.

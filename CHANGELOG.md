@@ -7,7 +7,23 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.14.0` - current active beta snapshot as of 2026-03-21
+- `Beta V1.15.0` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.15.0 - 2026-03-21
+
+### Added
+
+- New premium landing page experience in `apps/web-home/index.html` with:
+  - glassmorphic transparent sticky navbar
+  - immersive hero with prominent platform logo and replaceable background layer
+  - smooth snap-scroll section locking
+  - alternating zig-zag section layout for feature storytelling
+  - responsive auth actions (Login vs Dashboard + profile dropdown)
+
+### Changed
+
+- Landing visual direction upgraded for cleaner hierarchy, stronger first impression, and guided section-by-section narrative flow.
+- System fallback version updated to `Beta V1.15.0` for consistent runtime reporting.
 
 ## Beta V1.14.0 - 2026-03-21
 

@@ -3,182 +3,431 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SPHINCS Beta V1</title>
+    <title>SPHINCS Platform</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+
       :root {
         color-scheme: light;
-        --bg: #0b0f14;
-        --surface: #121821;
-        --line: #1f2a37;
-        --text: #e5e7eb;
-        --text-2: #9ca3af;
-        --gold: #f59e0b;
-        --gold-hover: #d97706;
-        --soft-gold: rgba(245, 158, 11, 0.1);
+        --bg-1: #081320;
+        --bg-2: #13304a;
+        --bg-3: #1d4d63;
+        --text-1: #f7fafc;
+        --text-2: #c6d4de;
+        --line: rgba(255, 255, 255, 0.24);
+        --glass: rgba(13, 28, 42, 0.45);
+        --brand: #70d6ff;
+        --brand-strong: #32b8f0;
+        --brand-soft: rgba(112, 214, 255, 0.18);
+        --surface: rgba(8, 19, 32, 0.62);
+        --hero-bg-image: linear-gradient(130deg, rgba(8, 19, 32, 0.4), rgba(19, 48, 74, 0.4)),
+          radial-gradient(circle at 20% 20%, rgba(112, 214, 255, 0.26), transparent 42%),
+          radial-gradient(circle at 80% 15%, rgba(50, 184, 240, 0.18), transparent 38%),
+          linear-gradient(145deg, #0d2233, #1d4d63);
       }
+
       * {
         box-sizing: border-box;
       }
+
+      html,
       body {
         margin: 0;
-        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
-        color: var(--text);
-        min-height: 100vh;
-        background:
-          radial-gradient(circle at 14% 14%, rgba(245, 158, 11, 0.18), transparent 38%),
-          radial-gradient(circle at 88% 22%, rgba(245, 158, 11, 0.12), transparent 46%),
-          var(--bg);
+        height: 100%;
       }
+
+      body {
+        font-family: "Manrope", sans-serif;
+        color: var(--text-1);
+        background: linear-gradient(150deg, var(--bg-1), var(--bg-2) 58%, var(--bg-3));
+      }
+
       .page {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
       }
+
       .topbar {
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: center;
-        padding: 14px 24px;
-        border-bottom: 1px solid var(--line);
-        background: rgba(11, 15, 20, 0.8);
-        backdrop-filter: blur(8px);
-        z-index: 5;
+        gap: 18px;
+        margin: 14px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: var(--glass);
+        backdrop-filter: blur(18px) saturate(140%);
+        box-shadow: 0 16px 42px rgba(2, 8, 16, 0.34);
       }
+
       .brand {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 12px;
-        color: var(--text);
+        gap: 10px;
+        color: var(--text-1);
         text-decoration: none;
       }
+
       .logo {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        object-fit: contain;
-        background: var(--soft-gold);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        padding: 4px;
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.14);
       }
-      .brand span {
-        font-weight: 800;
-        letter-spacing: 0.04em;
+
+      .brand-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1rem;
+        letter-spacing: 0.12em;
+        font-weight: 700;
       }
-      .nav {
-        display: flex;
-        gap: 12px;
+
+      .topbar-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
       }
-      .nav a {
+
+      .nav-links {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .nav-links a {
         color: var(--text-2);
         text-decoration: none;
-        font-size: 14px;
-        padding: 8px 12px;
+        font-size: 0.92rem;
+        padding: 9px 11px;
+        border-radius: 11px;
+        transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .nav-links a:hover {
+        color: var(--text-1);
+        background: rgba(255, 255, 255, 0.11);
+        transform: translateY(-1px);
+      }
+
+      .auth-area {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 11px;
+        padding: 9px 14px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+      }
+
+      .btn-login {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-1);
+        border: 1px solid rgba(255, 255, 255, 0.34);
+      }
+
+      .btn-dashboard {
+        background: linear-gradient(120deg, var(--brand), var(--brand-strong));
+        color: #062032;
+      }
+
+      .profile-wrap {
+        position: relative;
+      }
+
+      .profile-btn {
+        width: 40px;
+        height: 40px;
         border-radius: 999px;
-        border: 1px solid var(--line);
+        border: 1px solid rgba(255, 255, 255, 0.36);
+        background: rgba(255, 255, 255, 0.11);
+        color: var(--text-1);
+        font-weight: 800;
+        cursor: pointer;
       }
-      .nav a:hover {
-        background: var(--soft-gold);
-        color: var(--text);
-        border-color: rgba(245, 158, 11, 0.4);
+
+      .profile-menu {
+        position: absolute;
+        top: 46px;
+        right: 0;
+        width: 180px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(8, 20, 34, 0.96);
+        backdrop-filter: blur(14px);
+        padding: 8px;
+        display: none;
       }
-      .hero-wrap {
-        flex: 1;
+
+      .profile-menu a,
+      .profile-menu button {
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: var(--text-1);
+        text-align: left;
+        padding: 10px;
+        border-radius: 9px;
+        text-decoration: none;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .profile-menu a:hover,
+      .profile-menu button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .profile-wrap.open .profile-menu {
+        display: block;
+      }
+
+      .snap-shell {
+        height: 100vh;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+      }
+
+      .snap-shell::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .snap-shell::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+      }
+
+      .snap-section {
+        scroll-snap-align: start;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 120px 6vw 8vh;
+      }
+
+      .hero {
+        position: relative;
+        width: min(1280px, 100%);
+        min-height: 82vh;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        overflow: hidden;
+        background: var(--hero-bg-image);
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 44px 80px rgba(1, 8, 16, 0.4);
         display: grid;
         place-items: center;
-        padding: 40px 20px 56px;
       }
-      .hero {
-        width: min(980px, 100%);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 44px 30px 34px;
-        background: linear-gradient(170deg, rgba(18, 24, 33, 0.95) 0%, rgba(11, 15, 20, 0.95) 100%);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(5, 17, 28, 0.16), rgba(5, 17, 28, 0.56));
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 2;
         text-align: center;
+        max-width: 900px;
       }
-      .beta-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid var(--gold);
-        border-radius: 999px;
-        padding: 6px 12px;
-        color: var(--gold);
-        font-weight: 700;
-        background: var(--soft-gold);
-        margin-bottom: 16px;
+
+      .hero-logo {
+        width: clamp(88px, 12vw, 138px);
+        height: clamp(88px, 12vw, 138px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        background: rgba(255, 255, 255, 0.16);
+        object-fit: cover;
+        margin-bottom: 18px;
       }
+
       h1 {
         margin: 0;
-        font-size: clamp(46px, 10vw, 112px);
-        line-height: 0.94;
-        letter-spacing: 0.06em;
-        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2.4rem, 6vw, 5.5rem);
+        line-height: 0.96;
+        letter-spacing: 0.03em;
       }
-      .subtitle {
+
+      .hero-sub {
         margin: 18px auto 0;
-        max-width: 720px;
-        color: var(--text-2);
-        font-size: clamp(16px, 2.5vw, 22px);
-      }
-      .cta {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-        margin: 26px auto 0;
         max-width: 680px;
-      }
-      .btn {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 56px;
-        text-decoration: none;
-        border-radius: 14px;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
-      }
-      .btn-erp {
-        background: linear-gradient(135deg, var(--gold), var(--gold-hover));
-        color: #111827;
-        box-shadow: 0 12px 26px rgba(245, 158, 11, 0.32);
-      }
-      .btn-crm {
-        background: transparent;
-        color: var(--text);
-        border: 1px solid rgba(245, 158, 11, 0.5);
-        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
-      }
-      .btn:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.03);
-      }
-      .foot {
-        margin-top: 18px;
         color: var(--text-2);
-        font-size: 14px;
+        font-size: clamp(1rem, 1.8vw, 1.28rem);
+        line-height: 1.6;
       }
-      .foot code {
-        background: rgba(255, 255, 255, 0.08);
-        padding: 2px 6px;
-        border-radius: 6px;
+
+      .split {
+        width: min(1280px, 100%);
+        min-height: 78vh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: clamp(16px, 4vw, 54px);
+        align-items: stretch;
       }
-      @media (max-width: 760px) {
+
+      .media,
+      .copy {
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .media {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(150deg, rgba(11, 31, 47, 0.95), rgba(26, 74, 98, 0.88));
+        box-shadow: 0 24px 50px rgba(2, 8, 16, 0.35);
+      }
+
+      .media::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(125deg, rgba(112, 214, 255, 0.24), transparent 58%),
+          radial-gradient(circle at 72% 22%, rgba(255, 255, 255, 0.21), transparent 46%);
+      }
+
+      .media-inner {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2rem, 10vw, 6rem);
+        letter-spacing: 0.2em;
+      }
+
+      .copy {
+        background: var(--surface);
+        backdrop-filter: blur(10px);
+        padding: clamp(22px, 4vw, 42px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .eyebrow {
+        color: var(--brand);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 10px;
+      }
+
+      .copy h2 {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(1.5rem, 3.2vw, 2.8rem);
+        line-height: 1.06;
+      }
+
+      .copy p {
+        margin: 14px 0 0;
+        color: var(--text-2);
+        line-height: 1.74;
+        font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+      }
+
+      .copy ul {
+        margin: 18px 0 0;
+        padding-left: 18px;
+        color: var(--text-2);
+        line-height: 1.7;
+      }
+
+      .zig .media {
+        order: 1;
+      }
+
+      .zig .copy {
+        order: 2;
+      }
+
+      .zag .media {
+        order: 2;
+      }
+
+      .zag .copy {
+        order: 1;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(28px) scale(0.98);
+        transition: opacity 600ms ease, transform 700ms ease;
+      }
+
+      .reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      @media (max-width: 980px) {
         .topbar {
-          padding: 12px 14px;
+          margin: 10px;
+          padding: 9px 10px;
         }
-        .nav {
+
+        .nav-links {
           display: none;
         }
-        .hero {
-          padding: 30px 18px 24px;
-          border-radius: 18px;
+
+        .snap-section {
+          padding: 104px 16px 6vh;
         }
-        .cta {
+
+        .split {
           grid-template-columns: 1fr;
+          min-height: auto;
+        }
+
+        .zig .media,
+        .zig .copy,
+        .zag .media,
+        .zag .copy {
+          order: initial;
+        }
+
+        .media {
+          min-height: 300px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .brand-title {
+          display: none;
+        }
+
+        .hero {
+          min-height: 76vh;
+          border-radius: 22px;
+        }
+
+        .copy {
+          padding: 20px;
         }
       }
     </style>
@@ -186,35 +435,184 @@
   <body>
     <div class="page">
       <header class="topbar">
-        <a class="brand" href="./">
-          <img
-            class="logo"
-            src="./assets/branding/apple-touch-icon.png"
-            alt="SPHINCS logo"
-          />
-          <span>SPHINCS</span>
+        <a class="brand" href="#home">
+          <img class="logo" src="./assets/branding/apple-touch-icon.png" alt="SPHINCS logo" />
+          <span class="brand-title">SPHINCS</span>
         </a>
-        <nav class="nav">
-          <a href="./erp/">ERP</a>
-          <a href="./crm/">CRM</a>
-          <a href="./#beta">Beta V1</a>
-        </nav>
+
+        <div class="topbar-right">
+          <nav class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#contact">Contact</a>
+          </nav>
+
+          <div class="auth-area" id="authArea"></div>
+        </div>
       </header>
 
-      <main class="hero-wrap">
-        <div class="hero" id="beta">
-          <div class="beta-tag">Public Test Build</div>
-          <h1>BETA V1</h1>
-          <p class="subtitle">
-            SPHINCS ERP + CRM testing environment.
-            Choose your module and jump straight into the beta.
-          </p>
-          <div class="cta">
-            <a class="btn btn-erp" href="./erp/">Open ERP</a>
-            <a class="btn btn-crm" href="./crm/">Open CRM</a>
+      <main class="snap-shell" id="scrollRoot">
+        <section class="snap-section" id="home">
+          <div class="hero reveal">
+            <div class="hero-content">
+              <img class="hero-logo" src="./assets/branding/apple-touch-icon.png" alt="SPHINCS" />
+              <h1>Command Your Operations</h1>
+              <p class="hero-sub">
+                A premium ERP + CRM workspace designed for focused teams, connected workflows,
+                and a guided product journey that feels intentional from the first scroll.
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <section class="snap-section" id="about">
+          <div class="split zig reveal">
+            <div class="media"><div class="media-inner">S</div></div>
+            <article class="copy">
+              <div class="eyebrow">S | Strategy</div>
+              <h2>Strategic Visibility Across Every Unit</h2>
+              <p>
+                See inventory, customer pipeline, purchasing, and execution in one shared rhythm.
+                The platform is shaped for decision-making speed without visual clutter.
+              </p>
+              <ul>
+                <li>Unified operational context</li>
+                <li>Real-time module continuity</li>
+                <li>Clean decision-focused layouts</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="snap-section" id="pricing">
+          <div class="split zag reveal">
+            <div class="media"><div class="media-inner">P</div></div>
+            <article class="copy">
+              <div class="eyebrow">P | Performance</div>
+              <h2>Precision Workflows, Premium Pace</h2>
+              <p>
+                Use structured flows for items, suppliers, opportunities, and purchase operations
+                with smooth transitions that keep your team in momentum.
+              </p>
+              <ul>
+                <li>Fast create/edit loops</li>
+                <li>Role-aware actions</li>
+                <li>Audit-ready activity trails</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="snap-section" id="contact">
+          <div class="split zig reveal">
+            <div class="media"><div class="media-inner">H</div></div>
+            <article class="copy">
+              <div class="eyebrow">H | Harmony</div>
+              <h2>Harmonized CRM To ERP Handoffs</h2>
+              <p>
+                Move from customer intent to operational execution with guided transitions:
+                lead conversion, opportunity qualification, and ERP handoff in a coherent path.
+              </p>
+              <ul>
+                <li>Lead to opportunity conversion</li>
+                <li>Won-stage handoff to ERP purchase planning</li>
+                <li>Cross-module audit traceability</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="snap-section">
+          <div class="split zag reveal">
+            <div class="media"><div class="media-inner">I</div></div>
+            <article class="copy">
+              <div class="eyebrow">I | Intelligence</div>
+              <h2>Insights You Can Act On Instantly</h2>
+              <p>
+                Every section of the workspace is tuned for high signal and low noise, so teams can
+                act faster and coordinate better across departments.
+              </p>
+            </article>
+          </div>
+        </section>
       </main>
     </div>
+
+    <script>
+      (function () {
+        const authArea = document.getElementById("authArea");
+        const profileInitial = "U";
+
+        const isLoggedIn = Boolean(
+          localStorage.getItem("sphincs_access_token") ||
+            localStorage.getItem("accessToken") ||
+            sessionStorage.getItem("sphincs_access_token")
+        );
+
+        if (!authArea) {
+          return;
+        }
+
+        if (!isLoggedIn) {
+          authArea.innerHTML = '<a class="btn btn-login" href="./erp/">Login</a>';
+        } else {
+          authArea.innerHTML =
+            '<a class="btn btn-dashboard" href="./erp/">Dashboard</a>' +
+            '<div class="profile-wrap" id="profileWrap">' +
+            '  <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false">' +
+            profileInitial +
+            "</button>" +
+            '  <div class="profile-menu" id="profileMenu">' +
+            '    <a href="./erp/">Profile</a>' +
+            '    <a href="./erp/">Settings</a>' +
+            '    <button type="button" id="logoutBtn">Logout</button>' +
+            "  </div>" +
+            "</div>";
+
+          const profileWrap = document.getElementById("profileWrap");
+          const profileBtn = document.getElementById("profileBtn");
+          const logoutBtn = document.getElementById("logoutBtn");
+
+          if (profileWrap && profileBtn) {
+            profileBtn.addEventListener("click", function (event) {
+              event.stopPropagation();
+              const isOpen = profileWrap.classList.toggle("open");
+              profileBtn.setAttribute("aria-expanded", String(isOpen));
+            });
+            document.addEventListener("click", function () {
+              profileWrap.classList.remove("open");
+              profileBtn.setAttribute("aria-expanded", "false");
+            });
+          }
+
+          if (logoutBtn) {
+            logoutBtn.addEventListener("click", function () {
+              localStorage.removeItem("sphincs_access_token");
+              localStorage.removeItem("accessToken");
+              sessionStorage.removeItem("sphincs_access_token");
+              window.location.reload();
+            });
+          }
+        }
+
+        const revealTargets = document.querySelectorAll(".reveal");
+        const observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+              }
+            });
+          },
+          {
+            threshold: 0.25
+          }
+        );
+        revealTargets.forEach(function (node) {
+          observer.observe(node);
+        });
+      })();
+    </script>
   </body>
 </html>
