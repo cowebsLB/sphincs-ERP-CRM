@@ -408,3 +408,30 @@ Date: 2026-03-21
 ### Notes
 
 - This is a deploy compatibility fix only; schema intent and SQL statements are unchanged.
+
+## Task: Render Deploy Guard For Failed Migration State (P3009)
+
+Date: 2026-03-21
+
+### Scope
+
+- Fixed recurring Render deploy failure caused by Prisma failed-migration lock state in target DB.
+
+### Changes
+
+- Updated `scripts/render-build-core-api.sh` to run:
+  - `prisma migrate resolve --rolled-back 20260321_distribution_db_foundation`
+  before `prisma migrate deploy`.
+- Added resolve attempts for both migration paths:
+  - `DIRECT_URL` execution path
+  - `DATABASE_URL` fallback path
+- Added non-fatal handling so resolve failures do not stop deploy if there is nothing to resolve.
+
+### Validation
+
+- Script logic reviewed for both URL modes and fallback flow.
+- Local bash syntax execution could not be performed in this environment because `/bin/bash` is unavailable.
+
+### Notes
+
+- This unblocks deployments where the migration history table still marks `20260321_distribution_db_foundation` as failed from earlier attempts.

@@ -7,7 +7,16 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.1` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.2` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.2 - 2026-03-21
+
+### Fixed
+
+- Updated Render core-api build script to auto-resolve the previously failed migration record before deploy:
+  - `prisma migrate resolve --rolled-back 20260321_distribution_db_foundation`
+- Added resolve attempt for both `DIRECT_URL` and `DATABASE_URL` migration paths in `scripts/render-build-core-api.sh`.
+- Prevents `P3009` lock condition from blocking subsequent `prisma migrate deploy` runs after the prior failed attempt.
 
 ## Beta V1.16.1 - 2026-03-21
 
