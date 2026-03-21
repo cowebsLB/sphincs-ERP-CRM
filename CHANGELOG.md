@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.6` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.7` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.7 - 2026-03-21
+
+### Added
+
+- Distribution dispatch APIs:
+  - `GET /api/v1/distribution/dispatches`
+  - `POST /api/v1/distribution/dispatches`
+- Dispatch create validation:
+  - required destination + line items
+  - positive line quantities
+  - status enum validation
+  - organization/branch/item scope checks
+- Dispatch list filtering support:
+  - `status`, `branchId`, `includeDeleted`
+
+### Changed
+
+- Distribution controller/service now include dispatch workflows in addition to dashboard, movements, receipts, transfers, and adjustments.
+- System fallback version updated to `Beta V1.16.7`.
 
 ## Beta V1.16.6 - 2026-03-21
 

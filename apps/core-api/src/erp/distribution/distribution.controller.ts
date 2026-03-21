@@ -119,4 +119,26 @@ export class DistributionController {
   createAdjustment(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createAdjustment(body, req?.user);
   }
+
+  @Get("dispatches")
+  listDispatches(
+    @Query("status") status?: string,
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listDispatches(
+      {
+        status,
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("dispatches")
+  createDispatch(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createDispatch(body, req?.user);
+  }
 }

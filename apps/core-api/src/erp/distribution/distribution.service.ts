@@ -50,6 +50,12 @@ type AdjustmentListFilters = {
   includeDeleted?: boolean;
 };
 
+type DispatchListFilters = {
+  status?: string;
+  branchId?: string;
+  includeDeleted?: boolean;
+};
+
 @Injectable()
 export class DistributionService {
   constructor(private readonly prisma: PrismaService) {}
@@ -182,6 +188,17 @@ export class DistributionService {
       );
     }
     return text as StockAdjustmentType;
+  }
+
+  private parseOptionalDispatchStatus(value: unknown): DispatchStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(DispatchStatus).includes(text as DispatchStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(DispatchStatus).join(", ")}`);
+    }
+    return text as DispatchStatus;
   }
 
   private parseInteger(value: unknown, fieldName: string, fallback: number): number {
@@ -463,6 +480,29 @@ export class DistributionService {
         previous_qty: previousQty,
         adjusted_qty: adjustedQty,
         variance: providedVariance
+      };
+    });
+  }
+
+  private parseDispatchLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const quantity = this.parseInteger(row.quantity, `line_items[${index}].quantity`, 0);
+      if (quantity < 1) {
+        throw new BadRequestException(`line_items[${index}].quantity must be at least 1`);
+      }
+
+      return {
+        item_id: itemId,
+        quantity
       };
     });
   }
@@ -955,6 +995,110 @@ export class DistributionService {
         applied_at: this.parseDate(body.applied_at ?? body.appliedAt, "applied_at"),
         notes: this.parseOptionalString(body.notes),
         supporting_file: this.parseOptionalString(body.supporting_file ?? body.supportingFile),
+        line_items: {
+          create: lineItems
+        }
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async listDispatches(filters: DispatchListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalDispatchStatus(filters.status);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    return this.prisma.stockDispatch.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createDispatch(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const lineItems = this.parseDispatchLineItems(body.line_items ?? body.lineItems);
+    for (const lineItem of lineItems) {
+      await this.validateItemScope(lineItem.item_id, user);
+    }
+
+    const dispatchNumber =
+      this.parseOptionalString(body.dispatch_number ?? body.dispatchNumber) ??
+      `DISP-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+    const status = this.parseOptionalDispatchStatus(body.status) ?? DispatchStatus.DRAFT;
+
+    return this.prisma.stockDispatch.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        dispatch_number: dispatchNumber,
+        destination: this.parseRequiredString(body.destination, "destination"),
+        status,
+        dispatch_date: this.parseDate(body.dispatch_date ?? body.dispatchDate, "dispatch_date"),
+        packed_by: this.parseOptionalUuid(body.packed_by ?? body.packedBy, "packed_by"),
+        dispatched_by:
+          status === DispatchStatus.DISPATCHED || status === DispatchStatus.DELIVERED
+            ? user.id
+            : this.parseOptionalUuid(body.dispatched_by ?? body.dispatchedBy, "dispatched_by"),
+        carrier_info: this.parseOptionalString(body.carrier_info ?? body.carrierInfo),
+        tracking_info: this.parseOptionalString(body.tracking_info ?? body.trackingInfo),
+        proof_of_dispatch: this.parseOptionalString(body.proof_of_dispatch ?? body.proofOfDispatch),
+        notes: this.parseOptionalString(body.notes),
         line_items: {
           create: lineItems
         }

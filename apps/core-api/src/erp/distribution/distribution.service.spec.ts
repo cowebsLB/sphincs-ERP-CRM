@@ -62,7 +62,14 @@ describe("DistributionService", () => {
       })
     },
     stockDispatch: {
-      count: jest.fn().mockResolvedValue(2)
+      count: jest.fn().mockResolvedValue(2),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "disp-1",
+        dispatch_number: "DISP-20260321120000-ABCD",
+        status: "DRAFT",
+        line_items: []
+      })
     },
     stockAdjustment: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -514,6 +521,95 @@ describe("DistributionService", () => {
               previous_qty: 20,
               adjusted_qty: 15,
               variance: -3
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates dispatch records with line validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createDispatch(
+      {
+        branch_id: BRANCH_1,
+        destination: "Customer Beirut",
+        status: "READY",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 4
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          destination: "Customer Beirut",
+          status: "READY"
+        })
+      })
+    );
+    expect(result.id).toBe("disp-1");
+  });
+
+  it("lists dispatches with status filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listDispatches(
+      {
+        status: "DISPATCHED",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "DISPATCHED",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects dispatch line with non-positive quantity", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createDispatch(
+        {
+          branch_id: BRANCH_1,
+          destination: "Customer Beirut",
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              quantity: 0
             }
           ]
         },

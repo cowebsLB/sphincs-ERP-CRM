@@ -13,6 +13,8 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/transfers`
 - `GET /api/v1/distribution/adjustments`
 - `POST /api/v1/distribution/adjustments`
+- `GET /api/v1/distribution/dispatches`
+- `POST /api/v1/distribution/dispatches`
 
 ## Purpose
 
@@ -73,7 +75,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/dispatches`, `/returns` APIs.
+1. Add `/distribution/returns` APIs.
 
 ## Movement API Notes (V1.16.3)
 
@@ -215,5 +217,30 @@ Supported query parameters:
 
 - `status`
 - `adjustmentType`
+- `branchId`
+- `includeDeleted`
+
+## Dispatch API Notes (V1.16.7)
+
+### `POST /api/v1/distribution/dispatches`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `destination`
+- `line_items[]`
+
+Each dispatch line supports:
+
+- `item_id`
+- `quantity`
+
+Validation includes positive line quantity checks, status enum checks, and branch/item scope validation.
+
+### `GET /api/v1/distribution/dispatches`
+
+Supported query parameters:
+
+- `status`
 - `branchId`
 - `includeDeleted`

@@ -579,3 +579,37 @@ Date: 2026-03-21
 ### Notes
 
 - Adjustment APIs now provide the correction path required for real-world stock mismatches between expected and counted quantities.
+
+## Task: Distribution Dispatch API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented outbound dispatch APIs for stock issue workflows.
+
+### Changes
+
+- Added controller routes:
+  - `GET /api/v1/distribution/dispatches`
+  - `POST /api/v1/distribution/dispatches`
+- Added service methods:
+  - `listDispatches(...)`
+  - `createDispatch(...)`
+- Added dispatch validation for:
+  - required destination and line items
+  - positive dispatch line quantities
+  - status enum checks
+  - organization/branch/item scope safety
+- Added/expanded tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated distribution API docs for dispatch endpoints.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `65/65` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Dispatch APIs complete the outbound processing foundation and prepare the path for returns integration.
