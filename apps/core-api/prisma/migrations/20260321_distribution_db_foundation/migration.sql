@@ -1,4 +1,4 @@
-﻿-- Distribution DB foundation (DB-first pivot)
+-- Distribution DB foundation (DB-first pivot)
 
 CREATE TYPE "DistributionMovementType" AS ENUM (
   'PURCHASE_RECEIPT',

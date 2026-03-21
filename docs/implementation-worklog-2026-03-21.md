@@ -385,3 +385,26 @@ Date: 2026-03-21
 
 - Branch-scoped users receive branch-scoped dashboard aggregates.
 - This is the first service layer above the DB foundation and unlocks receiving/transfer workflow APIs next.
+
+## Task: Render Migration Deploy Hotfix (BOM Removal)
+
+Date: 2026-03-21
+
+### Scope
+
+- Fixed production migration deploy failure on Render for `20260321_distribution_db_foundation`.
+
+### Changes
+
+- Re-encoded `apps/core-api/prisma/migrations/20260321_distribution_db_foundation/migration.sql` as UTF-8 without BOM.
+- Root cause from deploy logs:
+  - Postgres syntax error at first character (`\uFEFF`) caused by BOM header.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api exec prisma validate` passed.
+- `pnpm --filter @sphincs/core-api prisma:generate` passed.
+
+### Notes
+
+- This is a deploy compatibility fix only; schema intent and SQL statements are unchanged.

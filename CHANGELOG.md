@@ -27,6 +27,10 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 - `AppModule` now includes `DistributionModule`.
 - System fallback version updated to `Beta V1.16.1`.
 
+### Fixed
+
+- Removed UTF-8 BOM from `20260321_distribution_db_foundation/migration.sql` to prevent Postgres syntax error (`P3018`, code `42601`) during `prisma migrate deploy` on Render.
+
 ### Notes
 
 - This release is the first API layer above the Distribution DB foundation (`Beta V1.16.0`).
