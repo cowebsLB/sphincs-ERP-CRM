@@ -1,5 +1,37 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Dispatch Lifecycle Actions (V1.16.10)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added dispatch status transition action endpoints:
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/ready`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/pack`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/dispatch`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/deliver`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/fail`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
+- Added service-level dispatch transition engine with:
+  - action parsing
+  - allowed-transition validation
+  - branch scope enforcement
+  - actor/timestamp stamping for dispatch workflow operations
+- Added unit test coverage for:
+  - valid transition to `READY`
+  - valid transition to `DELIVERED`
+  - invalid transition rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `74/74` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Dispatch lifecycle enforcement now prevents invalid status jumps in operational flows.
+
 ## Task: Distribution Transfer Lifecycle Actions (V1.16.9)
 
 Date: 2026-03-21

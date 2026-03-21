@@ -67,6 +67,7 @@ type ReturnListFilters = {
 };
 
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
+type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 
 @Injectable()
 export class DistributionService {
@@ -262,6 +263,31 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(DispatchStatus).join(", ")}`);
     }
     return text as DispatchStatus;
+  }
+
+  private parseDispatchTransitionAction(value: unknown): DispatchTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("action is required");
+    }
+    if (!["READY", "PACK", "DISPATCH", "DELIVER", "FAIL", "RETURN"].includes(text)) {
+      throw new BadRequestException("action must be one of: READY, PACK, DISPATCH, DELIVER, FAIL, RETURN");
+    }
+    return text as DispatchTransitionAction;
+  }
+
+  private canTransitionDispatch(fromStatus: DispatchStatus, toStatus: DispatchStatus): boolean {
+    const allowed: Record<DispatchStatus, DispatchStatus[]> = {
+      [DispatchStatus.DRAFT]: [DispatchStatus.READY, DispatchStatus.CANCELLED],
+      [DispatchStatus.READY]: [DispatchStatus.PACKED, DispatchStatus.FAILED],
+      [DispatchStatus.PACKED]: [DispatchStatus.DISPATCHED, DispatchStatus.FAILED],
+      [DispatchStatus.DISPATCHED]: [DispatchStatus.DELIVERED, DispatchStatus.FAILED, DispatchStatus.RETURNED],
+      [DispatchStatus.DELIVERED]: [DispatchStatus.RETURNED],
+      [DispatchStatus.FAILED]: [],
+      [DispatchStatus.RETURNED]: [],
+      [DispatchStatus.CANCELLED]: []
+    };
+    return allowed[fromStatus].includes(toStatus);
   }
 
   private parseOptionalStockReturnStatus(value: unknown): StockReturnStatus | undefined {
@@ -1319,6 +1345,91 @@ export class DistributionService {
         line_items: {
           create: lineItems
         }
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionDispatch(
+    dispatchIdRaw: string,
+    body: Record<string, unknown>,
+    scope?: UserScope
+  ) {
+    const user = this.requireScope(scope);
+    const dispatchId = this.parseRequiredUuid(dispatchIdRaw, "dispatchId");
+    const action = this.parseDispatchTransitionAction(body.action);
+    const notes = this.parseOptionalString(body.notes);
+
+    const dispatch = await this.prisma.stockDispatch.findFirst({
+      where: {
+        id: dispatchId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        status: true,
+        branch_id: true
+      }
+    });
+    if (!dispatch) {
+      throw new NotFoundException("Dispatch not found");
+    }
+    if (user.branchId && dispatch.branch_id !== user.branchId) {
+      throw new BadRequestException("Dispatch is outside your branch scope");
+    }
+
+    const targetStatus =
+      action === "READY"
+        ? DispatchStatus.READY
+        : action === "PACK"
+          ? DispatchStatus.PACKED
+          : action === "DISPATCH"
+            ? DispatchStatus.DISPATCHED
+            : action === "DELIVER"
+              ? DispatchStatus.DELIVERED
+              : action === "FAIL"
+                ? DispatchStatus.FAILED
+                : DispatchStatus.RETURNED;
+
+    if (!this.canTransitionDispatch(dispatch.status, targetStatus)) {
+      throw new BadRequestException(
+        `Cannot transition dispatch from ${dispatch.status} to ${targetStatus}`
+      );
+    }
+
+    return this.prisma.stockDispatch.update({
+      where: { id: dispatch.id },
+      data: {
+        status: targetStatus,
+        packed_by: targetStatus === DispatchStatus.PACKED ? user.id : undefined,
+        dispatched_by:
+          targetStatus === DispatchStatus.DISPATCHED || targetStatus === DispatchStatus.DELIVERED
+            ? user.id
+            : undefined,
+        dispatch_date:
+          targetStatus === DispatchStatus.DISPATCHED || targetStatus === DispatchStatus.DELIVERED
+            ? new Date()
+            : undefined,
+        notes: notes ?? undefined
       },
       include: {
         branch: {

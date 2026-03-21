@@ -77,10 +77,21 @@ describe("DistributionService", () => {
     stockDispatch: {
       count: jest.fn().mockResolvedValue(2),
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "disp-1",
+        status: "DRAFT",
+        branch_id: BRANCH_1
+      }),
       create: jest.fn().mockResolvedValue({
         id: "disp-1",
         dispatch_number: "DISP-20260321120000-ABCD",
         status: "DRAFT",
+        line_items: []
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "disp-1",
+        dispatch_number: "DISP-20260321120000-ABCD",
+        status: "READY",
         line_items: []
       })
     },
@@ -723,6 +734,90 @@ describe("DistributionService", () => {
             }
           ]
         },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("transitions dispatch to READY from DRAFT", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "READY" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "44444444-4444-4444-8444-444444444444",
+          organization_id: "org-1",
+          deleted_at: null
+        })
+      })
+    );
+    expect(prismaMock.stockDispatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "READY"
+        })
+      })
+    );
+  });
+
+  it("transitions dispatch to DELIVERED from DISPATCHED", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "DISPATCHED",
+      branch_id: BRANCH_1
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "DELIVER" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "DELIVERED",
+          dispatched_by: "user-1",
+          dispatch_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("rejects invalid dispatch transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "DRAFT",
+      branch_id: BRANCH_1
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionDispatch(
+        "44444444-4444-4444-8444-444444444444",
+        { action: "DELIVER" },
         {
           id: "user-1",
           organizationId: "org-1",

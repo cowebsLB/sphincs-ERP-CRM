@@ -19,6 +19,12 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/adjustments`
 - `GET /api/v1/distribution/dispatches`
 - `POST /api/v1/distribution/dispatches`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/ready`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/pack`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/dispatch`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/deliver`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/fail`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
 - `GET /api/v1/distribution/returns`
 - `POST /api/v1/distribution/returns`
 
@@ -81,8 +87,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add dispatch lifecycle action APIs (`ready`, `packed`, `dispatched`, `delivered`, `failed`, `returned`).
-2. Add return lifecycle action APIs (`received`, `inspected`, `completed`, `cancelled`).
+1. Add return lifecycle action APIs (`received`, `inspected`, `completed`, `cancelled`).
 
 ## Movement API Notes (V1.16.3)
 
@@ -276,6 +281,29 @@ Supported query parameters:
 - `status`
 - `branchId`
 - `includeDeleted`
+
+## Dispatch Lifecycle Actions (V1.16.10)
+
+### Endpoints
+
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/ready`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/pack`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/dispatch`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/deliver`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/fail`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
+
+### Behavior
+
+- Actions enforce strict status transitions:
+  - `DRAFT -> READY`
+  - `READY -> PACKED|FAILED`
+  - `PACKED -> DISPATCHED|FAILED`
+  - `DISPATCHED -> DELIVERED|FAILED|RETURNED`
+  - `DELIVERED -> RETURNED`
+- Invalid transition attempts return `400 Bad Request`.
+- Branch scope is enforced using the dispatch branch ID.
+- Transition updates stamp relevant actor/time fields where applicable.
 
 ## Return API Notes (V1.16.8)
 

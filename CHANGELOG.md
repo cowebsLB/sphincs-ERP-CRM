@@ -7,7 +7,31 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.9` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.10` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.10 - 2026-03-21
+
+### Added
+
+- Dispatch lifecycle action APIs:
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/ready`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/pack`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/dispatch`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/deliver`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/fail`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
+- Dispatch status transition guardrails:
+  - `DRAFT -> READY`
+  - `READY -> PACKED|FAILED`
+  - `PACKED -> DISPATCHED|FAILED`
+  - `DISPATCHED -> DELIVERED|FAILED|RETURNED`
+  - `DELIVERED -> RETURNED`
+
+### Changed
+
+- Distribution service now enforces action-based dispatch transition validation and scoped branch checks before status updates.
+- Dispatch transitions now auto-stamp operation metadata (`packed_by`, `dispatched_by`, `dispatch_date`) when applicable.
+- System fallback version updated to `Beta V1.16.10`.
 
 ## Beta V1.16.9 - 2026-03-21
 

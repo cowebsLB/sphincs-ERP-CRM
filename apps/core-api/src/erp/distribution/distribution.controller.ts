@@ -178,6 +178,60 @@ export class DistributionController {
     return this.distributionService.createDispatch(body, req?.user);
   }
 
+  @Patch("dispatches/:dispatchId/ready")
+  markDispatchReady(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "READY" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/pack")
+  packDispatch(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "PACK" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/dispatch")
+  markDispatchDispatched(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "DISPATCH" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/deliver")
+  deliverDispatch(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "DELIVER" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/fail")
+  failDispatch(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "FAIL" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/return")
+  returnDispatch(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "RETURN" }, req?.user);
+  }
+
   @Get("returns")
   listReturns(
     @Query("status") status?: string,
