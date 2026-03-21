@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.12.2` - current active beta snapshot as of 2026-03-21
+- `Beta V1.13.0` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.13.0 - 2026-03-21
+
+### Added
+
+- First Beta V3 CRM-to-ERP operational handoff endpoint:
+  - `POST /api/v1/crm/opportunities/:id/handoff/purchase-order`
+- New e2e coverage validating CRM opportunity handoff creates ERP draft purchase orders.
+- New documentation for handoff rules and payload contract.
+
+### Changed
+
+- Opportunity service now supports `WON`-gated handoff to ERP purchasing and creates draft PO payloads through the existing purchasing service.
+- Opportunities module now imports ERP purchasing module to support the cross-module handoff path.
 
 ## Beta V1.12.2 - 2026-03-21
 

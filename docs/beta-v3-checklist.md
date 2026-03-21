@@ -32,8 +32,8 @@ If Beta V2 makes the current platform usable, Beta V3 makes it structurally trus
 
 ## 3) CRM To ERP Workflow Connection
 
-- [ ] Define the first supported CRM-to-ERP operational handoff.
-- [ ] Document when an opportunity should trigger ERP-side follow-up versus remain CRM-only.
+- [x] Define the first supported CRM-to-ERP operational handoff.
+- [x] Document when an opportunity should trigger ERP-side follow-up versus remain CRM-only.
 - [ ] Add a safe business-state transition path from lead to opportunity.
 - [ ] Add an explicit "won" or downstream operational-ready opportunity flow.
 - [ ] Log cross-module workflow transitions in audit history.
@@ -83,5 +83,5 @@ Beta V3 is complete only when all of these are true:
 - [x] Map and document required new foreign keys.
 - [x] Apply the relational backbone in safe migration order.
 - [x] Add automated tenant-safety coverage.
-- [ ] Implement the first supported CRM-to-ERP handoff.
+- [x] Implement the first supported CRM-to-ERP handoff.
 - [ ] Update docs and relationship diagrams before closing Beta V3.

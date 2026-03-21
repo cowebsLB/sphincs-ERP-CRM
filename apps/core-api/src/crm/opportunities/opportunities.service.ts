@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma.service";
+import { PurchasingService } from "../../erp/purchasing/purchasing.service";
 
 export type OpportunityStatus = "OPEN" | "WON" | "LOST";
 type UserScope = {
@@ -10,7 +11,10 @@ type UserScope = {
 
 @Injectable()
 export class OpportunitiesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly purchasingService: PurchasingService
+  ) {}
   private readonly uuidPattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   private readonly validStatuses: OpportunityStatus[] = ["OPEN", "WON", "LOST"];
@@ -161,5 +165,56 @@ export class OpportunitiesService {
         updated_by: user.id
       }
     });
+  }
+
+  async createPurchaseOrderHandoff(id: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const opportunity = await this.prisma.opportunity.findFirst({
+      where: {
+        id,
+        organization_id: user.organizationId,
+        created_by: user.id,
+        deleted_at: null
+      }
+    });
+
+    if (!opportunity) {
+      throw new NotFoundException("Opportunity not found");
+    }
+
+    if (opportunity.status !== "WON") {
+      throw new BadRequestException("Opportunity must be WON before ERP handoff");
+    }
+
+    const lineItems = Array.isArray(body.line_items) && body.line_items.length > 0
+      ? body.line_items
+      : [
+          {
+            item_id: null,
+            description: `CRM opportunity ${id} handoff`,
+            quantity: 1,
+            unit_cost: 0,
+            tax_rate: 0,
+            discount: 0
+          }
+        ];
+
+    const handoffPayload: Record<string, unknown> = {
+      supplier_id: body.supplier_id,
+      status: "DRAFT",
+      payment_status: "UNPAID",
+      payment_terms: body.payment_terms,
+      expected_delivery_date: body.expected_delivery_date,
+      shipping_address: body.shipping_address,
+      shipping_method: body.shipping_method,
+      tracking_number: body.tracking_number,
+      notes:
+        `CRM handoff from opportunity ${id}` +
+        (opportunity.lead_id ? ` (lead ${opportunity.lead_id})` : "") +
+        (body.notes ? ` | ${String(body.notes)}` : ""),
+      line_items: lineItems
+    };
+
+    return this.purchasingService.create(handoffPayload, user);
   }
 }

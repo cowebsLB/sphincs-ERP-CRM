@@ -78,3 +78,26 @@ Date: 2026-03-21
 ### Notes
 
 - This is a test-harness compatibility fix; application runtime behavior is unchanged.
+
+## Task: Beta V3 Step 4 - First CRM To ERP Handoff
+
+Date: 2026-03-21
+
+### Scope
+
+- Added CRM endpoint for operational handoff:
+  - `POST /api/v1/crm/opportunities/:id/handoff/purchase-order`
+- Handoff enforces `WON`-only opportunity gating.
+- Handoff creates ERP draft purchase orders through existing purchasing service path.
+- Added service tests and e2e coverage for the new handoff flow.
+- Added dedicated handoff documentation.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`11/11` suites, `46/46` tests).
+- `pnpm --filter @sphincs/core-api test:e2e` passed (`1/1` suite, `7/7` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- The first handoff is intentionally minimal and production-safe: opportunity -> draft purchase order.

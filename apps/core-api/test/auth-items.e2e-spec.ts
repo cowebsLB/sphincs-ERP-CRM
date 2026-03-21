@@ -328,6 +328,46 @@ describe("Auth + ERP smoke (e2e)", () => {
         status: "DRAFT"
       }))
     },
+    opportunity: {
+      findFirst: jest.fn(
+        async ({
+          where
+        }: {
+          where?: {
+            id?: string;
+            organization_id?: string;
+            created_by?: string;
+            deleted_at?: null;
+          };
+        }) => {
+          const wonOpportunity = {
+            id: "88888888-8888-4888-8888-888888888888",
+            organization_id: adminUser.organization_id,
+            branch_id: adminUser.branch_id,
+            lead_id: "99999999-9999-4999-8999-999999999999",
+            status: "WON",
+            created_by: adminUser.id,
+            deleted_at: null
+          };
+          if (!where) {
+            return wonOpportunity;
+          }
+          if (where.id && where.id !== wonOpportunity.id) {
+            return null;
+          }
+          if (where.organization_id && where.organization_id !== wonOpportunity.organization_id) {
+            return null;
+          }
+          if (where.created_by && where.created_by !== wonOpportunity.created_by) {
+            return null;
+          }
+          if (where.deleted_at === null && wonOpportunity.deleted_at !== null) {
+            return null;
+          }
+          return wonOpportunity;
+        }
+      )
+    },
     auditLog: {
       create: jest.fn(async () => ({
         id: "44444444-4444-4444-4444-444444444444"
@@ -581,5 +621,24 @@ describe("Auth + ERP smoke (e2e)", () => {
         ]
       })
       .expect(400);
+  });
+
+  it("creates a CRM-to-ERP purchase-order handoff for a won opportunity", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({ email: "admin@sphincs.local", password: "ChangeMe123!" })
+      .expect(201);
+    const token = login.body.accessToken as string;
+
+    const handoff = await request(app.getHttpServer())
+      .post("/api/v1/crm/opportunities/88888888-8888-4888-8888-888888888888/handoff/purchase-order")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        supplier_id: "66666666-6666-4666-8666-666666666666"
+      })
+      .expect(201);
+
+    expect(handoff.body.status).toBe("DRAFT");
+    expect(Array.isArray(handoff.body.line_items)).toBe(true);
   });
 });

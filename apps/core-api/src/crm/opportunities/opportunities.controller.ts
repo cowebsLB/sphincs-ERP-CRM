@@ -30,6 +30,15 @@ export class OpportunitiesController {
     return this.opportunitiesService.update(id, body, req?.user);
   }
 
+  @Post(":id/handoff/purchase-order")
+  createPurchaseOrderHandoff(
+    @Param("id") id: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.opportunitiesService.createPurchaseOrderHandoff(id, body, req?.user);
+  }
+
   @Post(":id/restore")
   restore(@Param("id") id: string, @Body() _body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.opportunitiesService.restore(id, req?.user);
