@@ -613,3 +613,43 @@ Date: 2026-03-21
 ### Notes
 
 - Dispatch APIs complete the outbound processing foundation and prepare the path for returns integration.
+
+## Task: Distribution Returns API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented returns APIs for inbound/outbound return handling in the distribution workflow.
+
+### Changes
+
+- Added controller routes:
+  - `GET /api/v1/distribution/returns`
+  - `POST /api/v1/distribution/returns`
+- Added service methods:
+  - `listReturns(...)`
+  - `createReturn(...)`
+- Added returns validation for:
+  - required return type
+  - positive line quantities
+  - line-level `restock`/`damaged` handling
+  - organization/branch/item scope safety
+- Added/expanded tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated distribution API docs for returns endpoints.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `68/68` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Returns APIs complete the first end-to-end distribution operation set:
+  - movements
+  - receipts
+  - transfers
+  - adjustments
+  - dispatches
+  - returns

@@ -138,6 +138,15 @@ describe("DistributionService", () => {
     purchaseOrder: {
       findFirst: jest.fn().mockResolvedValue({ id: "po-1", organization_id: "org-1", branch_id: BRANCH_1 })
     },
+    stockReturn: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "ret-1",
+        return_number: "RET-20260321120000-ABCD",
+        status: "DRAFT",
+        line_items: []
+      })
+    },
     stockReturnLine: {
       findMany: jest.fn().mockResolvedValue([
         {
@@ -610,6 +619,98 @@ describe("DistributionService", () => {
             {
               item_id: "33333333-3333-4333-8333-333333333333",
               quantity: 0
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates return records with scoped validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createReturn(
+      {
+        return_type: "CUSTOMER_RETURN",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 2,
+            restock: true,
+            damaged: false
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          return_type: "CUSTOMER_RETURN",
+          source_branch_id: BRANCH_1
+        })
+      })
+    );
+    expect(result.id).toBe("ret-1");
+  });
+
+  it("lists returns with filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listReturns(
+      {
+        status: "RECEIVED",
+        returnType: "CUSTOMER_RETURN",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "RECEIVED",
+          return_type: "CUSTOMER_RETURN",
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects return when branch scope is not included", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReturn(
+        {
+          return_type: "CUSTOMER_RETURN",
+          source_branch_id: BRANCH_2,
+          destination_branch_id: BRANCH_2,
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              quantity: 2
             }
           ]
         },

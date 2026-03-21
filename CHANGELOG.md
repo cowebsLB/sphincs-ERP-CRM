@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.7` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.8` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.8 - 2026-03-21
+
+### Added
+
+- Distribution return APIs:
+  - `GET /api/v1/distribution/returns`
+  - `POST /api/v1/distribution/returns`
+- Return create validation:
+  - return type + status enum checks
+  - positive line quantities
+  - line-level `restock`/`damaged` flags
+  - organization/branch/item scope checks
+- Return list filtering support:
+  - `status`, `returnType`, `sourceBranchId`, `destinationBranchId`, `includeDeleted`
+
+### Changed
+
+- Distribution controller/service now include returns workflows in addition to dashboard, movements, receipts, transfers, adjustments, and dispatches.
+- System fallback version updated to `Beta V1.16.8`.
 
 ## Beta V1.16.7 - 2026-03-21
 

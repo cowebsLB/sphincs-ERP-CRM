@@ -141,4 +141,30 @@ export class DistributionController {
   createDispatch(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createDispatch(body, req?.user);
   }
+
+  @Get("returns")
+  listReturns(
+    @Query("status") status?: string,
+    @Query("returnType") returnType?: string,
+    @Query("sourceBranchId") sourceBranchId?: string,
+    @Query("destinationBranchId") destinationBranchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listReturns(
+      {
+        status,
+        returnType,
+        sourceBranchId,
+        destinationBranchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("returns")
+  createReturn(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createReturn(body, req?.user);
+  }
 }

@@ -15,6 +15,8 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/adjustments`
 - `GET /api/v1/distribution/dispatches`
 - `POST /api/v1/distribution/dispatches`
+- `GET /api/v1/distribution/returns`
+- `POST /api/v1/distribution/returns`
 
 ## Purpose
 
@@ -75,7 +77,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/returns` APIs.
+1. Expand workflow state transitions and approval actions across transfers, dispatches, and returns.
 
 ## Movement API Notes (V1.16.3)
 
@@ -243,4 +245,45 @@ Supported query parameters:
 
 - `status`
 - `branchId`
+- `includeDeleted`
+
+## Return API Notes (V1.16.8)
+
+### `POST /api/v1/distribution/returns`
+
+Required:
+
+- `return_type`
+- `line_items[]`
+
+Optional:
+
+- `status`
+- `source_branch_id`
+- `destination_branch_id`
+- `linked_source_type`
+- `linked_source_id`
+- `reason`
+- `condition_notes`
+- `restock`
+- `damaged`
+- `processed_date`
+- `notes`
+
+Each return line supports:
+
+- `item_id`
+- `quantity`
+- `condition`
+- `restock`
+- `damaged`
+
+### `GET /api/v1/distribution/returns`
+
+Supported query parameters:
+
+- `status`
+- `returnType`
+- `sourceBranchId`
+- `destinationBranchId`
 - `includeDeleted`

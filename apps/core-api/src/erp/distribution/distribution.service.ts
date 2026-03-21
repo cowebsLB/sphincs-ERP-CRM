@@ -5,6 +5,8 @@ import {
   GoodsReceiptStatus,
   StockAdjustmentStatus,
   StockAdjustmentType,
+  StockReturnStatus,
+  StockReturnType,
   StockTransferStatus
 } from "@prisma/client";
 import { PrismaService } from "../../prisma.service";
@@ -53,6 +55,14 @@ type AdjustmentListFilters = {
 type DispatchListFilters = {
   status?: string;
   branchId?: string;
+  includeDeleted?: boolean;
+};
+
+type ReturnListFilters = {
+  status?: string;
+  returnType?: string;
+  sourceBranchId?: string;
+  destinationBranchId?: string;
   includeDeleted?: boolean;
 };
 
@@ -201,6 +211,28 @@ export class DistributionService {
     return text as DispatchStatus;
   }
 
+  private parseOptionalStockReturnStatus(value: unknown): StockReturnStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(StockReturnStatus).includes(text as StockReturnStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(StockReturnStatus).join(", ")}`);
+    }
+    return text as StockReturnStatus;
+  }
+
+  private parseOptionalStockReturnType(value: unknown): StockReturnType | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(StockReturnType).includes(text as StockReturnType)) {
+      throw new BadRequestException(`return_type must be one of: ${Object.values(StockReturnType).join(", ")}`);
+    }
+    return text as StockReturnType;
+  }
+
   private parseInteger(value: unknown, fieldName: string, fallback: number): number {
     if (value === undefined || value === null || value === "") {
       return fallback;
@@ -221,6 +253,23 @@ export class DistributionService {
       throw new BadRequestException(`${fieldName} must be a valid number`);
     }
     return parsed;
+  }
+
+  private parseBoolean(value: unknown, fallback: boolean): boolean {
+    if (value === undefined || value === null || value === "") {
+      return fallback;
+    }
+    if (typeof value === "boolean") {
+      return value;
+    }
+    const text = String(value).trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(text)) {
+      return true;
+    }
+    if (["false", "0", "no", "off"].includes(text)) {
+      return false;
+    }
+    throw new BadRequestException("Boolean field contains an invalid value");
   }
 
   private parseDate(value: unknown, fieldName: string): Date | null {
@@ -503,6 +552,32 @@ export class DistributionService {
       return {
         item_id: itemId,
         quantity
+      };
+    });
+  }
+
+  private parseReturnLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const quantity = this.parseInteger(row.quantity, `line_items[${index}].quantity`, 0);
+      if (quantity < 1) {
+        throw new BadRequestException(`line_items[${index}].quantity must be at least 1`);
+      }
+
+      return {
+        item_id: itemId,
+        quantity,
+        condition: this.parseOptionalString(row.condition),
+        restock: this.parseBoolean(row.restock, true),
+        damaged: this.parseBoolean(row.damaged, false)
       };
     });
   }
@@ -1105,6 +1180,153 @@ export class DistributionService {
       },
       include: {
         branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async listReturns(filters: ReturnListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalStockReturnStatus(filters.status);
+    const returnType = this.parseOptionalStockReturnType(filters.returnType);
+    const sourceBranchId = filters.sourceBranchId
+      ? this.parseRequiredUuid(filters.sourceBranchId, "sourceBranchId")
+      : undefined;
+    const destinationBranchId = filters.destinationBranchId
+      ? this.parseRequiredUuid(filters.destinationBranchId, "destinationBranchId")
+      : undefined;
+
+    if (sourceBranchId) {
+      await this.validateBranchInOrganization(sourceBranchId, "sourceBranchId", user);
+    }
+    if (destinationBranchId) {
+      await this.validateBranchInOrganization(destinationBranchId, "destinationBranchId", user);
+    }
+
+    return this.prisma.stockReturn.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(returnType ? { return_type: returnType } : {}),
+        ...(sourceBranchId ? { source_branch_id: sourceBranchId } : {}),
+        ...(destinationBranchId ? { destination_branch_id: destinationBranchId } : {}),
+        ...(user.branchId
+          ? {
+              OR: [{ source_branch_id: user.branchId }, { destination_branch_id: user.branchId }]
+            }
+          : {})
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createReturn(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const returnType = this.parseOptionalStockReturnType(body.return_type ?? body.returnType);
+    if (!returnType) {
+      throw new BadRequestException("return_type is required");
+    }
+
+    const sourceBranchId = this.parseOptionalUuid(body.source_branch_id ?? body.sourceBranchId, "source_branch_id");
+    const destinationBranchId = this.parseOptionalUuid(
+      body.destination_branch_id ?? body.destinationBranchId,
+      "destination_branch_id"
+    );
+    if (sourceBranchId) {
+      await this.validateBranchInOrganization(sourceBranchId, "source_branch_id", user);
+    }
+    if (destinationBranchId) {
+      await this.validateBranchInOrganization(destinationBranchId, "destination_branch_id", user);
+    }
+    if (user.branchId && sourceBranchId !== user.branchId && destinationBranchId !== user.branchId) {
+      throw new BadRequestException("Return must include your branch scope");
+    }
+
+    const lineItems = this.parseReturnLineItems(body.line_items ?? body.lineItems);
+    for (const lineItem of lineItems) {
+      await this.validateItemScope(lineItem.item_id, user);
+    }
+
+    const returnNumber =
+      this.parseOptionalString(body.return_number ?? body.returnNumber) ??
+      `RET-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+    const status = this.parseOptionalStockReturnStatus(body.status) ?? StockReturnStatus.DRAFT;
+
+    return this.prisma.stockReturn.create({
+      data: {
+        organization_id: user.organizationId,
+        return_number: returnNumber,
+        return_type: returnType,
+        status,
+        linked_source_type: this.parseOptionalString(body.linked_source_type ?? body.linkedSourceType),
+        linked_source_id: this.parseOptionalUuid(body.linked_source_id ?? body.linkedSourceId, "linked_source_id"),
+        source_branch_id: sourceBranchId,
+        destination_branch_id: destinationBranchId,
+        reason: this.parseOptionalString(body.reason),
+        condition_notes: this.parseOptionalString(body.condition_notes ?? body.conditionNotes),
+        restock: this.parseBoolean(body.restock, true),
+        damaged: this.parseBoolean(body.damaged, false),
+        processed_by:
+          status === StockReturnStatus.COMPLETED || status === StockReturnStatus.INSPECTED ? user.id : null,
+        processed_date: this.parseDate(body.processed_date ?? body.processedDate, "processed_date"),
+        notes: this.parseOptionalString(body.notes),
+        line_items: {
+          create: lineItems
+        }
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
           select: {
             id: true,
             name: true
