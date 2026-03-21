@@ -52,7 +52,14 @@ describe("DistributionService", () => {
       })
     },
     stockTransfer: {
-      count: jest.fn().mockResolvedValue(3)
+      count: jest.fn().mockResolvedValue(3),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "tr-1",
+        transfer_number: "TR-20260321120000-ABCD",
+        status: "DRAFT",
+        line_items: []
+      })
     },
     stockDispatch: {
       count: jest.fn().mockResolvedValue(2)
@@ -98,7 +105,13 @@ describe("DistributionService", () => {
     },
     branch: {
       findMany: jest.fn().mockResolvedValue([{ id: BRANCH_1, name: "Main" }]),
-      findFirst: jest.fn().mockResolvedValue({ id: BRANCH_1, organization_id: "org-1", deleted_at: null })
+      findFirst: jest.fn().mockImplementation(async (args: { where: { id?: string } }) => {
+        const branchId = args?.where?.id;
+        if (branchId === BRANCH_1 || branchId === BRANCH_2) {
+          return { id: branchId, organization_id: "org-1", deleted_at: null };
+        }
+        return null;
+      })
     },
     item: {
       findFirst: jest.fn().mockResolvedValue({ id: "item-1", organization_id: "org-1", branch_id: BRANCH_1 })
@@ -307,6 +320,95 @@ describe("DistributionService", () => {
               ordered_qty: 10,
               received_qty: 8,
               rejected_qty: 3
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates stock transfers with scoped branch checks", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createTransfer(
+      {
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity_requested: 10,
+            quantity_sent: 8,
+            quantity_received: 5
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          requested_by: "user-1"
+        })
+      })
+    );
+    expect(result.id).toBe("tr-1");
+  });
+
+  it("lists transfers with status filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listTransfers(
+      {
+        status: "REQUESTED",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "REQUESTED",
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects transfer when source and destination are identical", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createTransfer(
+        {
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_1,
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              quantity_requested: 10
             }
           ]
         },

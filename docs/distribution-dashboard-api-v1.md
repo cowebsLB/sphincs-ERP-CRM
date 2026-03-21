@@ -9,6 +9,8 @@ Date: 2026-03-21
 - `POST /api/v1/distribution/movements`
 - `GET /api/v1/distribution/receipts`
 - `POST /api/v1/distribution/receipts`
+- `GET /api/v1/distribution/transfers`
+- `POST /api/v1/distribution/transfers`
 
 ## Purpose
 
@@ -69,8 +71,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add `/distribution/transfers` workflow APIs.
-2. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
+1. Add `/distribution/adjustments`, `/dispatches`, `/returns` APIs.
 
 ## Movement API Notes (V1.16.3)
 
@@ -145,4 +146,38 @@ Supported query parameters:
 - `status`
 - `supplierId`
 - `branchId`
+- `includeDeleted`
+
+## Transfer API Notes (V1.16.5)
+
+### `POST /api/v1/distribution/transfers`
+
+Required:
+
+- `source_branch_id` (defaults to user branch for branch-scoped users)
+- `destination_branch_id`
+- `line_items[]`
+
+Each transfer line supports:
+
+- `item_id`
+- `quantity_requested`
+- `quantity_sent`
+- `quantity_received`
+
+Validation includes:
+
+- source/destination branch cannot be identical
+- `quantity_requested >= 1`
+- `quantity_sent <= quantity_requested`
+- `quantity_received <= quantity_sent`
+- organization and branch scope checks for all linked entities
+
+### `GET /api/v1/distribution/transfers`
+
+Supported query parameters:
+
+- `status`
+- `sourceBranchId`
+- `destinationBranchId`
 - `includeDeleted`

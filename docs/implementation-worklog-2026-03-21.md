@@ -509,3 +509,39 @@ Date: 2026-03-21
   - no received qty -> `DRAFT`
   - partial received -> `PARTIAL`
   - fully received -> `RECEIVED`
+
+## Task: Distribution Transfers API (Create + List)
+
+Date: 2026-03-21
+
+### Scope
+
+- Implemented transfer workflow APIs for inter-branch stock movement orchestration.
+
+### Changes
+
+- Added controller routes:
+  - `GET /api/v1/distribution/transfers`
+  - `POST /api/v1/distribution/transfers`
+- Added service methods:
+  - `listTransfers(...)`
+  - `createTransfer(...)`
+- Added transfer validation for:
+  - source/destination branch integrity
+  - transfer line quantity rules (`requested/sent/received`)
+  - organization + branch + item scope safety
+- Added/expanded tests in:
+  - `apps/core-api/src/erp/distribution/distribution.service.spec.ts`
+- Updated distribution API documentation for transfer endpoints and filters.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `59/59` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Transfer APIs now complete the first operational trilogy after dashboard:
+  - movements
+  - receipts
+  - transfers

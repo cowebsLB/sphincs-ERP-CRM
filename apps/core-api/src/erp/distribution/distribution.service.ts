@@ -34,6 +34,13 @@ type ReceiptListFilters = {
   includeDeleted?: boolean;
 };
 
+type TransferListFilters = {
+  status?: string;
+  sourceBranchId?: string;
+  destinationBranchId?: string;
+  includeDeleted?: boolean;
+};
+
 @Injectable()
 export class DistributionService {
   constructor(private readonly prisma: PrismaService) {}
@@ -125,6 +132,17 @@ export class DistributionService {
     return text as GoodsReceiptStatus;
   }
 
+  private parseOptionalStockTransferStatus(value: unknown): StockTransferStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(StockTransferStatus).includes(text as StockTransferStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(StockTransferStatus).join(", ")}`);
+    }
+    return text as StockTransferStatus;
+  }
+
   private parseInteger(value: unknown, fieldName: string, fallback: number): number {
     if (value === undefined || value === null || value === "") {
       return fallback;
@@ -175,6 +193,23 @@ export class DistributionService {
     }
     if (user.branchId && user.branchId !== branchId) {
       throw new BadRequestException(`${fieldName} must reference your branch scope`);
+    }
+    return branch;
+  }
+
+  private async validateBranchInOrganization(branchId: string | null, fieldName: string, user: UserScope) {
+    if (!branchId) {
+      return null;
+    }
+    const branch = await this.prisma.branch.findFirst({
+      where: {
+        id: branchId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!branch) {
+      throw new BadRequestException(`${fieldName} must reference a branch in your organization`);
     }
     return branch;
   }
@@ -305,6 +340,55 @@ export class DistributionService {
       return GoodsReceiptStatus.RECEIVED;
     }
     return GoodsReceiptStatus.PARTIAL;
+  }
+
+  private parseTransferLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const quantityRequested = this.parseInteger(
+        row.quantity_requested ?? row.quantityRequested,
+        `line_items[${index}].quantity_requested`,
+        0
+      );
+      const quantitySent = this.parseInteger(
+        row.quantity_sent ?? row.quantitySent,
+        `line_items[${index}].quantity_sent`,
+        0
+      );
+      const quantityReceived = this.parseInteger(
+        row.quantity_received ?? row.quantityReceived,
+        `line_items[${index}].quantity_received`,
+        0
+      );
+
+      if (quantityRequested < 1) {
+        throw new BadRequestException(`line_items[${index}].quantity_requested must be at least 1`);
+      }
+      if (quantitySent < 0 || quantityReceived < 0) {
+        throw new BadRequestException(`line_items[${index}] quantities cannot be negative`);
+      }
+      if (quantitySent > quantityRequested) {
+        throw new BadRequestException(`line_items[${index}].quantity_sent cannot exceed quantity_requested`);
+      }
+      if (quantityReceived > quantitySent) {
+        throw new BadRequestException(`line_items[${index}].quantity_received cannot exceed quantity_sent`);
+      }
+
+      return {
+        item_id: itemId,
+        quantity_requested: quantityRequested,
+        quantity_sent: quantitySent,
+        quantity_received: quantityReceived
+      };
+    });
   }
 
   async createMovement(body: Record<string, unknown>, scope?: UserScope) {
@@ -559,6 +643,157 @@ export class DistributionService {
           }
         },
         line_items: true
+      }
+    });
+  }
+
+  async listTransfers(filters: TransferListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalStockTransferStatus(filters.status);
+    const sourceBranchId = filters.sourceBranchId
+      ? this.parseRequiredUuid(filters.sourceBranchId, "sourceBranchId")
+      : undefined;
+    const destinationBranchId = filters.destinationBranchId
+      ? this.parseRequiredUuid(filters.destinationBranchId, "destinationBranchId")
+      : undefined;
+
+    if (sourceBranchId) {
+      await this.validateBranchInOrganization(sourceBranchId, "sourceBranchId", user);
+    }
+    if (destinationBranchId) {
+      await this.validateBranchInOrganization(destinationBranchId, "destinationBranchId", user);
+    }
+
+    return this.prisma.stockTransfer.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(sourceBranchId ? { source_branch_id: sourceBranchId } : {}),
+        ...(destinationBranchId ? { destination_branch_id: destinationBranchId } : {}),
+        ...(user.branchId
+          ? {
+              OR: [{ source_branch_id: user.branchId }, { destination_branch_id: user.branchId }]
+            }
+          : {})
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createTransfer(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const sourceBranchId =
+      this.parseOptionalUuid(body.source_branch_id ?? body.sourceBranchId, "source_branch_id") ??
+      user.branchId ??
+      null;
+    const destinationBranchId = this.parseOptionalUuid(
+      body.destination_branch_id ?? body.destinationBranchId,
+      "destination_branch_id"
+    );
+
+    if (!sourceBranchId) {
+      throw new BadRequestException("source_branch_id is required");
+    }
+    if (!destinationBranchId) {
+      throw new BadRequestException("destination_branch_id is required");
+    }
+    if (sourceBranchId === destinationBranchId) {
+      throw new BadRequestException("source_branch_id and destination_branch_id cannot be identical");
+    }
+
+    await this.validateBranchInOrganization(sourceBranchId, "source_branch_id", user);
+    await this.validateBranchInOrganization(destinationBranchId, "destination_branch_id", user);
+
+    if (user.branchId && sourceBranchId !== user.branchId && destinationBranchId !== user.branchId) {
+      throw new BadRequestException("Transfer must include your branch scope");
+    }
+
+    const lineItems = this.parseTransferLineItems(body.line_items ?? body.lineItems);
+    for (const lineItem of lineItems) {
+      await this.validateItemScope(lineItem.item_id, user);
+    }
+
+    const transferNumber =
+      this.parseOptionalString(body.transfer_number ?? body.transferNumber) ??
+      `TR-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+    const status = this.parseOptionalStockTransferStatus(body.status) ?? StockTransferStatus.DRAFT;
+    const approvedBy =
+      status === StockTransferStatus.APPROVED || status === StockTransferStatus.DISPATCHED
+        ? user.id
+        : this.parseOptionalUuid(body.approved_by ?? body.approvedBy, "approved_by");
+
+    return this.prisma.stockTransfer.create({
+      data: {
+        organization_id: user.organizationId,
+        transfer_number: transferNumber,
+        source_branch_id: sourceBranchId,
+        destination_branch_id: destinationBranchId,
+        status,
+        requested_by: user.id,
+        approved_by: approvedBy,
+        created_date: this.parseDate(body.created_date ?? body.createdDate, "created_date") ?? new Date(),
+        dispatched_date: this.parseDate(body.dispatched_date ?? body.dispatchedDate, "dispatched_date"),
+        received_date: this.parseDate(body.received_date ?? body.receivedDate, "received_date"),
+        status_history: (body.status_history as object | null | undefined) ?? undefined,
+        notes: this.parseOptionalString(body.notes),
+        line_items: {
+          create: lineItems
+        }
+      },
+      include: {
+        source_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        destination_branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        line_items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                name: true,
+                sku: true
+              }
+            }
+          }
+        }
       }
     });
   }

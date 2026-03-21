@@ -71,4 +71,28 @@ export class DistributionController {
   createReceipt(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createReceipt(body, req?.user);
   }
+
+  @Get("transfers")
+  listTransfers(
+    @Query("status") status?: string,
+    @Query("sourceBranchId") sourceBranchId?: string,
+    @Query("destinationBranchId") destinationBranchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listTransfers(
+      {
+        status,
+        sourceBranchId,
+        destinationBranchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("transfers")
+  createTransfer(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createTransfer(body, req?.user);
+  }
 }

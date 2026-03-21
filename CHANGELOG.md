@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.4` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.5` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.5 - 2026-03-21
+
+### Added
+
+- Distribution transfer APIs:
+  - `GET /api/v1/distribution/transfers`
+  - `POST /api/v1/distribution/transfers`
+- Transfer create validation with lifecycle-safe constraints:
+  - source and destination branches must differ
+  - line quantity rules (`requested >= sent >= received`)
+  - organization + branch + item scope validation
+- Transfer list filtering support:
+  - `status`, `sourceBranchId`, `destinationBranchId`, `includeDeleted`
+
+### Changed
+
+- Distribution controller/service now include transfer workflows in addition to dashboard, movements, and receipts.
+- System fallback version updated to `Beta V1.16.5`.
 
 ## Beta V1.16.4 - 2026-03-21
 
