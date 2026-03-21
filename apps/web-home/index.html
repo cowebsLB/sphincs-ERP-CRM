@@ -602,9 +602,29 @@
       (function () {
         const authArea = document.getElementById("authArea");
         const profileInitial = "U";
+        const SESSION_KEYS = ["sphincs.session", "sphincs.erp.session", "sphincs.crm.session"];
+
+        function readSession() {
+          for (const key of SESSION_KEYS) {
+            const raw = localStorage.getItem(key);
+            if (!raw) {
+              continue;
+            }
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.accessToken) {
+                return parsed;
+              }
+            } catch {
+              // Ignore malformed legacy values and keep checking.
+            }
+          }
+          return null;
+        }
 
         const isLoggedIn = Boolean(
-          localStorage.getItem("sphincs_access_token") ||
+          readSession() ||
+            localStorage.getItem("sphincs_access_token") ||
             localStorage.getItem("accessToken") ||
             sessionStorage.getItem("sphincs_access_token")
         );
@@ -647,6 +667,9 @@
 
           if (logoutBtn) {
             logoutBtn.addEventListener("click", function () {
+              SESSION_KEYS.forEach(function (key) {
+                localStorage.removeItem(key);
+              });
               localStorage.removeItem("sphincs_access_token");
               localStorage.removeItem("accessToken");
               sessionStorage.removeItem("sphincs_access_token");
