@@ -293,4 +293,28 @@ export class DistributionController {
   ): unknown {
     return this.distributionService.transitionReturn(returnId, { ...body, action: "CANCEL" }, req?.user);
   }
+
+  @Get("reservations")
+  listReservations(
+    @Query("status") status?: string,
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listReservations(
+      {
+        status,
+        branchId,
+        itemId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("reservations")
+  createReservation(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createReservation(body, req?.user);
+  }
 }

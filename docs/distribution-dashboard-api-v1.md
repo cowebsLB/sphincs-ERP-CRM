@@ -31,6 +31,8 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/returns/:returnId/inspect`
 - `PATCH /api/v1/distribution/returns/:returnId/complete`
 - `PATCH /api/v1/distribution/returns/:returnId/cancel`
+- `GET /api/v1/distribution/reservations`
+- `POST /api/v1/distribution/reservations`
 
 ## Purpose
 
@@ -91,7 +93,7 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add distribution reservation/allocation APIs for stock promise workflows.
+1. Add reorder rules and restocking recommendation APIs.
 
 ## Movement API Notes (V1.16.3)
 
@@ -368,3 +370,33 @@ Supported query parameters:
 - Invalid transition attempts return `400 Bad Request`.
 - Branch scope is enforced using source/destination branch scope checks.
 - Processing fields are updated on lifecycle actions where applicable (`processed_by`, `processed_date`).
+
+## Reservation API Notes (V1.16.12)
+
+### `POST /api/v1/distribution/reservations`
+
+Required:
+
+- `item_id`
+- `reserved_quantity` (must be at least `1`)
+
+Optional:
+
+- `branch_id` (defaults to branch-scoped user branch when available)
+- `status` (`ACTIVE`, `RELEASED`, `EXPIRED`, `FULFILLED`, `CANCELLED`)
+- `reference_type`
+- `reference_id`
+- `reserved_date`
+- `expires_at`
+- `notes`
+
+Validation includes status enum checks, positive quantity checks, and organization/branch/item scope enforcement.
+
+### `GET /api/v1/distribution/reservations`
+
+Supported query parameters:
+
+- `status`
+- `branchId`
+- `itemId`
+- `includeDeleted`

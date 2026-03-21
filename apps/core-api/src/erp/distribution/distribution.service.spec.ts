@@ -193,6 +193,14 @@ describe("DistributionService", () => {
           }
         }
       ])
+    },
+    inventoryReservation: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "res-1",
+        reserved_quantity: 3,
+        status: "ACTIVE"
+      })
     }
   });
 
@@ -1009,6 +1017,85 @@ describe("DistributionService", () => {
       service.transitionReturn(
         "55555555-5555-4555-8555-555555555555",
         { action: "COMPLETE" },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates reservations with scoped validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createReservation(
+      {
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        reserved_quantity: 3,
+        reference_type: "SALES_ORDER"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryReservation.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          reserved_quantity: 3,
+          status: "ACTIVE"
+        })
+      })
+    );
+    expect(result.id).toBe("res-1");
+  });
+
+  it("lists reservations with status filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listReservations(
+      {
+        status: "ACTIVE",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryReservation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "ACTIVE",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("rejects reservations with non-positive quantity", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReservation(
+        {
+          branch_id: BRANCH_1,
+          item_id: "33333333-3333-4333-8333-333333333333",
+          reserved_quantity: 0
+        },
         {
           id: "user-1",
           organizationId: "org-1",

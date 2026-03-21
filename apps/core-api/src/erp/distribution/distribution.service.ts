@@ -3,6 +3,7 @@ import {
   DispatchStatus,
   DistributionMovementType,
   GoodsReceiptStatus,
+  InventoryReservationStatus,
   StockAdjustmentStatus,
   StockAdjustmentType,
   StockReturnStatus,
@@ -63,6 +64,13 @@ type ReturnListFilters = {
   returnType?: string;
   sourceBranchId?: string;
   destinationBranchId?: string;
+  includeDeleted?: boolean;
+};
+
+type ReservationListFilters = {
+  status?: string;
+  branchId?: string;
+  itemId?: string;
   includeDeleted?: boolean;
 };
 
@@ -300,6 +308,17 @@ export class DistributionService {
       throw new BadRequestException(`status must be one of: ${Object.values(StockReturnStatus).join(", ")}`);
     }
     return text as StockReturnStatus;
+  }
+
+  private parseOptionalInventoryReservationStatus(value: unknown): InventoryReservationStatus | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return undefined;
+    }
+    if (!Object.values(InventoryReservationStatus).includes(text as InventoryReservationStatus)) {
+      throw new BadRequestException(`status must be one of: ${Object.values(InventoryReservationStatus).join(", ")}`);
+    }
+    return text as InventoryReservationStatus;
   }
 
   private parseReturnTransitionAction(value: unknown): ReturnTransitionAction {
@@ -1704,6 +1723,102 @@ export class DistributionService {
                 sku: true
               }
             }
+          }
+        }
+      }
+    });
+  }
+
+  async listReservations(filters: ReservationListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalInventoryReservationStatus(filters.status);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    return this.prisma.inventoryReservation.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 100
+    });
+  }
+
+  async createReservation(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    await this.validateItemScope(itemId, user);
+
+    const reservedQuantity = this.parseInteger(
+      body.reserved_quantity ?? body.reservedQuantity,
+      "reserved_quantity",
+      0
+    );
+    if (reservedQuantity < 1) {
+      throw new BadRequestException("reserved_quantity must be at least 1");
+    }
+
+    const status = this.parseOptionalInventoryReservationStatus(body.status) ?? InventoryReservationStatus.ACTIVE;
+
+    return this.prisma.inventoryReservation.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        reserved_quantity: reservedQuantity,
+        reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
+        reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
+        reserved_by: user.id,
+        reserved_date: this.parseDate(body.reserved_date ?? body.reservedDate, "reserved_date") ?? new Date(),
+        expires_at: this.parseDate(body.expires_at ?? body.expiresAt, "expires_at"),
+        status,
+        notes: this.parseOptionalString(body.notes)
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
           }
         }
       }

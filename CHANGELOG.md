@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.11` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.12` - current active beta snapshot as of 2026-03-21
+
+## Beta V1.16.12 - 2026-03-21
+
+### Added
+
+- Reservation APIs:
+  - `GET /api/v1/distribution/reservations`
+  - `POST /api/v1/distribution/reservations`
+- Reservation list filtering support:
+  - `status`, `branchId`, `itemId`, `includeDeleted`
+- Reservation create validation:
+  - required `item_id`
+  - positive `reserved_quantity`
+  - reservation status enum checks
+  - organization/branch/item scope checks
+
+### Changed
+
+- Distribution service now supports branch-scoped reservation reads and writes through unified distribution APIs.
+- System fallback version updated to `Beta V1.16.12`.
 
 ## Beta V1.16.11 - 2026-03-21
 

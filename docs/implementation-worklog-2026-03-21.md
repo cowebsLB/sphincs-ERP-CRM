@@ -1,5 +1,32 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Reservation APIs (V1.16.12)
+
+Date: 2026-03-21
+
+### Scope
+
+- Added reservation endpoints:
+  - `GET /api/v1/distribution/reservations`
+  - `POST /api/v1/distribution/reservations`
+- Added reservation service logic for:
+  - branch-scoped listing
+  - status/branch/item filtering
+  - reservation creation with scope and enum validation
+- Added unit tests for:
+  - reservation create success
+  - reservation list filtering
+  - non-positive quantity rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `80/80` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Reservation records now flow through the same distribution controller/service surface as other stock operations.
+
 ## Task: Distribution Return Lifecycle Actions (V1.16.11)
 
 Date: 2026-03-21
