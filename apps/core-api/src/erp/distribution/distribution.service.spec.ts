@@ -409,10 +409,20 @@ describe("DistributionService", () => {
     },
     inventoryReservation: {
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "res-1",
+        branch_id: BRANCH_1,
+        status: "ACTIVE"
+      }),
       create: jest.fn().mockResolvedValue({
         id: "res-1",
         reserved_quantity: 3,
         status: "ACTIVE"
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "res-1",
+        reserved_quantity: 3,
+        status: "RELEASED"
       })
     },
     reorderRule: {
@@ -1745,6 +1755,60 @@ describe("DistributionService", () => {
           item_id: "33333333-3333-4333-8333-333333333333",
           reserved_quantity: 0
         },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("transitions reservations to RELEASED and writes audit", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transitionReservation(
+      "56565656-5656-4565-8565-565656565656",
+      { action: "RELEASE", notes: "Released by operator" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryReservation.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "RELEASED"
+        })
+      })
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_RESERVATION_TRANSITION",
+          entity_type: "inventory_reservation"
+        })
+      })
+    );
+    expect(result.id).toBe("res-1");
+  });
+
+  it("rejects reservation transition when status is terminal", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryReservation.findFirst.mockResolvedValue({
+      id: "res-1",
+      branch_id: BRANCH_1,
+      status: "RELEASED"
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionReservation(
+        "56565656-5656-4565-8565-565656565656",
+        { action: "CANCEL" },
         {
           id: "user-1",
           organizationId: "org-1",

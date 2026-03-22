@@ -653,6 +653,36 @@ export class DistributionController {
     return this.distributionService.createReservation(body, req?.user);
   }
 
+  @Patch("reservations/:reservationId/release")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  releaseReservation(
+    @Param("reservationId") reservationId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReservation(reservationId, { ...body, action: "RELEASE" }, req?.user);
+  }
+
+  @Patch("reservations/:reservationId/fulfill")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  fulfillReservation(
+    @Param("reservationId") reservationId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReservation(reservationId, { ...body, action: "FULFILL" }, req?.user);
+  }
+
+  @Patch("reservations/:reservationId/cancel")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  cancelReservation(
+    @Param("reservationId") reservationId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReservation(reservationId, { ...body, action: "CANCEL" }, req?.user);
+  }
+
   @Get("reorder-rules")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listReorderRules(

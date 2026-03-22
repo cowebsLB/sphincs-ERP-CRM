@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.33` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.34` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.34 - 2026-03-22
+
+### Added
+
+- Reservation lifecycle endpoints:
+  - `PATCH /api/v1/distribution/reservations/:reservationId/release`
+  - `PATCH /api/v1/distribution/reservations/:reservationId/fulfill`
+  - `PATCH /api/v1/distribution/reservations/:reservationId/cancel`
+- Reservation transition behavior with:
+  - status transition guardrails
+  - branch-scope validation
+  - audit log events (`DISTRIBUTION_RESERVATION_TRANSITION`)
+- Unit coverage for reservation transition success and terminal-state rejection behavior.
+
+### Changed
+
+- Distribution reservations now have explicit operational lifecycle controls beyond create/list.
+- System fallback version updated to `Beta V1.16.34`.
 
 ## Beta V1.16.33 - 2026-03-22
 

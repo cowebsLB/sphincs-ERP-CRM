@@ -59,6 +59,9 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/pack-jobs/:packJobId/cancel`
 - `GET /api/v1/distribution/reservations`
 - `POST /api/v1/distribution/reservations`
+- `PATCH /api/v1/distribution/reservations/:reservationId/release`
+- `PATCH /api/v1/distribution/reservations/:reservationId/fulfill`
+- `PATCH /api/v1/distribution/reservations/:reservationId/cancel`
 - `GET /api/v1/distribution/reorder-rules`
 - `POST /api/v1/distribution/reorder-rules`
 - `GET /api/v1/distribution/restocking-suggestions`
@@ -641,6 +644,21 @@ Supported query parameters:
 - `branchId`
 - `itemId`
 - `includeDeleted`
+
+### Reservation Lifecycle (V1.16.34)
+
+Endpoints:
+
+- `PATCH /api/v1/distribution/reservations/:reservationId/release`
+- `PATCH /api/v1/distribution/reservations/:reservationId/fulfill`
+- `PATCH /api/v1/distribution/reservations/:reservationId/cancel`
+
+Behavior:
+
+- Allowed transitions:
+  - `ACTIVE -> RELEASED|FULFILLED|CANCELLED`
+- Terminal states (`RELEASED`, `FULFILLED`, `CANCELLED`, `EXPIRED`) reject further transitions.
+- Each transition writes an audit event for traceability.
 
 ## Reorder Rule API Notes (V1.16.13)
 

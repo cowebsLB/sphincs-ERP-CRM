@@ -223,6 +223,7 @@ type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
 type DispatchJobTransitionAction = "START" | "COMPLETE" | "CANCEL";
 type WarehouseLocationTransitionAction = "ACTIVATE" | "DEACTIVATE";
 type LotTransitionAction = "ACTIVATE" | "HOLD" | "EXHAUST" | "CLOSE";
+type ReservationTransitionAction = "RELEASE" | "FULFILL" | "CANCEL";
 
 @Injectable()
 export class DistributionService {
@@ -551,6 +552,14 @@ export class DistributionService {
       throw new BadRequestException("action must be one of: ACTIVATE, HOLD, EXHAUST, CLOSE");
     }
     return text as LotTransitionAction;
+  }
+
+  private parseReservationTransitionAction(value: unknown): ReservationTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!["RELEASE", "FULFILL", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: RELEASE, FULFILL, CANCEL");
+    }
+    return text as ReservationTransitionAction;
   }
 
   private parseLotQuantity(value: unknown, fieldName: string, fallback = 0): number {
@@ -3184,6 +3193,81 @@ export class DistributionService {
         }
       }
     });
+  }
+
+  async transitionReservation(reservationIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const reservationId = this.parseRequiredUuid(reservationIdRaw, "reservationId");
+    const action = this.parseReservationTransitionAction(body.action);
+    const reservation = await this.prisma.inventoryReservation.findFirst({
+      where: {
+        id: reservationId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!reservation) {
+      throw new NotFoundException("Reservation not found");
+    }
+    await this.validateBranchScope(reservation.branch_id, "reservation.branch_id", user);
+
+    const currentStatus = reservation.status;
+    const targetStatus =
+      action === "RELEASE"
+        ? InventoryReservationStatus.RELEASED
+        : action === "FULFILL"
+          ? InventoryReservationStatus.FULFILLED
+          : InventoryReservationStatus.CANCELLED;
+
+    const allowed: Record<InventoryReservationStatus, InventoryReservationStatus[]> = {
+      [InventoryReservationStatus.ACTIVE]: [
+        InventoryReservationStatus.RELEASED,
+        InventoryReservationStatus.FULFILLED,
+        InventoryReservationStatus.CANCELLED
+      ],
+      [InventoryReservationStatus.RELEASED]: [],
+      [InventoryReservationStatus.EXPIRED]: [],
+      [InventoryReservationStatus.FULFILLED]: [],
+      [InventoryReservationStatus.CANCELLED]: []
+    };
+    if (!allowed[currentStatus].includes(targetStatus)) {
+      throw new BadRequestException(`Cannot transition reservation from ${currentStatus} to ${targetStatus}`);
+    }
+
+    const updated = await this.prisma.inventoryReservation.update({
+      where: { id: reservation.id },
+      data: {
+        status: targetStatus,
+        notes: this.parseOptionalString(body.notes) ?? undefined
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true
+          }
+        }
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_RESERVATION_TRANSITION", "inventory_reservation", reservation.id, {
+      action,
+      from_status: currentStatus,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listReorderRules(filters: ReorderRuleListFilters, scope?: UserScope) {

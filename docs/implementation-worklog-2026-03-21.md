@@ -1,5 +1,33 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Reservation Lifecycle Actions (V1.16.34)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reservation lifecycle endpoints:
+  - release
+  - fulfill
+  - cancel
+- Added service transition logic with:
+  - allowed transition validation
+  - terminal state rejection
+  - branch scope enforcement
+- Added audit events for reservation status changes.
+- Added unit coverage for:
+  - successful release transition
+  - invalid transition rejection from terminal state
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `115/115` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes reservation workflows by enabling explicit release/fulfill/cancel operations and auditability.
+
 ## Task: Distribution Inactive Stock Exceptions Report (V1.16.33)
 
 Date: 2026-03-22
