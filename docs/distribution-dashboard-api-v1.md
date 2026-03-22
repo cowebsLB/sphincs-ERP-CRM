@@ -35,6 +35,8 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/returns/:returnId/inspect`
 - `PATCH /api/v1/distribution/returns/:returnId/complete`
 - `PATCH /api/v1/distribution/returns/:returnId/cancel`
+- `GET /api/v1/distribution/warehouse-locations`
+- `POST /api/v1/distribution/warehouse-locations`
 - `GET /api/v1/distribution/reservations`
 - `POST /api/v1/distribution/reservations`
 - `GET /api/v1/distribution/reorder-rules`
@@ -124,6 +126,41 @@ Phase-2 logistics foundations now available in schema:
   - `quantity_on_hand <= reorder_level`
   - `reorder_level > 0`
 - Out-of-stock is tracked separately where `quantity_on_hand <= 0`.
+
+## Warehouse Location API Notes (V1.16.24)
+
+### `GET /api/v1/distribution/warehouse-locations`
+
+Supported query parameters:
+
+- `branchId`
+- `parentLocationId`
+- `isActive`
+- `includeDeleted`
+
+Behavior:
+
+- branch-scoped users are automatically restricted to their own branch.
+- `parentLocationId` is validated within organization scope.
+
+### `POST /api/v1/distribution/warehouse-locations`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `code`
+- `name`
+
+Optional:
+
+- `parent_location_id`
+- `location_type` (defaults to `GENERAL`)
+- `is_active` (defaults to `true`)
+
+Validation includes:
+
+- parent location must belong to the same branch
+- branch-level unique `code` enforcement
 
 ## Next API Steps
 

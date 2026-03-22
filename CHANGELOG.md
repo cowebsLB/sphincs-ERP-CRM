@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.23` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.24` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.24 - 2026-03-22
+
+### Added
+
+- Warehouse location APIs for the distribution module:
+  - `GET /api/v1/distribution/warehouse-locations`
+  - `POST /api/v1/distribution/warehouse-locations`
+- Warehouse location API capabilities:
+  - branch-scoped listing with optional `isActive` and `parentLocationId` filters
+  - branch-safe parent/child location validation on create
+  - branch-level unique location code enforcement
+- Unit tests for warehouse location list/create validation flows.
+
+### Changed
+
+- Distribution service now includes warehouse-location scope validation helper logic.
+- System fallback version updated to `Beta V1.16.24`.
 
 ## Beta V1.16.23 - 2026-03-22
 

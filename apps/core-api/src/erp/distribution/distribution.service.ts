@@ -75,6 +75,13 @@ type ReservationListFilters = {
   includeDeleted?: boolean;
 };
 
+type WarehouseLocationListFilters = {
+  branchId?: string;
+  parentLocationId?: string;
+  isActive?: boolean;
+  includeDeleted?: boolean;
+};
+
 type ReorderRuleListFilters = {
   branchId?: string;
   itemId?: string;
@@ -552,6 +559,26 @@ export class DistributionService {
       throw new BadRequestException(`${fieldName} must reference a branch in your organization`);
     }
     return branch;
+  }
+
+  private async validateWarehouseLocationScope(locationId: string | null, fieldName: string, user: UserScope) {
+    if (!locationId) {
+      return null;
+    }
+    const location = await this.prisma.warehouseLocation.findFirst({
+      where: {
+        id: locationId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!location) {
+      throw new BadRequestException(`${fieldName} must reference a warehouse location in your organization`);
+    }
+    if (user.branchId && location.branch_id !== user.branchId) {
+      throw new BadRequestException(`${fieldName} must reference your branch scope`);
+    }
+    return location;
   }
 
   private async validateItemScope(itemId: string, user: UserScope) {
@@ -1938,6 +1965,112 @@ export class DistributionService {
       to_status: targetStatus
     });
     return updated;
+  }
+
+  async listWarehouseLocations(filters: WarehouseLocationListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const parentLocationId = filters.parentLocationId
+      ? this.parseRequiredUuid(filters.parentLocationId, "parentLocationId")
+      : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (parentLocationId) {
+      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parentLocationId", user);
+      if (branchId && parent && parent.branch_id !== branchId) {
+        throw new BadRequestException("parentLocationId must belong to the requested branchId");
+      }
+    }
+
+    return this.prisma.warehouseLocation.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(parentLocationId ? { parent_location_id: parentLocationId } : {}),
+        ...(typeof filters.isActive === "boolean" ? { is_active: filters.isActive } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        parent: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        }
+      },
+      orderBy: [{ branch_id: "asc" }, { code: "asc" }],
+      take: 300
+    });
+  }
+
+  async createWarehouseLocation(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const parentLocationId = this.parseOptionalUuid(
+      body.parent_location_id ?? body.parentLocationId,
+      "parent_location_id"
+    );
+    if (parentLocationId) {
+      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parent_location_id", user);
+      if (parent && parent.branch_id !== branchId) {
+        throw new BadRequestException("parent_location_id must reference a location in the same branch");
+      }
+    }
+
+    const code = this.parseRequiredString(body.code, "code").toUpperCase();
+    const duplicate = await this.prisma.warehouseLocation.findFirst({
+      where: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        code,
+        deleted_at: null
+      }
+    });
+    if (duplicate) {
+      throw new BadRequestException("code already exists for this branch");
+    }
+
+    return this.prisma.warehouseLocation.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        parent_location_id: parentLocationId,
+        code,
+        name: this.parseRequiredString(body.name, "name"),
+        location_type: (this.parseOptionalString(body.location_type ?? body.locationType) ?? "GENERAL").toUpperCase(),
+        is_active: this.parseBoolean(body.is_active ?? body.isActive, true)
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        parent: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        }
+      }
+    });
   }
 
   async listReservations(filters: ReservationListFilters, scope?: UserScope) {

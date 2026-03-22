@@ -1,5 +1,33 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Warehouse Location APIs (V1.16.24)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added distribution warehouse location endpoints:
+  - `GET /api/v1/distribution/warehouse-locations`
+  - `POST /api/v1/distribution/warehouse-locations`
+- Added service logic for warehouse-location workflows:
+  - branch-scoped and organization-scoped location validation
+  - parent location same-branch enforcement
+  - branch-level code uniqueness guard
+- Added unit tests for:
+  - filtered warehouse-location listing
+  - warehouse-location create with parent validation
+  - cross-branch parent rejection behavior
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api prisma:generate` passed.
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `97/97` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This establishes the first API surface on top of the phase-2 warehouse location schema so location-aware receiving/dispatch flows can be added next.
+
 ## Task: Distribution Phase-2 Logistics DB Foundation (V1.16.23)
 
 Date: 2026-03-22

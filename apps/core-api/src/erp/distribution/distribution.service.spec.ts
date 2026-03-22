@@ -4,6 +4,8 @@ import { DistributionService } from "./distribution.service";
 describe("DistributionService", () => {
   const BRANCH_1 = "11111111-1111-4111-8111-111111111111";
   const BRANCH_2 = "22222222-2222-4222-8222-222222222222";
+  const LOCATION_PARENT_BRANCH_1 = "33333333-3333-4333-8333-333333333333";
+  const LOCATION_PARENT_BRANCH_2 = "44444444-4444-4444-8444-444444444444";
 
   const createPrismaMock = () => ({
     inventoryStock: {
@@ -175,6 +177,71 @@ describe("DistributionService", () => {
           return { id: branchId, organization_id: "org-1", deleted_at: null };
         }
         return null;
+      })
+    },
+    warehouseLocation: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          id: "55555555-5555-4555-8555-555555555555",
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          parent_location_id: LOCATION_PARENT_BRANCH_1,
+          code: "BIN-A1",
+          name: "Bin A1",
+          location_type: "BIN",
+          is_active: true,
+          branch: { id: BRANCH_1, name: "Main" },
+          parent: { id: LOCATION_PARENT_BRANCH_1, code: "ZONE-A", name: "Zone A" }
+        }
+      ]),
+      findFirst: jest.fn().mockImplementation(
+        async (args: { where: { id?: string; branch_id?: string; code?: string; organization_id?: string } }) => {
+          const where = args?.where ?? {};
+          if (where.id === LOCATION_PARENT_BRANCH_1) {
+            return {
+              id: LOCATION_PARENT_BRANCH_1,
+              organization_id: "org-1",
+              branch_id: BRANCH_1,
+              code: "ZONE-A",
+              name: "Zone A",
+              deleted_at: null
+            };
+          }
+          if (where.id === LOCATION_PARENT_BRANCH_2) {
+            return {
+              id: LOCATION_PARENT_BRANCH_2,
+              organization_id: "org-1",
+              branch_id: BRANCH_2,
+              code: "ZONE-N",
+              name: "Zone North",
+              deleted_at: null
+            };
+          }
+          if (
+            where.organization_id === "org-1" &&
+            where.branch_id === BRANCH_1 &&
+            where.code === "BIN-DUPLICATE"
+          ) {
+            return {
+              id: "66666666-6666-4666-8666-666666666666",
+              organization_id: "org-1",
+              branch_id: BRANCH_1,
+              code: "BIN-DUPLICATE",
+              name: "Existing Bin",
+              deleted_at: null
+            };
+          }
+          return null;
+        }
+      ),
+      create: jest.fn().mockResolvedValue({
+        id: "77777777-7777-4777-8777-777777777777",
+        code: "BIN-A2",
+        name: "Bin A2",
+        location_type: "BIN",
+        is_active: true,
+        branch: { id: BRANCH_1, name: "Main" },
+        parent: { id: LOCATION_PARENT_BRANCH_1, code: "ZONE-A", name: "Zone A" }
       })
     },
     item: {
@@ -1147,6 +1214,91 @@ describe("DistributionService", () => {
       service.transitionReturn(
         "55555555-5555-4555-8555-555555555555",
         { action: "COMPLETE" },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("lists warehouse locations with scoped filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listWarehouseLocations(
+      {
+        branchId: BRANCH_1,
+        isActive: true,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.warehouseLocation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          is_active: true,
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("creates warehouse locations with parent validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createWarehouseLocation(
+      {
+        branch_id: BRANCH_1,
+        parent_location_id: LOCATION_PARENT_BRANCH_1,
+        code: "bin-a2",
+        name: "Bin A2",
+        location_type: "bin",
+        is_active: true
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.warehouseLocation.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          parent_location_id: LOCATION_PARENT_BRANCH_1,
+          code: "BIN-A2",
+          location_type: "BIN",
+          is_active: true
+        })
+      })
+    );
+    expect(result.id).toBe("77777777-7777-4777-8777-777777777777");
+  });
+
+  it("rejects warehouse locations when parent belongs to another branch", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createWarehouseLocation(
+        {
+          branch_id: BRANCH_1,
+          parent_location_id: LOCATION_PARENT_BRANCH_2,
+          code: "bin-a3",
+          name: "Bin A3"
+        },
         {
           id: "user-1",
           organizationId: "org-1",

@@ -373,6 +373,32 @@ export class DistributionController {
     return this.distributionService.transitionReturn(returnId, { ...body, action: "CANCEL" }, req?.user);
   }
 
+  @Get("warehouse-locations")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listWarehouseLocations(
+    @Query("branchId") branchId?: string,
+    @Query("parentLocationId") parentLocationId?: string,
+    @Query("isActive") isActive?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listWarehouseLocations(
+      {
+        branchId,
+        parentLocationId,
+        isActive: isActive === undefined ? undefined : isActive === "true",
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("warehouse-locations")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createWarehouseLocation(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createWarehouseLocation(body, req?.user);
+  }
+
   @Get("reservations")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listReservations(
