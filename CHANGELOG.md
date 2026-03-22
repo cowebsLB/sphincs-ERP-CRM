@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.38` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.39` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.39 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/branch-stock-summary`
+- Branch stock summary report includes:
+  - aggregated branch-level stock totals (on-hand, available, in-transit, incoming, damaged)
+  - branch-level low-stock and out-of-stock counts
+  - item row counts per branch
+  - global summary totals across included branches
+- Unit coverage for branch-level stock summary aggregation output.
+
+### Changed
+
+- Branch stock visibility is now available as a dedicated report endpoint in addition to dashboard widgets.
+- System fallback version updated to `Beta V1.16.39`.
 
 ## Beta V1.16.38 - 2026-03-22
 

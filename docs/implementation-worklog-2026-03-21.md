@@ -1,5 +1,33 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Branch Stock Summary Report (V1.16.39)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/branch-stock-summary`
+- Added branch-level summary aggregation over inventory stock records with:
+  - total quantity on hand
+  - total available quantity
+  - total in-transit quantity
+  - total incoming quantity
+  - total damaged quantity
+  - low-stock and out-of-stock item counts
+  - item-row count per branch
+- Added summary totals across all included branches.
+- Added unit coverage for branch-stock summary calculations and grouped output.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `124/124` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This exposes branch stock summary as a first-class reporting route, reducing dependence on dashboard-only aggregates.
+
 ## Task: Transfer + Dispatch Cancellation Transitions (V1.16.38)
 
 Date: 2026-03-22

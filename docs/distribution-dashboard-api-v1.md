@@ -76,6 +76,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/alerts`
 - `PATCH /api/v1/distribution/alerts/:alertId/resolve`
 - `GET /api/v1/distribution/reports/stock-on-hand`
+- `GET /api/v1/distribution/reports/branch-stock-summary`
 - `GET /api/v1/distribution/reports/movements`
 - `GET /api/v1/distribution/reports/transfers`
 - `GET /api/v1/distribution/reports/adjustments`

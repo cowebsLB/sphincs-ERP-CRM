@@ -2371,6 +2371,74 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds branch stock summary report grouped by branch", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: 10,
+        available_quantity: 8,
+        in_transit_quantity: 2,
+        incoming_quantity: 3,
+        damaged_quantity: 1,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", reorder_level: 12 }
+      },
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-2",
+        quantity_on_hand: 0,
+        available_quantity: 0,
+        in_transit_quantity: 0,
+        incoming_quantity: 4,
+        damaged_quantity: 0,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-2", reorder_level: 5 }
+      },
+      {
+        branch_id: BRANCH_2,
+        item_id: "item-3",
+        quantity_on_hand: 6,
+        available_quantity: 6,
+        in_transit_quantity: 1,
+        incoming_quantity: 0,
+        damaged_quantity: 0,
+        branch: { id: BRANCH_2, name: "North" },
+        item: { id: "item-3", reorder_level: 3 }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.branchStockSummaryReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1"
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_branches: 2,
+        total_item_rows: 3,
+        total_quantity_on_hand: 16,
+        low_stock_item_count: 1,
+        out_of_stock_item_count: 1
+      })
+    );
+    expect(result.rows.find((row: { branch_id: string }) => row.branch_id === BRANCH_1)).toEqual(
+      expect.objectContaining({
+        item_row_count: 2,
+        total_quantity_on_hand: 10,
+        low_stock_item_count: 1,
+        out_of_stock_item_count: 1
+      })
+    );
+  });
+
   it("builds movement history report with summary totals", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

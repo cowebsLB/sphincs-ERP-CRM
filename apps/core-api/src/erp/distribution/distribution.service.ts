@@ -138,6 +138,11 @@ type StockOnHandReportFilters = {
   includeDeleted?: boolean;
 };
 
+type BranchStockSummaryReportFilters = {
+  branchId?: string;
+  includeDeleted?: boolean;
+};
+
 type MovementReportFilters = {
   movementType?: string;
   branchId?: string;
@@ -3990,6 +3995,100 @@ export class DistributionService {
     return {
       summary,
       rows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async branchStockSummaryReport(filters: BranchStockSummaryReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rows = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, reorder_level: true } }
+      },
+      orderBy: [{ branch_id: "asc" }, { item_id: "asc" }],
+      take: 1000
+    });
+
+    const byBranch = new Map<
+      string,
+      {
+        branch_id: string;
+        branch_name: string | null;
+        item_row_count: number;
+        total_quantity_on_hand: number;
+        total_available_quantity: number;
+        total_in_transit_quantity: number;
+        total_incoming_quantity: number;
+        total_damaged_quantity: number;
+        low_stock_item_count: number;
+        out_of_stock_item_count: number;
+      }
+    >();
+
+    for (const row of rows) {
+      const quantityOnHand = row.quantity_on_hand ?? 0;
+      const availableQuantity = row.available_quantity ?? 0;
+      const inTransitQuantity = row.in_transit_quantity ?? 0;
+      const incomingQuantity = row.incoming_quantity ?? 0;
+      const damagedQuantity = row.damaged_quantity ?? 0;
+      const reorderLevel = row.item.reorder_level ?? 0;
+      const outOfStock = quantityOnHand <= 0;
+      const lowStock = !outOfStock && reorderLevel > 0 && quantityOnHand <= reorderLevel;
+      const key = row.branch_id;
+      const current = byBranch.get(key) ?? {
+        branch_id: row.branch_id,
+        branch_name: row.branch?.name ?? null,
+        item_row_count: 0,
+        total_quantity_on_hand: 0,
+        total_available_quantity: 0,
+        total_in_transit_quantity: 0,
+        total_incoming_quantity: 0,
+        total_damaged_quantity: 0,
+        low_stock_item_count: 0,
+        out_of_stock_item_count: 0
+      };
+
+      current.item_row_count += 1;
+      current.total_quantity_on_hand += quantityOnHand;
+      current.total_available_quantity += availableQuantity;
+      current.total_in_transit_quantity += inTransitQuantity;
+      current.total_incoming_quantity += incomingQuantity;
+      current.total_damaged_quantity += damagedQuantity;
+      current.low_stock_item_count += lowStock ? 1 : 0;
+      current.out_of_stock_item_count += outOfStock ? 1 : 0;
+      byBranch.set(key, current);
+    }
+
+    const summaryRows = Array.from(byBranch.values()).sort(
+      (a, b) => b.total_quantity_on_hand - a.total_quantity_on_hand
+    );
+    const summary = {
+      total_branches: summaryRows.length,
+      total_item_rows: summaryRows.reduce((sum, row) => sum + row.item_row_count, 0),
+      total_quantity_on_hand: summaryRows.reduce((sum, row) => sum + row.total_quantity_on_hand, 0),
+      total_available_quantity: summaryRows.reduce((sum, row) => sum + row.total_available_quantity, 0),
+      total_in_transit_quantity: summaryRows.reduce((sum, row) => sum + row.total_in_transit_quantity, 0),
+      total_incoming_quantity: summaryRows.reduce((sum, row) => sum + row.total_incoming_quantity, 0),
+      total_damaged_quantity: summaryRows.reduce((sum, row) => sum + row.total_damaged_quantity, 0),
+      low_stock_item_count: summaryRows.reduce((sum, row) => sum + row.low_stock_item_count, 0),
+      out_of_stock_item_count: summaryRows.reduce((sum, row) => sum + row.out_of_stock_item_count, 0)
+    };
+
+    return {
+      summary,
+      rows: summaryRows,
       generated_at: new Date().toISOString()
     };
   }

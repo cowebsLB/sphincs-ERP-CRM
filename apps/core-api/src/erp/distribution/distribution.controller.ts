@@ -865,6 +865,22 @@ export class DistributionController {
     );
   }
 
+  @Get("reports/branch-stock-summary")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  branchStockSummaryReport(
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.branchStockSummaryReport(
+      {
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
   @Get("reports/movements")
   @Roles(...DISTRIBUTION_READ_ROLES)
   movementHistoryReport(
