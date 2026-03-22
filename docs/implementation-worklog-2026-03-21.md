@@ -1,5 +1,35 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Shortages Report (V1.16.35)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/shortages`
+- Added shortages report computation based on active reorder rules and current stock snapshots.
+- Added row-level outputs for:
+  - branch/item/supplier context
+  - reorder level and reorder quantity
+  - current on-hand and available quantities
+  - calculated shortage quantity
+  - suggested reorder quantity
+- Added summary totals for:
+  - shortage rows
+  - total shortage quantity
+  - total suggested reorder quantity
+- Added unit coverage for shortage report calculation behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `116/116` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This adds a direct replenishment-focused operations view so teams can action restock requirements immediately.
+
 ## Task: Distribution Reservation Lifecycle Actions (V1.16.34)
 
 Date: 2026-03-22

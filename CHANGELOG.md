@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.34` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.35` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.35 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/shortages`
+- Shortages report output includes:
+  - branch + item context from active reorder rules
+  - current on-hand and available quantity snapshots
+  - computed shortage quantity and suggested reorder quantity
+  - filtered rows containing only restock-required items
+- Unit coverage for shortage summary and per-row quantity calculations.
+
+### Changed
+
+- Distribution reporting now surfaces direct restocking action data from reorder thresholds.
+- System fallback version updated to `Beta V1.16.35`.
 
 ## Beta V1.16.34 - 2026-03-22
 

@@ -1014,4 +1014,22 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/shortages")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  shortageReport(
+    @Query("branchId") branchId?: string,
+    @Query("supplierId") supplierId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.shortageReport(
+      {
+        branchId,
+        supplierId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

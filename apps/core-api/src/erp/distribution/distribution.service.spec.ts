@@ -2698,6 +2698,73 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds shortage report from reorder rules and stock snapshots", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.reorderRule.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        preferred_supplier_id: "sup-1",
+        reorder_level: 20,
+        reorder_quantity: 12,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A" },
+        preferred_supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" }
+      },
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-2",
+        preferred_supplier_id: "sup-1",
+        reorder_level: 5,
+        reorder_quantity: 5,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-2", name: "Widget B", sku: "W-B" },
+        preferred_supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" }
+      }
+    ]);
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: 9,
+        available_quantity: 7
+      },
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-2",
+        quantity_on_hand: 7,
+        available_quantity: 7
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.shortageReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_rows: 1,
+        total_shortage_quantity: 11,
+        total_suggested_reorder_quantity: 12
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        item_id: "item-1",
+        shortage_quantity: 11,
+        suggested_reorder_quantity: 12
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

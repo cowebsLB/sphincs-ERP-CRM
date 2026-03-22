@@ -79,6 +79,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/operations-exceptions`
 - `GET /api/v1/distribution/reports/branch-sla`
 - `GET /api/v1/distribution/reports/inactive-stock`
+- `GET /api/v1/distribution/reports/shortages`
 
 ## Purpose
 

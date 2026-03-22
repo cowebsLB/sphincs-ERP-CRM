@@ -216,6 +216,12 @@ type InactiveStockReportFilters = {
   includeDeleted?: boolean;
 };
 
+type ShortageReportFilters = {
+  branchId?: string;
+  supplierId?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -4716,6 +4722,109 @@ export class DistributionService {
     return {
       summary,
       rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async shortageReport(filters: ShortageReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const supplierId = filters.supplierId ? this.parseRequiredUuid(filters.supplierId, "supplierId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+
+    const rules = await this.prisma.reorderRule.findMany({
+      where: {
+        organization_id: user.organizationId,
+        is_active: true,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(supplierId ? { preferred_supplier_id: supplierId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        preferred_supplier: { select: { id: true, name: true, supplier_code: true } }
+      },
+      take: 1000
+    });
+
+    if (rules.length === 0) {
+      return {
+        summary: {
+          total_rows: 0,
+          shortage_item_count: 0,
+          total_shortage_quantity: 0,
+          total_suggested_reorder_quantity: 0
+        },
+        rows: [],
+        generated_at: new Date().toISOString()
+      };
+    }
+
+    const stockKeys = rules.map((row) => ({ branch_id: row.branch_id, item_id: row.item_id }));
+    const stocks = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        OR: stockKeys.map((row) => ({
+          branch_id: row.branch_id,
+          item_id: row.item_id
+        }))
+      },
+      select: {
+        branch_id: true,
+        item_id: true,
+        quantity_on_hand: true,
+        available_quantity: true
+      }
+    });
+    const stockMap = new Map(stocks.map((row) => [`${row.branch_id}:${row.item_id}`, row]));
+
+    const rows = rules
+      .map((rule) => {
+        const key = `${rule.branch_id}:${rule.item_id}`;
+        const stock = stockMap.get(key);
+        const currentQty = stock?.quantity_on_hand ?? 0;
+        const availableQty = stock?.available_quantity ?? currentQty;
+        const reorderLevel = rule.reorder_level;
+        const shortageQty = Math.max(reorderLevel - currentQty, 0);
+        const suggestedQty = shortageQty > 0 ? Math.max(shortageQty, rule.reorder_quantity) : 0;
+        return {
+          branch_id: rule.branch_id,
+          branch_name: rule.branch.name,
+          item_id: rule.item_id,
+          item_name: rule.item.name,
+          sku: rule.item.sku,
+          supplier_id: rule.preferred_supplier_id,
+          supplier_name: rule.preferred_supplier?.name ?? null,
+          reorder_level: reorderLevel,
+          reorder_quantity: rule.reorder_quantity,
+          current_quantity_on_hand: currentQty,
+          current_available_quantity: availableQty,
+          shortage_quantity: shortageQty,
+          suggested_reorder_quantity: suggestedQty,
+          needs_restock: shortageQty > 0
+        };
+      })
+      .filter((row) => row.needs_restock)
+      .sort((a, b) => b.shortage_quantity - a.shortage_quantity);
+
+    const summary = {
+      total_rows: rows.length,
+      shortage_item_count: rows.length,
+      total_shortage_quantity: rows.reduce((sum, row) => sum + row.shortage_quantity, 0),
+      total_suggested_reorder_quantity: rows.reduce((sum, row) => sum + row.suggested_reorder_quantity, 0)
+    };
+
+    return {
+      summary,
+      rows,
       generated_at: new Date().toISOString()
     };
   }
