@@ -175,6 +175,20 @@ type StockLossReportFilters = {
   includeDeleted?: boolean;
 };
 
+type StockValuationReportFilters = {
+  branchId?: string;
+  itemId?: string;
+  includeDeleted?: boolean;
+};
+
+type FastSlowMoverReportFilters = {
+  branchId?: string;
+  from?: string;
+  to?: string;
+  minMovements?: number;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -3972,6 +3986,149 @@ export class DistributionService {
     return {
       summary,
       rows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async stockValuationReport(filters: StockValuationReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    const rows = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true, cost_price: true } }
+      },
+      orderBy: [{ branch_id: "asc" }, { item_id: "asc" }],
+      take: 500
+    });
+
+    const reportRows = rows.map((row) => {
+      const quantityOnHand = row.quantity_on_hand ?? 0;
+      const unitCost = Number(row.item.cost_price ?? 0);
+      const valuation = Number((quantityOnHand * unitCost).toFixed(2));
+      return {
+        branch_id: row.branch_id,
+        branch_name: row.branch?.name ?? null,
+        item_id: row.item_id,
+        item_name: row.item.name,
+        sku: row.item.sku,
+        quantity_on_hand: quantityOnHand,
+        unit_cost: unitCost,
+        stock_valuation: valuation
+      };
+    });
+
+    const summary = {
+      total_rows: reportRows.length,
+      total_stock_valuation: Number(reportRows.reduce((sum, row) => sum + row.stock_valuation, 0).toFixed(2)),
+      by_branch: reportRows.reduce<Record<string, number>>((acc, row) => {
+        const key = row.branch_name ?? row.branch_id;
+        acc[key] = Number(((acc[key] ?? 0) + row.stock_valuation).toFixed(2));
+        return acc;
+      }, {})
+    };
+
+    return {
+      summary,
+      rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async fastSlowMoverReport(filters: FastSlowMoverReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+    const minMovements = this.parseInteger(filters.minMovements, "minMovements", 1);
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (minMovements < 1) {
+      throw new BadRequestException("minMovements must be at least 1");
+    }
+
+    const rows = await this.prisma.inventoryMovement.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(fromDate || toDate
+          ? {
+              occurred_at: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(branchId
+          ? {
+              OR: [{ branch_id: branchId }, { source_branch_id: branchId }, { destination_branch_id: branchId }]
+            }
+          : {}),
+        ...(user.branchId
+          ? {
+              OR: [
+                { branch_id: user.branchId },
+                { source_branch_id: user.branchId },
+                { destination_branch_id: user.branchId }
+              ]
+            }
+          : {})
+      },
+      include: {
+        item: { select: { id: true, name: true, sku: true } }
+      },
+      take: 2000
+    });
+
+    const movementMap = new Map<
+      string,
+      { item_id: string; item_name: string; sku: string; movement_count: number; total_quantity: number }
+    >();
+
+    for (const row of rows) {
+      const existing = movementMap.get(row.item_id) ?? {
+        item_id: row.item_id,
+        item_name: row.item.name,
+        sku: row.item.sku,
+        movement_count: 0,
+        total_quantity: 0
+      };
+      existing.movement_count += 1;
+      existing.total_quantity += row.quantity;
+      movementMap.set(row.item_id, existing);
+    }
+
+    const aggregated = [...movementMap.values()].filter((row) => row.movement_count >= minMovements);
+    const sorted = aggregated.sort((a, b) => b.movement_count - a.movement_count || b.total_quantity - a.total_quantity);
+    const fastMovers = sorted.slice(0, 20);
+    const slowMovers = [...sorted].reverse().slice(0, 20);
+
+    return {
+      summary: {
+        item_count: aggregated.length,
+        total_movements: aggregated.reduce((sum, row) => sum + row.movement_count, 0),
+        total_quantity_moved: aggregated.reduce((sum, row) => sum + row.total_quantity, 0)
+      },
+      fast_movers: fastMovers,
+      slow_movers: slowMovers,
       generated_at: new Date().toISOString()
     };
   }

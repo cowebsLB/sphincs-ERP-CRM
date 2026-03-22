@@ -2307,6 +2307,101 @@ describe("DistributionService", () => {
     expect(result.summary.by_source.ADJUSTMENT_DECREASE).toBe(4);
   });
 
+  it("builds stock-valuation report with branch totals", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: 10,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A", cost_price: 12.5 }
+      },
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-2",
+        quantity_on_hand: 4,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-2", name: "Widget B", sku: "W-B", cost_price: 5 }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.stockValuationReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_rows: 2,
+        total_stock_valuation: 145
+      })
+    );
+    expect(result.summary.by_branch.Main).toBe(145);
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        item_name: "Widget A",
+        stock_valuation: 125
+      })
+    );
+  });
+
+  it("builds fast/slow mover report from movement aggregates", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryMovement.findMany.mockResolvedValue([
+      {
+        item_id: "item-1",
+        quantity: 10,
+        item: { id: "item-1", name: "Widget A", sku: "W-A" }
+      },
+      {
+        item_id: "item-1",
+        quantity: 4,
+        item: { id: "item-1", name: "Widget A", sku: "W-A" }
+      },
+      {
+        item_id: "item-2",
+        quantity: 3,
+        item: { id: "item-2", name: "Widget B", sku: "W-B" }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.fastSlowMoverReport(
+      {
+        minMovements: 1,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        item_count: 2,
+        total_movements: 3,
+        total_quantity_moved: 17
+      })
+    );
+    expect(result.fast_movers[0]).toEqual(
+      expect.objectContaining({
+        item_id: "item-1",
+        movement_count: 2,
+        total_quantity: 14
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

@@ -866,4 +866,44 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/stock-valuation")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  stockValuationReport(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.stockValuationReport(
+      {
+        branchId,
+        itemId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Get("reports/fast-slow-movers")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  fastSlowMoverReport(
+    @Query("branchId") branchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("minMovements") minMovements?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.fastSlowMoverReport(
+      {
+        branchId,
+        from,
+        to,
+        minMovements: minMovements ? Number(minMovements) : undefined,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

@@ -70,6 +70,8 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/adjustments`
 - `GET /api/v1/distribution/reports/receipts`
 - `GET /api/v1/distribution/reports/stock-loss`
+- `GET /api/v1/distribution/reports/stock-valuation`
+- `GET /api/v1/distribution/reports/fast-slow-movers`
 
 ## Purpose
 
@@ -826,3 +828,38 @@ Behavior:
   - total events
   - total lost quantity
   - grouped totals by loss source
+
+### `GET /api/v1/distribution/reports/stock-valuation` (V1.16.29)
+
+Supported query parameters:
+
+- `branchId`
+- `itemId`
+- `includeDeleted`
+
+Behavior:
+
+- Returns stock valuation rows by branch/item.
+- Uses `quantity_on_hand * cost_price` for per-row valuation.
+- Includes summary totals:
+  - total stock valuation
+  - valuation grouped by branch
+
+### `GET /api/v1/distribution/reports/fast-slow-movers` (V1.16.29)
+
+Supported query parameters:
+
+- `branchId`
+- `from`
+- `to`
+- `minMovements`
+- `includeDeleted`
+
+Behavior:
+
+- Aggregates movement volume per item.
+- Returns ranked `fast_movers` and `slow_movers`.
+- Includes summary:
+  - item count
+  - total movement count
+  - total quantity moved

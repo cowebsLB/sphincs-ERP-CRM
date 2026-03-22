@@ -1,5 +1,33 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Valuation + Mover Velocity Reports (V1.16.29)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoints:
+  - `GET /api/v1/distribution/reports/stock-valuation`
+  - `GET /api/v1/distribution/reports/fast-slow-movers`
+- Added stock valuation report with:
+  - per-item valuation rows (`quantity_on_hand * cost_price`)
+  - branch-level valuation grouping
+  - overall valuation totals
+- Added fast/slow mover report with:
+  - movement aggregation by item
+  - ranked fast movers and slow movers
+  - configurable minimum movement threshold (`minMovements`)
+- Added unit coverage for valuation and mover report calculations.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `109/109` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This expands distribution analytics toward business-level monitoring (inventory value and movement velocity) beyond operational transaction reporting.
+
 ## Task: Distribution Receipts + Stock Loss Reports (V1.16.28)
 
 Date: 2026-03-22

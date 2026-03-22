@@ -7,7 +7,30 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.28` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.29` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.29 - 2026-03-22
+
+### Added
+
+- Distribution report endpoints:
+  - `GET /api/v1/distribution/reports/stock-valuation`
+  - `GET /api/v1/distribution/reports/fast-slow-movers`
+- Stock valuation report includes:
+  - per-item valuation using on-hand quantity and cost price
+  - branch valuation totals
+  - overall valuation summary
+- Fast/slow mover report includes:
+  - item-level movement aggregation
+  - fast movers ranking
+  - slow movers ranking
+  - minimum movement threshold support
+- Unit coverage for both reporting methods.
+
+### Changed
+
+- Distribution reporting surface now includes valuation and mover-velocity analytics.
+- System fallback version updated to `Beta V1.16.29`.
 
 ## Beta V1.16.28 - 2026-03-22
 
