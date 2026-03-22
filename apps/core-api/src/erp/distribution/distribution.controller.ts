@@ -928,4 +928,26 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/operations-exceptions")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  operationsExceptionsReport(
+    @Query("branchId") branchId?: string,
+    @Query("receiptOverdueDays") receiptOverdueDays?: string,
+    @Query("transferOverdueDays") transferOverdueDays?: string,
+    @Query("dispatchOverdueDays") dispatchOverdueDays?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.operationsExceptionsReport(
+      {
+        branchId,
+        receiptOverdueDays: receiptOverdueDays ? Number(receiptOverdueDays) : undefined,
+        transferOverdueDays: transferOverdueDays ? Number(transferOverdueDays) : undefined,
+        dispatchOverdueDays: dispatchOverdueDays ? Number(dispatchOverdueDays) : undefined,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

@@ -7,7 +7,30 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.30` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.31` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.31 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/operations-exceptions`
+- Operations exceptions report includes:
+  - overdue receipt count
+  - overdue transfer count
+  - overdue dispatch count
+  - negative stock risk count
+  - exception detail lists per category
+- Configurable overdue thresholds:
+  - `receiptOverdueDays`
+  - `transferOverdueDays`
+  - `dispatchOverdueDays`
+- Unit coverage for operations exception summary aggregation.
+
+### Changed
+
+- Distribution reporting now includes consolidated exception monitoring for day-to-day operational triage.
+- System fallback version updated to `Beta V1.16.31`.
 
 ## Beta V1.16.30 - 2026-03-22
 
@@ -1022,3 +1045,4 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
   - user-scoped data isolation
   - soft delete and restore
   - deployable frontend and backend documentation
+

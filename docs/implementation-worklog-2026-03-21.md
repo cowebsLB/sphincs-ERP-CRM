@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Operations Exceptions Report (V1.16.31)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/operations-exceptions`
+- Added exception monitoring output for:
+  - overdue receipts
+  - overdue transfers
+  - overdue dispatches
+  - negative stock risks
+- Added configurable overdue thresholds:
+  - `receiptOverdueDays`
+  - `transferOverdueDays`
+  - `dispatchOverdueDays`
+- Added summary payload with per-category counts and total exceptions.
+- Added unit coverage for exception summary calculations.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `111/111` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This report provides a dedicated “what needs attention now” operations lens beyond standard KPI reports.
+
 ## Task: Distribution Supplier Fulfillment Report (V1.16.30)
 
 Date: 2026-03-22

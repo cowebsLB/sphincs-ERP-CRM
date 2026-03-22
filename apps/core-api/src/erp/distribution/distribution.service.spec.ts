@@ -2453,6 +2453,68 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds operations exceptions report with overdue and negative-stock counts", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.goodsReceipt.findMany.mockResolvedValue([
+      {
+        id: "gr-overdue",
+        status: "PARTIAL",
+        branch: { id: BRANCH_1, name: "Main" },
+        supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" }
+      }
+    ]);
+    prismaMock.stockTransfer.findMany.mockResolvedValue([
+      {
+        id: "tr-overdue",
+        status: "APPROVED",
+        source_branch: { id: BRANCH_1, name: "Main" },
+        destination_branch: { id: BRANCH_2, name: "North" }
+      }
+    ]);
+    prismaMock.stockDispatch.findMany.mockResolvedValue([
+      {
+        id: "disp-overdue",
+        status: "READY",
+        branch: { id: BRANCH_1, name: "Main" }
+      }
+    ]);
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        id: "stk-neg",
+        branch_id: BRANCH_1,
+        item_id: "item-1",
+        quantity_on_hand: -2,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "item-1", name: "Widget A", sku: "W-A" }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.operationsExceptionsReport(
+      {
+        receiptOverdueDays: 2,
+        transferOverdueDays: 2,
+        dispatchOverdueDays: 2,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        overdue_receipts: 1,
+        overdue_transfers: 1,
+        overdue_dispatches: 1,
+        negative_stock_items: 1,
+        total_exceptions: 4
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

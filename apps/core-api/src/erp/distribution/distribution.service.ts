@@ -197,6 +197,14 @@ type SupplierFulfillmentReportFilters = {
   includeDeleted?: boolean;
 };
 
+type OperationsExceptionsReportFilters = {
+  branchId?: string;
+  receiptOverdueDays?: number;
+  transferOverdueDays?: number;
+  dispatchOverdueDays?: number;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -4240,6 +4248,112 @@ export class DistributionService {
     return {
       summary,
       rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async operationsExceptionsReport(filters: OperationsExceptionsReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const receiptOverdueDays = this.parseInteger(filters.receiptOverdueDays, "receiptOverdueDays", 2);
+    const transferOverdueDays = this.parseInteger(filters.transferOverdueDays, "transferOverdueDays", 2);
+    const dispatchOverdueDays = this.parseInteger(filters.dispatchOverdueDays, "dispatchOverdueDays", 2);
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (receiptOverdueDays < 1 || transferOverdueDays < 1 || dispatchOverdueDays < 1) {
+      throw new BadRequestException("overdue day thresholds must be at least 1");
+    }
+
+    const now = new Date();
+    const receiptCutoff = new Date(now.getTime() - receiptOverdueDays * 24 * 60 * 60 * 1000);
+    const transferCutoff = new Date(now.getTime() - transferOverdueDays * 24 * 60 * 60 * 1000);
+    const dispatchCutoff = new Date(now.getTime() - dispatchOverdueDays * 24 * 60 * 60 * 1000);
+
+    const overdueReceipts = await this.prisma.goodsReceipt.findMany({
+      where: {
+        organization_id: user.organizationId,
+        status: { in: [GoodsReceiptStatus.DRAFT, GoodsReceiptStatus.PARTIAL] },
+        created_at: { lte: receiptCutoff },
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true, supplier_code: true } }
+      },
+      take: 300
+    });
+
+    const overdueTransfers = await this.prisma.stockTransfer.findMany({
+      where: {
+        organization_id: user.organizationId,
+        status: { in: [StockTransferStatus.REQUESTED, StockTransferStatus.APPROVED, StockTransferStatus.DISPATCHED] },
+        created_date: { lte: transferCutoff },
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId
+          ? {
+              OR: [{ source_branch_id: branchId }, { destination_branch_id: branchId }]
+            }
+          : {}),
+        ...(user.branchId
+          ? {
+              OR: [{ source_branch_id: user.branchId }, { destination_branch_id: user.branchId }]
+            }
+          : {})
+      },
+      include: {
+        source_branch: { select: { id: true, name: true } },
+        destination_branch: { select: { id: true, name: true } }
+      },
+      take: 300
+    });
+
+    const overdueDispatches = await this.prisma.stockDispatch.findMany({
+      where: {
+        organization_id: user.organizationId,
+        status: { in: [DispatchStatus.READY, DispatchStatus.PACKED, DispatchStatus.DISPATCHED] },
+        created_at: { lte: dispatchCutoff },
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } }
+      },
+      take: 300
+    });
+
+    const negativeStockRows = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        quantity_on_hand: { lt: 0 },
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } }
+      },
+      take: 300
+    });
+
+    return {
+      summary: {
+        overdue_receipts: overdueReceipts.length,
+        overdue_transfers: overdueTransfers.length,
+        overdue_dispatches: overdueDispatches.length,
+        negative_stock_items: negativeStockRows.length,
+        total_exceptions:
+          overdueReceipts.length + overdueTransfers.length + overdueDispatches.length + negativeStockRows.length
+      },
+      overdue_receipts: overdueReceipts,
+      overdue_transfers: overdueTransfers,
+      overdue_dispatches: overdueDispatches,
+      negative_stock_risks: negativeStockRows,
       generated_at: new Date().toISOString()
     };
   }

@@ -73,6 +73,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/stock-valuation`
 - `GET /api/v1/distribution/reports/fast-slow-movers`
 - `GET /api/v1/distribution/reports/supplier-fulfillment`
+- `GET /api/v1/distribution/reports/operations-exceptions`
 
 ## Purpose
 
@@ -886,3 +887,22 @@ Behavior:
   - `remaining_qty_total`
   - `fulfillment_rate_pct`
 - Returns suppliers ranked by fulfillment rate.
+
+### `GET /api/v1/distribution/reports/operations-exceptions` (V1.16.31)
+
+Supported query parameters:
+
+- `branchId`
+- `receiptOverdueDays`
+- `transferOverdueDays`
+- `dispatchOverdueDays`
+- `includeDeleted`
+
+Behavior:
+
+- Returns consolidated exception categories:
+  - overdue receipts
+  - overdue transfers
+  - overdue dispatches
+  - negative stock risks
+- Includes summary totals for each category plus combined total exceptions.
