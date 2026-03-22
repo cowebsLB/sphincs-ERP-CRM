@@ -528,6 +528,18 @@ describe("DistributionService", () => {
         })
       })
     );
+    expect(prismaMock.inventoryStock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity_on_hand: -5,
+          available_quantity: -5,
+          damaged_quantity: 0
+        })
+      })
+    );
     expect(result.id).toBe("m2");
   });
 

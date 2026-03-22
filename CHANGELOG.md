@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.39` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.40` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.40 - 2026-03-22
+
+### Changed
+
+- Inventory movement creation now auto-syncs inventory stock snapshots so movement log and current stock records stay connected.
+- Movement-driven stock sync behavior includes:
+  - branch resolution by movement context (`branch_id`, `source_branch_id`, `destination_branch_id`)
+  - on-hand and available quantity deltas for inbound/outbound movement types
+  - damaged quantity deltas for `DAMAGED_WRITE_OFF`
+  - create-or-update behavior for missing/existing `inventory_stocks` rows
+  - `last_movement_at` updates from movement occurrence time
+- Unit coverage updated to assert stock snapshot sync on movement creation.
+- System fallback version updated to `Beta V1.16.40`.
 
 ## Beta V1.16.39 - 2026-03-22
 

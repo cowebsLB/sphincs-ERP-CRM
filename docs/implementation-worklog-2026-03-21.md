@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Movement-to-Stock Auto Sync (V1.16.40)
+
+Date: 2026-03-22
+
+### Scope
+
+- Extended `createMovement` flow to automatically update `inventory_stocks` after posting movement records.
+- Added movement stock-sync logic for:
+  - target branch resolution based on movement type and branch fields
+  - stock deltas for inbound/outbound movement types
+  - damaged quantity increment behavior for `DAMAGED_WRITE_OFF`
+  - create-or-update inventory stock snapshot behavior
+  - `last_movement_at` synchronization from movement timestamp
+- Added unit assertion coverage that movement creation updates inventory stock snapshot rows.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `124/124` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This connects inventory movement logs to current stock records directly, reducing drift between transaction history and branch stock state.
+
 ## Task: Branch Stock Summary Report (V1.16.39)
 
 Date: 2026-03-22

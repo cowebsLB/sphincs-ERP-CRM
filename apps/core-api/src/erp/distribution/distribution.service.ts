@@ -1101,6 +1101,131 @@ export class DistributionService {
     });
   }
 
+  private movementBranchForStock(
+    movementType: DistributionMovementType,
+    branchId: string | null,
+    sourceBranchId: string | null,
+    destinationBranchId: string | null
+  ): string | null {
+    if (movementType === DistributionMovementType.TRANSFER_OUT || movementType === DistributionMovementType.RETURN_OUT) {
+      return sourceBranchId ?? branchId;
+    }
+    if (movementType === DistributionMovementType.TRANSFER_IN || movementType === DistributionMovementType.RETURN_IN) {
+      return destinationBranchId ?? branchId;
+    }
+    return branchId;
+  }
+
+  private movementStockDeltas(movementType: DistributionMovementType, quantity: number) {
+    const increaseTypes: DistributionMovementType[] = [
+      DistributionMovementType.PURCHASE_RECEIPT,
+      DistributionMovementType.TRANSFER_IN,
+      DistributionMovementType.ADJUSTMENT_INCREASE,
+      DistributionMovementType.RETURN_IN
+    ];
+    const decreaseTypes: DistributionMovementType[] = [
+      DistributionMovementType.TRANSFER_OUT,
+      DistributionMovementType.ADJUSTMENT_DECREASE,
+      DistributionMovementType.DISPATCH_ISSUE,
+      DistributionMovementType.RETURN_OUT,
+      DistributionMovementType.DAMAGED_WRITE_OFF
+    ];
+    if (increaseTypes.includes(movementType)) {
+      return { onHandDelta: quantity, availableDelta: quantity, damagedDelta: 0 };
+    }
+    if (movementType === DistributionMovementType.DAMAGED_WRITE_OFF) {
+      return { onHandDelta: -quantity, availableDelta: -quantity, damagedDelta: quantity };
+    }
+    if (decreaseTypes.includes(movementType)) {
+      return { onHandDelta: -quantity, availableDelta: -quantity, damagedDelta: 0 };
+    }
+    return { onHandDelta: 0, availableDelta: 0, damagedDelta: 0 };
+  }
+
+  private async applyMovementToInventoryStock(movement: {
+    organization_id: string;
+    movement_type: DistributionMovementType;
+    quantity: number;
+    item_id: string;
+    branch_id: string | null;
+    source_branch_id: string | null;
+    destination_branch_id: string | null;
+    occurred_at: Date;
+  }) {
+    const targetBranchId = this.movementBranchForStock(
+      movement.movement_type,
+      movement.branch_id,
+      movement.source_branch_id,
+      movement.destination_branch_id
+    );
+    if (!targetBranchId) {
+      return;
+    }
+
+    const deltas = this.movementStockDeltas(movement.movement_type, movement.quantity);
+    if (deltas.onHandDelta === 0 && deltas.availableDelta === 0 && deltas.damagedDelta === 0) {
+      return;
+    }
+
+    const current = await this.prisma.inventoryStock.findFirst({
+      where: {
+        organization_id: movement.organization_id,
+        branch_id: targetBranchId,
+        item_id: movement.item_id,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        quantity_on_hand: true,
+        reserved_quantity: true,
+        available_quantity: true,
+        in_transit_quantity: true,
+        incoming_quantity: true,
+        damaged_quantity: true
+      }
+    });
+
+    const currentOnHand = current?.quantity_on_hand ?? 0;
+    const currentReserved = current?.reserved_quantity ?? 0;
+    const currentAvailable = current?.available_quantity ?? Math.max(currentOnHand - currentReserved, 0);
+    const currentInTransit = current?.in_transit_quantity ?? 0;
+    const currentIncoming = current?.incoming_quantity ?? 0;
+    const currentDamaged = current?.damaged_quantity ?? 0;
+
+    const nextOnHand = currentOnHand + deltas.onHandDelta;
+    const nextAvailable = currentAvailable + deltas.availableDelta;
+    const nextDamaged = currentDamaged + deltas.damagedDelta;
+
+    if (current) {
+      await this.prisma.inventoryStock.update({
+        where: { id: current.id },
+        data: {
+          quantity_on_hand: nextOnHand,
+          available_quantity: nextAvailable,
+          damaged_quantity: nextDamaged,
+          last_movement_at: movement.occurred_at
+        }
+      });
+      return;
+    }
+
+    await this.prisma.inventoryStock.create({
+      data: {
+        organization_id: movement.organization_id,
+        branch_id: targetBranchId,
+        item_id: movement.item_id,
+        quantity_on_hand: nextOnHand,
+        reserved_quantity: currentReserved,
+        available_quantity: nextAvailable,
+        in_transit_quantity: currentInTransit,
+        incoming_quantity: currentIncoming,
+        damaged_quantity: nextDamaged,
+        stock_valuation: 0,
+        last_movement_at: movement.occurred_at
+      }
+    });
+  }
+
   async createMovement(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
 
@@ -1211,6 +1336,17 @@ export class DistributionService {
           }
         }
       }
+    });
+
+    await this.applyMovementToInventoryStock({
+      organization_id: user.organizationId,
+      movement_type: movementType,
+      quantity,
+      item_id: itemId,
+      branch_id: branchId,
+      source_branch_id: sourceBranchId,
+      destination_branch_id: destinationBranchId,
+      occurred_at: occurredAt
     });
 
     return created;
