@@ -305,6 +305,122 @@ export class DistributionController {
     return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "RETURN" }, req?.user);
   }
 
+  @Get("dispatches/:dispatchId/pick-jobs")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listDispatchPickJobs(
+    @Param("dispatchId") dispatchId: string,
+    @Query("status") status?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listDispatchPickJobs(
+      dispatchId,
+      {
+        status,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("dispatches/:dispatchId/pick-jobs")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createDispatchPickJob(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.createDispatchPickJob(dispatchId, body, req?.user);
+  }
+
+  @Patch("pick-jobs/:pickJobId/start")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  startDispatchPickJob(
+    @Param("pickJobId") pickJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPickJob(pickJobId, { ...body, action: "START" }, req?.user);
+  }
+
+  @Patch("pick-jobs/:pickJobId/complete")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  completeDispatchPickJob(
+    @Param("pickJobId") pickJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPickJob(pickJobId, { ...body, action: "COMPLETE" }, req?.user);
+  }
+
+  @Patch("pick-jobs/:pickJobId/cancel")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  cancelDispatchPickJob(
+    @Param("pickJobId") pickJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPickJob(pickJobId, { ...body, action: "CANCEL" }, req?.user);
+  }
+
+  @Get("dispatches/:dispatchId/pack-jobs")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listDispatchPackJobs(
+    @Param("dispatchId") dispatchId: string,
+    @Query("status") status?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listDispatchPackJobs(
+      dispatchId,
+      {
+        status,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("dispatches/:dispatchId/pack-jobs")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createDispatchPackJob(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.createDispatchPackJob(dispatchId, body, req?.user);
+  }
+
+  @Patch("pack-jobs/:packJobId/start")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  startDispatchPackJob(
+    @Param("packJobId") packJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPackJob(packJobId, { ...body, action: "START" }, req?.user);
+  }
+
+  @Patch("pack-jobs/:packJobId/complete")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  completeDispatchPackJob(
+    @Param("packJobId") packJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPackJob(packJobId, { ...body, action: "COMPLETE" }, req?.user);
+  }
+
+  @Patch("pack-jobs/:packJobId/cancel")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  cancelDispatchPackJob(
+    @Param("packJobId") packJobId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatchPackJob(packJobId, { ...body, action: "CANCEL" }, req?.user);
+  }
+
   @Get("returns")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listReturns(
@@ -397,6 +513,62 @@ export class DistributionController {
   @Roles(...DISTRIBUTION_WRITE_ROLES)
   createWarehouseLocation(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createWarehouseLocation(body, req?.user);
+  }
+
+  @Get("lots")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listLots(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("supplierId") supplierId?: string,
+    @Query("status") status?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listLots(
+      {
+        branchId,
+        itemId,
+        supplierId,
+        status,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("lots")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createLot(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createLot(body, req?.user);
+  }
+
+  @Get("lot-balances")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listLotBalances(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("lotId") lotId?: string,
+    @Query("locationId") locationId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listLotBalances(
+      {
+        branchId,
+        itemId,
+        lotId,
+        locationId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("lot-balances")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createLotBalance(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createLotBalance(body, req?.user);
   }
 
   @Get("reservations")

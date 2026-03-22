@@ -1,5 +1,42 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Bulk Routing Expansion (Lots + Pick/Pack) (V1.16.25)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added lots APIs:
+  - `GET /api/v1/distribution/lots`
+  - `POST /api/v1/distribution/lots`
+- Added lot-balance APIs:
+  - `GET /api/v1/distribution/lot-balances`
+  - `POST /api/v1/distribution/lot-balances`
+- Added dispatch pick/pack workflow APIs:
+  - `GET/POST /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+  - `PATCH /api/v1/distribution/pick-jobs/:pickJobId/start|complete|cancel`
+  - `GET/POST /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+  - `PATCH /api/v1/distribution/pack-jobs/:packJobId/start|complete|cancel`
+- Added service-level validation for:
+  - dispatch scope
+  - lot scope
+  - dispatch-line to job-line integrity
+  - branch-safe lot/location linkage
+- Added unit tests for:
+  - lot listing/creation
+  - lot-balance creation
+  - pick-job creation
+  - pack-job transition
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `102/102` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This batch was delivered as one integrated routing pass on `main` to reduce repeated deployment wait cycles.
+
 ## Task: Distribution Warehouse Location APIs (V1.16.24)
 
 Date: 2026-03-22

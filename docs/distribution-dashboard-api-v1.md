@@ -37,6 +37,20 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/returns/:returnId/cancel`
 - `GET /api/v1/distribution/warehouse-locations`
 - `POST /api/v1/distribution/warehouse-locations`
+- `GET /api/v1/distribution/lots`
+- `POST /api/v1/distribution/lots`
+- `GET /api/v1/distribution/lot-balances`
+- `POST /api/v1/distribution/lot-balances`
+- `GET /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+- `POST /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+- `PATCH /api/v1/distribution/pick-jobs/:pickJobId/start`
+- `PATCH /api/v1/distribution/pick-jobs/:pickJobId/complete`
+- `PATCH /api/v1/distribution/pick-jobs/:pickJobId/cancel`
+- `GET /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+- `POST /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+- `PATCH /api/v1/distribution/pack-jobs/:packJobId/start`
+- `PATCH /api/v1/distribution/pack-jobs/:packJobId/complete`
+- `PATCH /api/v1/distribution/pack-jobs/:packJobId/cancel`
 - `GET /api/v1/distribution/reservations`
 - `POST /api/v1/distribution/reservations`
 - `GET /api/v1/distribution/reorder-rules`
@@ -161,6 +175,93 @@ Validation includes:
 
 - parent location must belong to the same branch
 - branch-level unique `code` enforcement
+
+## Lot API Notes (V1.16.25)
+
+### `GET /api/v1/distribution/lots`
+
+Supported query parameters:
+
+- `branchId`
+- `itemId`
+- `supplierId`
+- `status`
+- `includeDeleted`
+
+### `POST /api/v1/distribution/lots`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `item_id`
+
+Optional:
+
+- `supplier_id`
+- `goods_receipt_id` (same-branch validation)
+- `batch_number`
+- `serial_number`
+- `manufacture_date`
+- `expiry_date`
+- `quantity_received`
+- `quantity_available`
+- `status`
+- `notes`
+
+Validation includes:
+
+- `quantity_available <= quantity_received`
+- organization and branch scope checks for related entities
+
+## Lot Balance API Notes (V1.16.25)
+
+### `GET /api/v1/distribution/lot-balances`
+
+Supported query parameters:
+
+- `branchId`
+- `itemId`
+- `lotId`
+- `locationId`
+- `includeDeleted`
+
+### `POST /api/v1/distribution/lot-balances`
+
+Required:
+
+- `branch_id` (or branch-scoped user default)
+- `item_id`
+- `lot_id`
+
+Optional:
+
+- `location_id`
+- `quantity_on_hand`
+- `reserved_quantity`
+- `available_quantity`
+- `damaged_quantity`
+- `in_transit_quantity`
+- `last_movement_at`
+
+Validation includes:
+
+- lot and location must belong to the same branch as the balance record
+- `item_id` must match the referenced lot item
+
+## Pick/Pack API Notes (V1.16.25)
+
+- Pick jobs:
+  - `GET/POST /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+  - `PATCH /api/v1/distribution/pick-jobs/:pickJobId/start|complete|cancel`
+- Pack jobs:
+  - `GET/POST /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+  - `PATCH /api/v1/distribution/pack-jobs/:packJobId/start|complete|cancel`
+
+Behavior:
+
+- Dispatch scope is validated before list/create operations.
+- Job line items must map to dispatch lines within the same dispatch.
+- Job transitions enforce `DRAFT -> IN_PROGRESS -> COMPLETED` with cancellation support.
 
 ## Next API Steps
 

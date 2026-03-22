@@ -7,7 +7,34 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.24` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.25` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.25 - 2026-03-22
+
+### Added
+
+- Distribution lots and lot-balance APIs:
+  - `GET /api/v1/distribution/lots`
+  - `POST /api/v1/distribution/lots`
+  - `GET /api/v1/distribution/lot-balances`
+  - `POST /api/v1/distribution/lot-balances`
+- Distribution dispatch pick/pack workflow APIs:
+  - `GET /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+  - `POST /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
+  - `PATCH /api/v1/distribution/pick-jobs/:pickJobId/start`
+  - `PATCH /api/v1/distribution/pick-jobs/:pickJobId/complete`
+  - `PATCH /api/v1/distribution/pick-jobs/:pickJobId/cancel`
+  - `GET /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+  - `POST /api/v1/distribution/dispatches/:dispatchId/pack-jobs`
+  - `PATCH /api/v1/distribution/pack-jobs/:packJobId/start`
+  - `PATCH /api/v1/distribution/pack-jobs/:packJobId/complete`
+  - `PATCH /api/v1/distribution/pack-jobs/:packJobId/cancel`
+- Additional distribution unit coverage for lots, lot balances, and dispatch pick/pack flows.
+
+### Changed
+
+- Distribution service now includes validation helpers for inventory-lot and dispatch scope enforcement.
+- System fallback version updated to `Beta V1.16.25`.
 
 ## Beta V1.16.24 - 2026-03-22
 

@@ -82,6 +82,27 @@ type WarehouseLocationListFilters = {
   includeDeleted?: boolean;
 };
 
+type LotListFilters = {
+  branchId?: string;
+  itemId?: string;
+  supplierId?: string;
+  status?: string;
+  includeDeleted?: boolean;
+};
+
+type LotBalanceListFilters = {
+  branchId?: string;
+  itemId?: string;
+  lotId?: string;
+  locationId?: string;
+  includeDeleted?: boolean;
+};
+
+type DispatchJobListFilters = {
+  status?: string;
+  includeDeleted?: boolean;
+};
+
 type ReorderRuleListFilters = {
   branchId?: string;
   itemId?: string;
@@ -142,6 +163,7 @@ type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
 type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
+type DispatchJobTransitionAction = "START" | "COMPLETE" | "CANCEL";
 
 @Injectable()
 export class DistributionService {
@@ -440,6 +462,30 @@ export class DistributionService {
     return text as InventoryReservationStatus;
   }
 
+  private parseOptionalGenericStatus(value: unknown): string | undefined {
+    const text = String(value ?? "").trim().toUpperCase();
+    return text || undefined;
+  }
+
+  private parseDispatchJobTransitionAction(value: unknown): DispatchJobTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      throw new BadRequestException("action is required");
+    }
+    if (!["START", "COMPLETE", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: START, COMPLETE, CANCEL");
+    }
+    return text as DispatchJobTransitionAction;
+  }
+
+  private parseLotQuantity(value: unknown, fieldName: string, fallback = 0): number {
+    const parsed = this.parseInteger(value, fieldName, fallback);
+    if (parsed < 0) {
+      throw new BadRequestException(`${fieldName} cannot be negative`);
+    }
+    return parsed;
+  }
+
   private parseReturnTransitionAction(value: unknown): ReturnTransitionAction {
     const text = String(value ?? "").trim().toUpperCase();
     if (!text) {
@@ -579,6 +625,48 @@ export class DistributionService {
       throw new BadRequestException(`${fieldName} must reference your branch scope`);
     }
     return location;
+  }
+
+  private async validateInventoryLotScope(lotId: string | null, fieldName: string, user: UserScope) {
+    if (!lotId) {
+      return null;
+    }
+    const lot = await this.prisma.inventoryLot.findFirst({
+      where: {
+        id: lotId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      }
+    });
+    if (!lot) {
+      throw new BadRequestException(`${fieldName} must reference an inventory lot in your organization`);
+    }
+    if (user.branchId && lot.branch_id !== user.branchId) {
+      throw new BadRequestException(`${fieldName} must reference your branch scope`);
+    }
+    return lot;
+  }
+
+  private async validateDispatchScope(dispatchId: string, user: UserScope) {
+    const dispatch = await this.prisma.stockDispatch.findFirst({
+      where: {
+        id: dispatchId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!dispatch) {
+      throw new NotFoundException("Dispatch not found");
+    }
+    if (user.branchId && dispatch.branch_id !== user.branchId) {
+      throw new BadRequestException("Dispatch is outside your branch scope");
+    }
+    return dispatch;
   }
 
   private async validateItemScope(itemId: string, user: UserScope) {
@@ -838,6 +926,62 @@ export class DistributionService {
         condition: this.parseOptionalString(row.condition),
         restock: this.parseBoolean(row.restock, true),
         damaged: this.parseBoolean(row.damaged, false)
+      };
+    });
+  }
+
+  private parsePickJobLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const stockDispatchLineId = this.parseRequiredUuid(
+        row.stock_dispatch_line_id ?? row.stockDispatchLineId,
+        `line_items[${index}].stock_dispatch_line_id`
+      );
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const requestedQty = this.parseLotQuantity(
+        row.requested_qty ?? row.requestedQty,
+        `line_items[${index}].requested_qty`,
+        0
+      );
+      const pickedQty = this.parseLotQuantity(row.picked_qty ?? row.pickedQty, `line_items[${index}].picked_qty`, 0);
+      if (pickedQty > requestedQty) {
+        throw new BadRequestException(`line_items[${index}].picked_qty cannot exceed requested_qty`);
+      }
+      return {
+        stock_dispatch_line_id: stockDispatchLineId,
+        item_id: itemId,
+        requested_qty: requestedQty,
+        picked_qty: pickedQty,
+        failed_reason: this.parseOptionalString(row.failed_reason ?? row.failedReason)
+      };
+    });
+  }
+
+  private parsePackJobLineItems(value: unknown) {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException("line_items must contain at least one item");
+    }
+    return value.map((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        throw new BadRequestException(`line_items[${index}] must be an object`);
+      }
+      const row = raw as Record<string, unknown>;
+      const stockDispatchLineId = this.parseRequiredUuid(
+        row.stock_dispatch_line_id ?? row.stockDispatchLineId,
+        `line_items[${index}].stock_dispatch_line_id`
+      );
+      const itemId = this.parseRequiredUuid(row.item_id ?? row.itemId, `line_items[${index}].item_id`);
+      const packedQty = this.parseLotQuantity(row.packed_qty ?? row.packedQty, `line_items[${index}].packed_qty`, 0);
+      return {
+        stock_dispatch_line_id: stockDispatchLineId,
+        item_id: itemId,
+        packed_qty: packedQty
       };
     });
   }
@@ -2067,6 +2211,522 @@ export class DistributionService {
             id: true,
             code: true,
             name: true
+          }
+        }
+      }
+    });
+  }
+
+  async listLots(filters: LotListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+    const supplierId = filters.supplierId ? this.parseRequiredUuid(filters.supplierId, "supplierId") : undefined;
+    const status = this.parseOptionalGenericStatus(filters.status);
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+
+    return this.prisma.inventoryLot.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(supplierId ? { supplier_id: supplierId } : {}),
+        ...(status ? { status } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        supplier: { select: { id: true, name: true, supplier_code: true } }
+      },
+      orderBy: [{ branch_id: "asc" }, { created_at: "desc" }],
+      take: 300
+    });
+  }
+
+  async createLot(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    await this.validateItemScope(itemId, user);
+
+    const supplierId = this.parseOptionalUuid(body.supplier_id ?? body.supplierId, "supplier_id");
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+
+    const goodsReceiptId = this.parseOptionalUuid(body.goods_receipt_id ?? body.goodsReceiptId, "goods_receipt_id");
+    if (goodsReceiptId) {
+      const receipt = await this.prisma.goodsReceipt.findFirst({
+        where: {
+          id: goodsReceiptId,
+          organization_id: user.organizationId,
+          deleted_at: null
+        }
+      });
+      if (!receipt) {
+        throw new BadRequestException("goods_receipt_id must reference a receipt in your organization");
+      }
+      if (receipt.branch_id !== branchId) {
+        throw new BadRequestException("goods_receipt_id must belong to the same branch");
+      }
+    }
+
+    const quantityReceived = this.parseLotQuantity(
+      body.quantity_received ?? body.quantityReceived,
+      "quantity_received",
+      0
+    );
+    const quantityAvailable = this.parseLotQuantity(
+      body.quantity_available ?? body.quantityAvailable,
+      "quantity_available",
+      quantityReceived
+    );
+    if (quantityAvailable > quantityReceived) {
+      throw new BadRequestException("quantity_available cannot exceed quantity_received");
+    }
+
+    return this.prisma.inventoryLot.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        supplier_id: supplierId,
+        goods_receipt_id: goodsReceiptId,
+        batch_number: this.parseOptionalString(body.batch_number ?? body.batchNumber),
+        serial_number: this.parseOptionalString(body.serial_number ?? body.serialNumber),
+        manufacture_date: this.parseDate(body.manufacture_date ?? body.manufactureDate, "manufacture_date"),
+        expiry_date: this.parseDate(body.expiry_date ?? body.expiryDate, "expiry_date"),
+        quantity_received: quantityReceived,
+        quantity_available: quantityAvailable,
+        status: this.parseOptionalGenericStatus(body.status) ?? "ACTIVE",
+        notes: this.parseOptionalString(body.notes)
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        supplier: { select: { id: true, name: true, supplier_code: true } }
+      }
+    });
+  }
+
+  async listLotBalances(filters: LotBalanceListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+    const lotId = filters.lotId ? this.parseRequiredUuid(filters.lotId, "lotId") : undefined;
+    const locationId = filters.locationId ? this.parseRequiredUuid(filters.locationId, "locationId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+    if (lotId) {
+      await this.validateInventoryLotScope(lotId, "lotId", user);
+    }
+    if (locationId) {
+      await this.validateWarehouseLocationScope(locationId, "locationId", user);
+    }
+
+    return this.prisma.inventoryLotBalance.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(lotId ? { lot_id: lotId } : {}),
+        ...(locationId ? { location_id: locationId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        lot: { select: { id: true, batch_number: true, serial_number: true, status: true } },
+        location: { select: { id: true, code: true, name: true } }
+      },
+      orderBy: [{ branch_id: "asc" }, { updated_at: "desc" }],
+      take: 500
+    });
+  }
+
+  async createLotBalance(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    await this.validateItemScope(itemId, user);
+
+    const lotId = this.parseRequiredUuid(body.lot_id ?? body.lotId, "lot_id");
+    const lot = await this.validateInventoryLotScope(lotId, "lot_id", user);
+    if (!lot || lot.branch_id !== branchId) {
+      throw new BadRequestException("lot_id must belong to the same branch");
+    }
+    if (lot.item_id !== itemId) {
+      throw new BadRequestException("item_id must match lot item");
+    }
+
+    const locationId = this.parseOptionalUuid(body.location_id ?? body.locationId, "location_id");
+    if (locationId) {
+      const location = await this.validateWarehouseLocationScope(locationId, "location_id", user);
+      if (location && location.branch_id !== branchId) {
+        throw new BadRequestException("location_id must belong to the same branch");
+      }
+    }
+
+    const quantityOnHand = this.parseLotQuantity(
+      body.quantity_on_hand ?? body.quantityOnHand,
+      "quantity_on_hand",
+      0
+    );
+    const reservedQuantity = this.parseLotQuantity(
+      body.reserved_quantity ?? body.reservedQuantity,
+      "reserved_quantity",
+      0
+    );
+    const damagedQuantity = this.parseLotQuantity(
+      body.damaged_quantity ?? body.damagedQuantity,
+      "damaged_quantity",
+      0
+    );
+    const inTransitQuantity = this.parseLotQuantity(
+      body.in_transit_quantity ?? body.inTransitQuantity,
+      "in_transit_quantity",
+      0
+    );
+    const availableQuantity = this.parseLotQuantity(
+      body.available_quantity ?? body.availableQuantity,
+      "available_quantity",
+      Math.max(quantityOnHand - reservedQuantity - damagedQuantity, 0)
+    );
+
+    return this.prisma.inventoryLotBalance.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        lot_id: lotId,
+        location_id: locationId,
+        quantity_on_hand: quantityOnHand,
+        reserved_quantity: reservedQuantity,
+        available_quantity: availableQuantity,
+        damaged_quantity: damagedQuantity,
+        in_transit_quantity: inTransitQuantity,
+        last_movement_at: this.parseDate(body.last_movement_at ?? body.lastMovementAt, "last_movement_at")
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        lot: { select: { id: true, batch_number: true, serial_number: true, status: true } },
+        location: { select: { id: true, code: true, name: true } }
+      }
+    });
+  }
+
+  async listDispatchPickJobs(dispatchIdRaw: string, filters: DispatchJobListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const dispatchId = this.parseRequiredUuid(dispatchIdRaw, "dispatchId");
+    await this.validateDispatchScope(dispatchId, user);
+    const status = this.parseOptionalGenericStatus(filters.status);
+
+    return this.prisma.dispatchPickJob.findMany({
+      where: {
+        organization_id: user.organizationId,
+        stock_dispatch_id: dispatchId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 120
+    });
+  }
+
+  async createDispatchPickJob(dispatchIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const dispatchId = this.parseRequiredUuid(dispatchIdRaw, "dispatchId");
+    const dispatch = await this.validateDispatchScope(dispatchId, user);
+
+    const lineItems = this.parsePickJobLineItems(body.line_items ?? body.lineItems);
+    const lineIds = [...new Set(lineItems.map((row) => row.stock_dispatch_line_id))];
+    const dispatchLines = await this.prisma.stockDispatchLine.findMany({
+      where: {
+        id: { in: lineIds },
+        stock_dispatch_id: dispatch.id
+      },
+      select: {
+        id: true,
+        item_id: true
+      }
+    });
+    if (dispatchLines.length !== lineIds.length) {
+      throw new BadRequestException("line_items contain stock_dispatch_line_id values outside this dispatch");
+    }
+    const dispatchLineMap = new Map(dispatchLines.map((row) => [row.id, row]));
+    for (const line of lineItems) {
+      const dispatchLine = dispatchLineMap.get(line.stock_dispatch_line_id);
+      if (!dispatchLine || dispatchLine.item_id !== line.item_id) {
+        throw new BadRequestException("line_items item_id must match the linked stock_dispatch_line_id");
+      }
+    }
+
+    const pickNumber =
+      this.parseOptionalString(body.pick_number ?? body.pickNumber) ??
+      `PICK-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+
+    return this.prisma.dispatchPickJob.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: dispatch.branch_id,
+        stock_dispatch_id: dispatch.id,
+        pick_number: pickNumber,
+        status: this.parseOptionalGenericStatus(body.status) ?? "DRAFT",
+        notes: this.parseOptionalString(body.notes),
+        lines: {
+          create: lineItems
+        }
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionDispatchPickJob(pickJobIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const pickJobId = this.parseRequiredUuid(pickJobIdRaw, "pickJobId");
+    const action = this.parseDispatchJobTransitionAction(body.action);
+
+    const pickJob = await this.prisma.dispatchPickJob.findFirst({
+      where: {
+        id: pickJobId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!pickJob) {
+      throw new NotFoundException("Pick job not found");
+    }
+    if (user.branchId && pickJob.branch_id !== user.branchId) {
+      throw new BadRequestException("Pick job is outside your branch scope");
+    }
+
+    const targetStatus = action === "START" ? "IN_PROGRESS" : action === "COMPLETE" ? "COMPLETED" : "CANCELLED";
+    const currentStatus = String(pickJob.status).toUpperCase();
+    const allowed: Record<string, string[]> = {
+      DRAFT: ["IN_PROGRESS", "CANCELLED"],
+      IN_PROGRESS: ["COMPLETED", "CANCELLED"],
+      COMPLETED: [],
+      CANCELLED: []
+    };
+    if (!allowed[currentStatus]?.includes(targetStatus)) {
+      throw new BadRequestException(`Cannot transition pick job from ${currentStatus} to ${targetStatus}`);
+    }
+
+    return this.prisma.dispatchPickJob.update({
+      where: { id: pickJob.id },
+      data: {
+        status: targetStatus,
+        started_at: targetStatus === "IN_PROGRESS" ? new Date() : undefined,
+        completed_at: targetStatus === "COMPLETED" ? new Date() : undefined,
+        picked_by: targetStatus === "IN_PROGRESS" || targetStatus === "COMPLETED" ? user.id : undefined,
+        notes: this.parseOptionalString(body.notes) ?? undefined
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
+          }
+        }
+      }
+    });
+  }
+
+  async listDispatchPackJobs(dispatchIdRaw: string, filters: DispatchJobListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const dispatchId = this.parseRequiredUuid(dispatchIdRaw, "dispatchId");
+    await this.validateDispatchScope(dispatchId, user);
+    const status = this.parseOptionalGenericStatus(filters.status);
+
+    return this.prisma.dispatchPackJob.findMany({
+      where: {
+        organization_id: user.organizationId,
+        stock_dispatch_id: dispatchId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
+          }
+        }
+      },
+      orderBy: { created_at: "desc" },
+      take: 120
+    });
+  }
+
+  async createDispatchPackJob(dispatchIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const dispatchId = this.parseRequiredUuid(dispatchIdRaw, "dispatchId");
+    const dispatch = await this.validateDispatchScope(dispatchId, user);
+
+    const lineItems = this.parsePackJobLineItems(body.line_items ?? body.lineItems);
+    const lineIds = [...new Set(lineItems.map((row) => row.stock_dispatch_line_id))];
+    const dispatchLines = await this.prisma.stockDispatchLine.findMany({
+      where: {
+        id: { in: lineIds },
+        stock_dispatch_id: dispatch.id
+      },
+      select: {
+        id: true,
+        item_id: true
+      }
+    });
+    if (dispatchLines.length !== lineIds.length) {
+      throw new BadRequestException("line_items contain stock_dispatch_line_id values outside this dispatch");
+    }
+    const dispatchLineMap = new Map(dispatchLines.map((row) => [row.id, row]));
+    for (const line of lineItems) {
+      const dispatchLine = dispatchLineMap.get(line.stock_dispatch_line_id);
+      if (!dispatchLine || dispatchLine.item_id !== line.item_id) {
+        throw new BadRequestException("line_items item_id must match the linked stock_dispatch_line_id");
+      }
+    }
+
+    const packNumber =
+      this.parseOptionalString(body.pack_number ?? body.packNumber) ??
+      `PACK-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+
+    return this.prisma.dispatchPackJob.create({
+      data: {
+        organization_id: user.organizationId,
+        branch_id: dispatch.branch_id,
+        stock_dispatch_id: dispatch.id,
+        pack_number: packNumber,
+        status: this.parseOptionalGenericStatus(body.status) ?? "DRAFT",
+        carrier_info: this.parseOptionalString(body.carrier_info ?? body.carrierInfo),
+        tracking_info: this.parseOptionalString(body.tracking_info ?? body.trackingInfo),
+        notes: this.parseOptionalString(body.notes),
+        lines: {
+          create: lineItems
+        }
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
+          }
+        }
+      }
+    });
+  }
+
+  async transitionDispatchPackJob(packJobIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const packJobId = this.parseRequiredUuid(packJobIdRaw, "packJobId");
+    const action = this.parseDispatchJobTransitionAction(body.action);
+
+    const packJob = await this.prisma.dispatchPackJob.findFirst({
+      where: {
+        id: packJobId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!packJob) {
+      throw new NotFoundException("Pack job not found");
+    }
+    if (user.branchId && packJob.branch_id !== user.branchId) {
+      throw new BadRequestException("Pack job is outside your branch scope");
+    }
+
+    const targetStatus = action === "START" ? "IN_PROGRESS" : action === "COMPLETE" ? "COMPLETED" : "CANCELLED";
+    const currentStatus = String(packJob.status).toUpperCase();
+    const allowed: Record<string, string[]> = {
+      DRAFT: ["IN_PROGRESS", "CANCELLED"],
+      IN_PROGRESS: ["COMPLETED", "CANCELLED"],
+      COMPLETED: [],
+      CANCELLED: []
+    };
+    if (!allowed[currentStatus]?.includes(targetStatus)) {
+      throw new BadRequestException(`Cannot transition pack job from ${currentStatus} to ${targetStatus}`);
+    }
+
+    return this.prisma.dispatchPackJob.update({
+      where: { id: packJob.id },
+      data: {
+        status: targetStatus,
+        started_at: targetStatus === "IN_PROGRESS" ? new Date() : undefined,
+        completed_at: targetStatus === "COMPLETED" ? new Date() : undefined,
+        packed_by: targetStatus === "IN_PROGRESS" || targetStatus === "COMPLETED" ? user.id : undefined,
+        notes: this.parseOptionalString(body.notes) ?? undefined
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        lines: {
+          include: {
+            item: { select: { id: true, name: true, sku: true } },
+            stock_dispatch_line: { select: { id: true, quantity: true } }
           }
         }
       }

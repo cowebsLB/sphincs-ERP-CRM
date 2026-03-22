@@ -48,6 +48,11 @@ describe("DistributionService", () => {
     goodsReceipt: {
       count: jest.fn().mockResolvedValue(4),
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        organization_id: "org-1",
+        branch_id: BRANCH_1
+      }),
       create: jest.fn().mockResolvedValue({
         id: "gr-1",
         receipt_number: "GR-20260321120000-ABCD",
@@ -242,6 +247,90 @@ describe("DistributionService", () => {
         is_active: true,
         branch: { id: BRANCH_1, name: "Main" },
         parent: { id: LOCATION_PARENT_BRANCH_1, code: "ZONE-A", name: "Zone A" }
+      })
+    },
+    inventoryLot: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          id: "88888888-8888-4888-8888-888888888888",
+          branch_id: BRANCH_1,
+          item_id: "item-1",
+          status: "ACTIVE",
+          batch_number: "BATCH-001",
+          branch: { id: BRANCH_1, name: "Main" },
+          item: { id: "item-1", name: "Widget A", sku: "W-A" },
+          supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" }
+        }
+      ]),
+      findFirst: jest.fn().mockImplementation(async (args: { where: { id?: string } }) => {
+        const lotId = args?.where?.id;
+        if (lotId === "88888888-8888-4888-8888-888888888888") {
+          return {
+            id: lotId,
+            organization_id: "org-1",
+            branch_id: BRANCH_1,
+            item_id: "33333333-3333-4333-8333-333333333333",
+            deleted_at: null
+          };
+        }
+        return null;
+      }),
+      create: jest.fn().mockResolvedValue({
+        id: "99999999-9999-4999-8999-999999999999",
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        status: "ACTIVE"
+      })
+    },
+    inventoryLotBalance: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        lot_id: "88888888-8888-4888-8888-888888888888",
+        quantity_on_hand: 10,
+        available_quantity: 8
+      })
+    },
+    stockDispatchLine: {
+      findMany: jest.fn().mockResolvedValue([
+        {
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          item_id: "33333333-3333-4333-8333-333333333333"
+        }
+      ])
+    },
+    dispatchPickJob: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        branch_id: BRANCH_1,
+        status: "DRAFT"
+      }),
+      create: jest.fn().mockResolvedValue({
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        status: "DRAFT"
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        status: "IN_PROGRESS"
+      })
+    },
+    dispatchPackJob: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        branch_id: BRANCH_1,
+        status: "DRAFT"
+      }),
+      create: jest.fn().mockResolvedValue({
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        status: "DRAFT"
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        status: "IN_PROGRESS"
       })
     },
     item: {
@@ -1306,6 +1395,154 @@ describe("DistributionService", () => {
         }
       )
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("lists lots with scoped filters", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listLots(
+      {
+        branchId: BRANCH_1,
+        status: "active",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryLot.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          status: "ACTIVE",
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("creates lot records with quantity validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createLot(
+      {
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        goods_receipt_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        batch_number: "BATCH-NEW",
+        quantity_received: 12,
+        quantity_available: 10
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryLot.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          quantity_received: 12,
+          quantity_available: 10
+        })
+      })
+    );
+    expect(result.id).toBe("99999999-9999-4999-8999-999999999999");
+  });
+
+  it("creates lot balances with same-branch lot linkage", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createLotBalance(
+      {
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        lot_id: "88888888-8888-4888-8888-888888888888",
+        quantity_on_hand: 10,
+        reserved_quantity: 2
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryLotBalance.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          quantity_on_hand: 10,
+          reserved_quantity: 2
+        })
+      })
+    );
+    expect(result.id).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  });
+
+  it("creates dispatch pick jobs with line validation", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createDispatchPickJob(
+      "12121212-1212-4121-8121-121212121212",
+      {
+        line_items: [
+          {
+            stock_dispatch_line_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            item_id: "33333333-3333-4333-8333-333333333333",
+            requested_qty: 5,
+            picked_qty: 0
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.dispatchPickJob.create).toHaveBeenCalled();
+    expect(result.id).toBe("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  });
+
+  it("transitions dispatch pack jobs to IN_PROGRESS", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transitionDispatchPackJob(
+      "13131313-1313-4131-8131-131313131313",
+      {
+        action: "START"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.dispatchPackJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "IN_PROGRESS",
+          packed_by: "user-1"
+        })
+      })
+    );
+    expect(result.id).toBe("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
   });
 
   it("creates reservations with scoped validation", async () => {
