@@ -72,6 +72,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/stock-loss`
 - `GET /api/v1/distribution/reports/stock-valuation`
 - `GET /api/v1/distribution/reports/fast-slow-movers`
+- `GET /api/v1/distribution/reports/supplier-fulfillment`
 
 ## Purpose
 
@@ -863,3 +864,25 @@ Behavior:
   - item count
   - total movement count
   - total quantity moved
+
+### `GET /api/v1/distribution/reports/supplier-fulfillment` (V1.16.30)
+
+Supported query parameters:
+
+- `supplierId`
+- `branchId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Aggregates receipt performance by supplier.
+- Includes per-supplier metrics:
+  - `receipt_count`
+  - `ordered_qty_total`
+  - `received_qty_total`
+  - `rejected_qty_total`
+  - `remaining_qty_total`
+  - `fulfillment_rate_pct`
+- Returns suppliers ranked by fulfillment rate.

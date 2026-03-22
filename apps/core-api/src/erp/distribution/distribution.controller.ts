@@ -906,4 +906,26 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/supplier-fulfillment")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  supplierFulfillmentReport(
+    @Query("supplierId") supplierId?: string,
+    @Query("branchId") branchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.supplierFulfillmentReport(
+      {
+        supplierId,
+        branchId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

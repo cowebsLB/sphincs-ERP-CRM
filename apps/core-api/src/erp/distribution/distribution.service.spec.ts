@@ -2402,6 +2402,57 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds supplier fulfillment report with aggregated rates", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.goodsReceipt.findMany.mockResolvedValue([
+      {
+        supplier_id: "sup-1",
+        supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" },
+        line_items: [
+          { ordered_qty: 10, received_qty: 8, rejected_qty: 1, remaining_qty: 1 },
+          { ordered_qty: 5, received_qty: 5, rejected_qty: 0, remaining_qty: 0 }
+        ]
+      },
+      {
+        supplier_id: "sup-1",
+        supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" },
+        line_items: [{ ordered_qty: 10, received_qty: 7, rejected_qty: 2, remaining_qty: 1 }]
+      },
+      {
+        supplier_id: "sup-2",
+        supplier: { id: "sup-2", name: "Supplier B", supplier_code: "SUP-B" },
+        line_items: [{ ordered_qty: 8, received_qty: 8, rejected_qty: 0, remaining_qty: 0 }]
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.supplierFulfillmentReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        supplier_count: 2,
+        receipt_count: 3,
+        ordered_qty_total: 33,
+        received_qty_total: 28
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        supplier_id: "sup-2",
+        fulfillment_rate_pct: 100
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

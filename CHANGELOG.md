@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.29` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.30` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.30 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/supplier-fulfillment`
+- Supplier fulfillment report includes:
+  - per-supplier receipt counts
+  - ordered/received/rejected/remaining quantity totals
+  - supplier-level fulfillment rate percentages
+  - consolidated summary totals
+- Unit coverage for supplier fulfillment aggregation and ranking.
+
+### Changed
+
+- Distribution reporting surface now includes supplier fulfillment accuracy analytics.
+- System fallback version updated to `Beta V1.16.30`.
 
 ## Beta V1.16.29 - 2026-03-22
 

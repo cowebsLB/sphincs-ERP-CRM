@@ -189,6 +189,14 @@ type FastSlowMoverReportFilters = {
   includeDeleted?: boolean;
 };
 
+type SupplierFulfillmentReportFilters = {
+  supplierId?: string;
+  branchId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -4129,6 +4137,109 @@ export class DistributionService {
       },
       fast_movers: fastMovers,
       slow_movers: slowMovers,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async supplierFulfillmentReport(filters: SupplierFulfillmentReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const supplierId = filters.supplierId ? this.parseRequiredUuid(filters.supplierId, "supplierId") : undefined;
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rows = await this.prisma.goodsReceipt.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(supplierId ? { supplier_id: supplierId } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(fromDate || toDate
+          ? {
+              received_date: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        supplier: { select: { id: true, name: true, supplier_code: true } },
+        line_items: true
+      },
+      take: 1000
+    });
+
+    const supplierMap = new Map<
+      string,
+      {
+        supplier_id: string;
+        supplier_name: string | null;
+        supplier_code: string | null;
+        receipt_count: number;
+        ordered_qty_total: number;
+        received_qty_total: number;
+        rejected_qty_total: number;
+        remaining_qty_total: number;
+      }
+    >();
+
+    for (const receipt of rows) {
+      const supplierKey = receipt.supplier_id ?? "UNASSIGNED";
+      const orderedQty = receipt.line_items.reduce((sum, line) => sum + line.ordered_qty, 0);
+      const receivedQty = receipt.line_items.reduce((sum, line) => sum + line.received_qty, 0);
+      const rejectedQty = receipt.line_items.reduce((sum, line) => sum + line.rejected_qty, 0);
+      const remainingQty = receipt.line_items.reduce((sum, line) => sum + line.remaining_qty, 0);
+
+      const current = supplierMap.get(supplierKey) ?? {
+        supplier_id: receipt.supplier_id ?? "UNASSIGNED",
+        supplier_name: receipt.supplier?.name ?? null,
+        supplier_code: receipt.supplier?.supplier_code ?? null,
+        receipt_count: 0,
+        ordered_qty_total: 0,
+        received_qty_total: 0,
+        rejected_qty_total: 0,
+        remaining_qty_total: 0
+      };
+
+      current.receipt_count += 1;
+      current.ordered_qty_total += orderedQty;
+      current.received_qty_total += receivedQty;
+      current.rejected_qty_total += rejectedQty;
+      current.remaining_qty_total += remainingQty;
+      supplierMap.set(supplierKey, current);
+    }
+
+    const reportRows = [...supplierMap.values()]
+      .map((row) => ({
+        ...row,
+        fulfillment_rate_pct:
+          row.ordered_qty_total > 0
+            ? Number(((row.received_qty_total / row.ordered_qty_total) * 100).toFixed(2))
+            : 0
+      }))
+      .sort((a, b) => b.fulfillment_rate_pct - a.fulfillment_rate_pct);
+
+    const summary = {
+      supplier_count: reportRows.length,
+      receipt_count: reportRows.reduce((sum, row) => sum + row.receipt_count, 0),
+      ordered_qty_total: reportRows.reduce((sum, row) => sum + row.ordered_qty_total, 0),
+      received_qty_total: reportRows.reduce((sum, row) => sum + row.received_qty_total, 0),
+      rejected_qty_total: reportRows.reduce((sum, row) => sum + row.rejected_qty_total, 0),
+      remaining_qty_total: reportRows.reduce((sum, row) => sum + row.remaining_qty_total, 0)
+    };
+
+    return {
+      summary,
+      rows: reportRows,
       generated_at: new Date().toISOString()
     };
   }

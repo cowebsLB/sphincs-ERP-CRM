@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Supplier Fulfillment Report (V1.16.30)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/supplier-fulfillment`
+- Added supplier-level fulfillment aggregation based on goods receipts and line quantities.
+- Added report outputs for:
+  - receipt count by supplier
+  - ordered/received/rejected/remaining quantity totals
+  - supplier fulfillment rate percentage
+  - consolidated summary totals
+- Added unit coverage for supplier fulfillment summaries and ranking behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `110/110` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes another key reporting gap by exposing supplier fulfillment accuracy as a first-class distribution metric.
+
 ## Task: Distribution Valuation + Mover Velocity Reports (V1.16.29)
 
 Date: 2026-03-22
