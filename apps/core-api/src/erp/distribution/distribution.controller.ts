@@ -63,6 +63,40 @@ export class DistributionController {
     return this.distributionService.createMovement(body, req?.user);
   }
 
+  @Get("inventory-stocks")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  listInventoryStocks(
+    @Query("branchId") branchId?: string,
+    @Query("itemId") itemId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.listInventoryStocks(
+      {
+        branchId,
+        itemId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Post("inventory-stocks")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  createInventoryStock(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
+    return this.distributionService.createInventoryStock(body, req?.user);
+  }
+
+  @Patch("inventory-stocks/:stockId")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  updateInventoryStock(
+    @Param("stockId") stockId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.updateInventoryStock(stockId, body, req?.user);
+  }
+
   @Get("receipts")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listReceipts(

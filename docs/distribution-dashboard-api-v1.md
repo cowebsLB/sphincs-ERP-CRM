@@ -7,6 +7,9 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/dashboard`
 - `GET /api/v1/distribution/movements`
 - `POST /api/v1/distribution/movements`
+- `GET /api/v1/distribution/inventory-stocks`
+- `POST /api/v1/distribution/inventory-stocks`
+- `PATCH /api/v1/distribution/inventory-stocks/:stockId`
 - `GET /api/v1/distribution/receipts`
 - `POST /api/v1/distribution/receipts`
 - `GET /api/v1/distribution/transfers`

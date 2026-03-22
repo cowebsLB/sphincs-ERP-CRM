@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Inventory Stock Records APIs (V1.16.36)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added inventory stock endpoints:
+  - `GET /api/v1/distribution/inventory-stocks`
+  - `POST /api/v1/distribution/inventory-stocks`
+  - `PATCH /api/v1/distribution/inventory-stocks/:stockId`
+- Added service logic for:
+  - organization + branch + item scoped inventory stock listing
+  - create flow with branch/item scope checks and stock consistency validation
+  - update-by-id flow with branch scope checks and quantity guardrails
+  - audit events on inventory stock create/update operations
+- Added unit coverage for:
+  - inventory stock list filter behavior
+  - inventory stock create snapshot behavior
+  - inventory stock update-by-id behavior
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `119/119` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes the direct Inventory Stock Records API gap and makes stock-by-branch data available as first-class distribution resources.
+
 ## Task: Distribution Shortages Report (V1.16.35)
 
 Date: 2026-03-22

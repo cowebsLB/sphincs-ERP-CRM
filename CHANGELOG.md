@@ -7,7 +7,28 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.35` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.36` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.36 - 2026-03-22
+
+### Added
+
+- Distribution inventory stock record endpoints:
+  - `GET /api/v1/distribution/inventory-stocks`
+  - `POST /api/v1/distribution/inventory-stocks`
+  - `PATCH /api/v1/distribution/inventory-stocks/:stockId`
+- Inventory stock service support for:
+  - branch/item scoped stock listing
+  - create-or-update stock snapshot writes (per organization + branch + item)
+  - direct stock snapshot updates by stock ID
+  - quantity consistency guardrails (`reserved <= on_hand`, `available <= on_hand`)
+  - audit log events for inventory stock create/update actions
+- Unit coverage for inventory stock listing, creation, and update flows.
+
+### Changed
+
+- Distribution now exposes first-class inventory stock record APIs instead of relying only on report internals.
+- System fallback version updated to `Beta V1.16.36`.
 
 ## Beta V1.16.35 - 2026-03-22
 

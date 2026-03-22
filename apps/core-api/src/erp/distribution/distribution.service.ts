@@ -33,6 +33,12 @@ type MovementListFilters = {
   includeDeleted?: boolean;
 };
 
+type InventoryStockListFilters = {
+  branchId?: string;
+  itemId?: string;
+  includeDeleted?: boolean;
+};
+
 type ReceiptListFilters = {
   status?: string;
   supplierId?: string;
@@ -1276,6 +1282,245 @@ export class DistributionService {
         }
       }
     });
+  }
+
+  async listInventoryStocks(filters: InventoryStockListFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+    if (itemId) {
+      await this.validateItemScope(itemId, user);
+    }
+
+    return this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(itemId ? { item_id: itemId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            status: true,
+            track_inventory: true
+          }
+        }
+      },
+      orderBy: { updated_at: "desc" },
+      take: 200
+    });
+  }
+
+  async createInventoryStock(body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    if (!branchId) {
+      throw new BadRequestException("branch_id is required");
+    }
+    await this.validateBranchScope(branchId, "branch_id", user);
+
+    const itemId = this.parseRequiredUuid(body.item_id ?? body.itemId, "item_id");
+    await this.validateItemScope(itemId, user);
+
+    const quantityOnHand = this.parseLotQuantity(body.quantity_on_hand ?? body.quantityOnHand, "quantity_on_hand", 0);
+    const reservedQuantity = this.parseLotQuantity(body.reserved_quantity ?? body.reservedQuantity, "reserved_quantity", 0);
+    const inTransitQuantity = this.parseLotQuantity(
+      body.in_transit_quantity ?? body.inTransitQuantity,
+      "in_transit_quantity",
+      0
+    );
+    const incomingQuantity = this.parseLotQuantity(body.incoming_quantity ?? body.incomingQuantity, "incoming_quantity", 0);
+    const damagedQuantity = this.parseLotQuantity(body.damaged_quantity ?? body.damagedQuantity, "damaged_quantity", 0);
+    const availableQuantity = this.parseLotQuantity(
+      body.available_quantity ?? body.availableQuantity,
+      "available_quantity",
+      Math.max(quantityOnHand - reservedQuantity, 0)
+    );
+    const stockValuationInput = this.parseNumber(body.stock_valuation ?? body.stockValuation, "stock_valuation");
+    if (reservedQuantity > quantityOnHand) {
+      throw new BadRequestException("reserved_quantity cannot exceed quantity_on_hand");
+    }
+    if (availableQuantity > quantityOnHand) {
+      throw new BadRequestException("available_quantity cannot exceed quantity_on_hand");
+    }
+    if (stockValuationInput !== null && stockValuationInput < 0) {
+      throw new BadRequestException("stock_valuation cannot be negative");
+    }
+
+    const stockData = {
+      quantity_on_hand: quantityOnHand,
+      reserved_quantity: reservedQuantity,
+      available_quantity: availableQuantity,
+      in_transit_quantity: inTransitQuantity,
+      incoming_quantity: incomingQuantity,
+      damaged_quantity: damagedQuantity,
+      stock_valuation: stockValuationInput ?? 0,
+      last_movement_at: this.parseDate(body.last_movement_at ?? body.lastMovementAt, "last_movement_at")
+    };
+
+    const existing = await this.prisma.inventoryStock.findFirst({
+      where: {
+        organization_id: user.organizationId,
+        branch_id: branchId,
+        item_id: itemId,
+        deleted_at: null
+      },
+      select: { id: true }
+    });
+
+    const saved = existing
+      ? await this.prisma.inventoryStock.update({
+          where: { id: existing.id },
+          data: stockData,
+          include: {
+            branch: { select: { id: true, name: true } },
+            item: { select: { id: true, name: true, sku: true, status: true, track_inventory: true } }
+          }
+        })
+      : await this.prisma.inventoryStock.create({
+          data: {
+            organization_id: user.organizationId,
+            branch_id: branchId,
+            item_id: itemId,
+            ...stockData
+          },
+          include: {
+            branch: { select: { id: true, name: true } },
+            item: { select: { id: true, name: true, sku: true, status: true, track_inventory: true } }
+          }
+        });
+
+    await this.recordAuditEvent(
+      user,
+      existing ? "DISTRIBUTION_INVENTORY_STOCK_UPDATED" : "DISTRIBUTION_INVENTORY_STOCK_CREATED",
+      "inventory_stock",
+      saved.id,
+      {
+        branch_id: branchId,
+        item_id: itemId,
+        quantity_on_hand: quantityOnHand,
+        reserved_quantity: reservedQuantity,
+        available_quantity: availableQuantity
+      }
+    );
+
+    return saved;
+  }
+
+  async updateInventoryStock(stockIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const stockId = this.parseRequiredUuid(stockIdRaw, "stockId");
+    const stock = await this.prisma.inventoryStock.findFirst({
+      where: {
+        id: stockId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        item_id: true,
+        quantity_on_hand: true,
+        reserved_quantity: true,
+        available_quantity: true,
+        in_transit_quantity: true,
+        incoming_quantity: true,
+        damaged_quantity: true,
+        stock_valuation: true
+      }
+    });
+    if (!stock) {
+      throw new NotFoundException("Inventory stock not found");
+    }
+    await this.validateBranchScope(stock.branch_id, "inventory_stock.branch_id", user);
+    await this.validateItemScope(stock.item_id, user);
+
+    const quantityOnHand = this.parseLotQuantity(
+      body.quantity_on_hand ?? body.quantityOnHand,
+      "quantity_on_hand",
+      stock.quantity_on_hand
+    );
+    const reservedQuantity = this.parseLotQuantity(
+      body.reserved_quantity ?? body.reservedQuantity,
+      "reserved_quantity",
+      stock.reserved_quantity
+    );
+    const inTransitQuantity = this.parseLotQuantity(
+      body.in_transit_quantity ?? body.inTransitQuantity,
+      "in_transit_quantity",
+      stock.in_transit_quantity
+    );
+    const incomingQuantity = this.parseLotQuantity(
+      body.incoming_quantity ?? body.incomingQuantity,
+      "incoming_quantity",
+      stock.incoming_quantity
+    );
+    const damagedQuantity = this.parseLotQuantity(
+      body.damaged_quantity ?? body.damagedQuantity,
+      "damaged_quantity",
+      stock.damaged_quantity
+    );
+    const availableQuantity = this.parseLotQuantity(
+      body.available_quantity ?? body.availableQuantity,
+      "available_quantity",
+      Math.max(quantityOnHand - reservedQuantity, 0)
+    );
+    const stockValuationInput = this.parseNumber(body.stock_valuation ?? body.stockValuation, "stock_valuation");
+    const stockValuation =
+      stockValuationInput !== null ? stockValuationInput : Number(String(stock.stock_valuation ?? "0"));
+
+    if (reservedQuantity > quantityOnHand) {
+      throw new BadRequestException("reserved_quantity cannot exceed quantity_on_hand");
+    }
+    if (availableQuantity > quantityOnHand) {
+      throw new BadRequestException("available_quantity cannot exceed quantity_on_hand");
+    }
+    if (stockValuation < 0) {
+      throw new BadRequestException("stock_valuation cannot be negative");
+    }
+
+    const updated = await this.prisma.inventoryStock.update({
+      where: { id: stock.id },
+      data: {
+        quantity_on_hand: quantityOnHand,
+        reserved_quantity: reservedQuantity,
+        available_quantity: availableQuantity,
+        in_transit_quantity: inTransitQuantity,
+        incoming_quantity: incomingQuantity,
+        damaged_quantity: damagedQuantity,
+        stock_valuation: stockValuation,
+        last_movement_at: this.parseDate(body.last_movement_at ?? body.lastMovementAt, "last_movement_at")
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true, status: true, track_inventory: true } }
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_INVENTORY_STOCK_UPDATED", "inventory_stock", stock.id, {
+      branch_id: stock.branch_id,
+      item_id: stock.item_id,
+      quantity_on_hand: quantityOnHand,
+      reserved_quantity: reservedQuantity,
+      available_quantity: availableQuantity
+    });
+
+    return updated;
   }
 
   async listReceipts(filters: ReceiptListFilters, scope?: UserScope) {

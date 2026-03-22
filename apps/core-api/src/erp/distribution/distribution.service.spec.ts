@@ -43,6 +43,35 @@ describe("DistributionService", () => {
           }
         }
       ]),
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue({
+        id: "stock-1",
+        branch_id: BRANCH_1,
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity_on_hand: 30,
+        reserved_quantity: 6,
+        available_quantity: 24,
+        in_transit_quantity: 2,
+        incoming_quantity: 5,
+        damaged_quantity: 1,
+        stock_valuation: 200,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "11111111-1111-4111-8111-111111111111", name: "Widget A", sku: "W-A", status: "ACTIVE" }
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "stock-1",
+        branch_id: BRANCH_1,
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity_on_hand: 40,
+        reserved_quantity: 5,
+        available_quantity: 35,
+        in_transit_quantity: 2,
+        incoming_quantity: 4,
+        damaged_quantity: 1,
+        stock_valuation: 300,
+        branch: { id: BRANCH_1, name: "Main" },
+        item: { id: "11111111-1111-4111-8111-111111111111", name: "Widget A", sku: "W-A", status: "ACTIVE" }
+      }),
       updateMany: jest.fn()
     },
     goodsReceipt: {
@@ -541,6 +570,119 @@ describe("DistributionService", () => {
         })
       })
     );
+  });
+
+  it("lists inventory stocks with branch and item scope", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listInventoryStocks(
+      {
+        branchId: BRANCH_1,
+        itemId: "11111111-1111-4111-8111-111111111111",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryStock.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          item_id: "11111111-1111-4111-8111-111111111111",
+          deleted_at: null
+        })
+      })
+    );
+  });
+
+  it("creates inventory stock snapshot rows", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.createInventoryStock(
+      {
+        branch_id: BRANCH_1,
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity_on_hand: 30,
+        reserved_quantity: 6,
+        in_transit_quantity: 2,
+        incoming_quantity: 5,
+        damaged_quantity: 1,
+        stock_valuation: 200
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryStock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organization_id: "org-1",
+          branch_id: BRANCH_1,
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity_on_hand: 30,
+          reserved_quantity: 6,
+          available_quantity: 24
+        })
+      })
+    );
+    expect(result.id).toBe("stock-1");
+  });
+
+  it("updates inventory stock snapshot rows by id", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryStock.findFirst
+      .mockResolvedValueOnce({
+        id: "stock-1",
+        branch_id: BRANCH_1,
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity_on_hand: 30,
+        reserved_quantity: 6,
+        available_quantity: 24,
+        in_transit_quantity: 2,
+        incoming_quantity: 5,
+        damaged_quantity: 1,
+        stock_valuation: 200
+      })
+      .mockResolvedValue(null);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.updateInventoryStock(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      {
+        quantity_on_hand: 40,
+        reserved_quantity: 5,
+        available_quantity: 35,
+        stock_valuation: 300
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryStock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "stock-1" },
+        data: expect.objectContaining({
+          quantity_on_hand: 40,
+          reserved_quantity: 5,
+          available_quantity: 35,
+          stock_valuation: 300
+        })
+      })
+    );
+    expect(result.id).toBe("stock-1");
   });
 
   it("creates goods receipts with partial status when quantities are incomplete", async () => {
