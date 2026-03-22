@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.37` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.38` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.38 - 2026-03-22
+
+### Added
+
+- Transfer lifecycle cancellation endpoint:
+  - `PATCH /api/v1/distribution/transfers/:transferId/cancel`
+- Dispatch lifecycle cancellation endpoint:
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/cancel`
+- Transition action support for:
+  - transfer `CANCEL` action mapped to `CANCELLED`
+  - dispatch `CANCEL` action mapped to `CANCELLED`
+- Unit coverage for:
+  - transfer cancellation from `REQUESTED`
+  - dispatch cancellation from `DRAFT`
+
+### Changed
+
+- Distribution transition APIs now expose cancellation actions already represented in status models.
+- System fallback version updated to `Beta V1.16.38`.
 
 ## Beta V1.16.37 - 2026-03-22
 

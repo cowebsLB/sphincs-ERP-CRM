@@ -1009,6 +1009,36 @@ describe("DistributionService", () => {
     );
   });
 
+  it("transitions transfer to CANCELLED from REQUESTED", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findFirst.mockResolvedValue({
+      id: "tr-1",
+      status: "REQUESTED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      status_history: []
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionTransfer(
+      "33333333-3333-4333-8333-333333333333",
+      { action: "CANCEL", notes: "Cancelled by manager" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "CANCELLED"
+        })
+      })
+    );
+  });
+
   it("rejects invalid transfer transition", async () => {
     const prismaMock = createPrismaMock();
     prismaMock.stockTransfer.findFirst.mockResolvedValue({
@@ -1361,6 +1391,34 @@ describe("DistributionService", () => {
           status: "DELIVERED",
           dispatched_by: "user-1",
           dispatch_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("transitions dispatch to CANCELLED from DRAFT", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "DRAFT",
+      branch_id: BRANCH_1
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "CANCEL" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "CANCELLED"
         })
       })
     );

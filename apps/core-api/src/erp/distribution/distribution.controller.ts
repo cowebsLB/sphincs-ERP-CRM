@@ -219,6 +219,16 @@ export class DistributionController {
     return this.distributionService.transitionTransfer(transferId, { ...body, action: "RECEIVE" }, req?.user);
   }
 
+  @Patch("transfers/:transferId/cancel")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
+  cancelTransfer(
+    @Param("transferId") transferId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionTransfer(transferId, { ...body, action: "CANCEL" }, req?.user);
+  }
+
   @Get("adjustments")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listAdjustments(
@@ -367,6 +377,16 @@ export class DistributionController {
     @Req() req?: AuthenticatedRequest
   ): unknown {
     return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "RETURN" }, req?.user);
+  }
+
+  @Patch("dispatches/:dispatchId/cancel")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
+  cancelDispatch(
+    @Param("dispatchId") dispatchId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionDispatch(dispatchId, { ...body, action: "CANCEL" }, req?.user);
   }
 
   @Get("dispatches/:dispatchId/pick-jobs")

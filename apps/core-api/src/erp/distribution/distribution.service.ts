@@ -228,9 +228,9 @@ type ShortageReportFilters = {
   includeDeleted?: boolean;
 };
 
-type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
+type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE" | "CANCEL";
 type ReceiptTransitionAction = "RECEIVE" | "CLOSE" | "CANCEL";
-type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
+type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN" | "CANCEL";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
 type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
 type DispatchJobTransitionAction = "START" | "COMPLETE" | "CANCEL";
@@ -374,8 +374,8 @@ export class DistributionService {
     if (!text) {
       throw new BadRequestException("action is required");
     }
-    if (!["REQUEST", "APPROVE", "DISPATCH", "RECEIVE"].includes(text)) {
-      throw new BadRequestException("action must be one of: REQUEST, APPROVE, DISPATCH, RECEIVE");
+    if (!["REQUEST", "APPROVE", "DISPATCH", "RECEIVE", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: REQUEST, APPROVE, DISPATCH, RECEIVE, CANCEL");
     }
     return text as TransferTransitionAction;
   }
@@ -482,8 +482,8 @@ export class DistributionService {
     if (!text) {
       throw new BadRequestException("action is required");
     }
-    if (!["READY", "PACK", "DISPATCH", "DELIVER", "FAIL", "RETURN"].includes(text)) {
-      throw new BadRequestException("action must be one of: READY, PACK, DISPATCH, DELIVER, FAIL, RETURN");
+    if (!["READY", "PACK", "DISPATCH", "DELIVER", "FAIL", "RETURN", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: READY, PACK, DISPATCH, DELIVER, FAIL, RETURN, CANCEL");
     }
     return text as DispatchTransitionAction;
   }
@@ -1993,7 +1993,9 @@ export class DistributionService {
           ? StockTransferStatus.APPROVED
           : action === "DISPATCH"
             ? StockTransferStatus.DISPATCHED
-            : this.parseTransferReceiveStatus(body.status);
+            : action === "CANCEL"
+              ? StockTransferStatus.CANCELLED
+              : this.parseTransferReceiveStatus(body.status);
 
     if (!this.canTransitionTransfer(transfer.status, targetStatus)) {
       throw new BadRequestException(
@@ -2413,9 +2415,11 @@ export class DistributionService {
             ? DispatchStatus.DISPATCHED
             : action === "DELIVER"
               ? DispatchStatus.DELIVERED
-              : action === "FAIL"
-                ? DispatchStatus.FAILED
-                : DispatchStatus.RETURNED;
+            : action === "FAIL"
+              ? DispatchStatus.FAILED
+              : action === "RETURN"
+                ? DispatchStatus.RETURNED
+                : DispatchStatus.CANCELLED;
 
     if (!this.canTransitionDispatch(dispatch.status, targetStatus)) {
       throw new BadRequestException(

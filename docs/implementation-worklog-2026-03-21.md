@@ -1,5 +1,31 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Transfer + Dispatch Cancellation Transitions (V1.16.38)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added cancellation endpoints:
+  - `PATCH /api/v1/distribution/transfers/:transferId/cancel`
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/cancel`
+- Extended transition action parsers to include:
+  - transfer `CANCEL`
+  - dispatch `CANCEL`
+- Mapped cancel actions to `CANCELLED` target statuses in service transition logic.
+- Added unit coverage for:
+  - transfer cancellation from `REQUESTED`
+  - dispatch cancellation from `DRAFT`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `123/123` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This exposes lifecycle cancellation operations that were already allowed by status transition rules, closing controller/action parity gaps.
+
 ## Task: Goods Receipt Lifecycle Transitions (V1.16.37)
 
 Date: 2026-03-22

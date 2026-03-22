@@ -21,6 +21,7 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/transfers/:transferId/approve`
 - `PATCH /api/v1/distribution/transfers/:transferId/dispatch`
 - `PATCH /api/v1/distribution/transfers/:transferId/receive`
+- `PATCH /api/v1/distribution/transfers/:transferId/cancel`
 - `GET /api/v1/distribution/adjustments`
 - `POST /api/v1/distribution/adjustments`
 - `PATCH /api/v1/distribution/adjustments/:adjustmentId/submit`
@@ -35,6 +36,7 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/dispatches/:dispatchId/deliver`
 - `PATCH /api/v1/distribution/dispatches/:dispatchId/fail`
 - `PATCH /api/v1/distribution/dispatches/:dispatchId/return`
+- `PATCH /api/v1/distribution/dispatches/:dispatchId/cancel`
 - `GET /api/v1/distribution/returns`
 - `POST /api/v1/distribution/returns`
 - `PATCH /api/v1/distribution/returns/:returnId/receive`
