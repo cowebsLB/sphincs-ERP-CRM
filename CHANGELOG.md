@@ -7,7 +7,33 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.22` - current active beta snapshot as of 2026-03-21
+- `Beta V1.16.23` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.23 - 2026-03-22
+
+### Added
+
+- Distribution phase-2 logistics and traceability tables:
+  - `warehouse_locations`
+  - `inventory_lots`
+  - `inventory_lot_balances`
+  - `dispatch_pick_jobs`
+  - `dispatch_pick_lines`
+  - `dispatch_pack_jobs`
+  - `dispatch_pack_lines`
+- New migration:
+  - `20260322_distribution_phase2_logistics_tables`
+
+### Changed
+
+- Linked operational distribution tables to warehouse location references:
+  - `inventory_movements`
+  - `goods_receipts`
+  - `stock_transfers`
+  - `stock_dispatches`
+  - `stock_returns`
+- Extended Prisma schema relations across organization, branch, item, dispatch, and supplier models for phase-2 distribution workflows.
+- System fallback version updated to `Beta V1.16.23`.
 
 ## Beta V1.16.22 - 2026-03-21
 

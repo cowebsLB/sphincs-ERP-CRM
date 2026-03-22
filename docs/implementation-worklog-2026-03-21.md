@@ -1,5 +1,38 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Phase-2 Logistics DB Foundation (V1.16.23)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added migration `20260322_distribution_phase2_logistics_tables` to expand distribution storage for phase-2 logistics and traceability.
+- Added new tables:
+  - `warehouse_locations`
+  - `inventory_lots`
+  - `inventory_lot_balances`
+  - `dispatch_pick_jobs`
+  - `dispatch_pick_lines`
+  - `dispatch_pack_jobs`
+  - `dispatch_pack_lines`
+- Extended existing operational tables with location linkage fields:
+  - `inventory_movements`
+  - `goods_receipts`
+  - `stock_transfers`
+  - `stock_dispatches`
+  - `stock_returns`
+- Updated Prisma schema relations to connect the new logistics entities with organization, branch, item, supplier, goods-receipt, and dispatch records.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api exec prisma validate --schema prisma/schema.prisma` passed.
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `94/94` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This is a database-first slice and prepares phase-2 endpoints for warehouse locations, lots/serial tracking foundations, and pick/pack workflows.
+
 ## Task: Distribution Adjustment Variance Report API (V1.16.22)
 
 Date: 2026-03-21

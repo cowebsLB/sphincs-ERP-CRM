@@ -73,6 +73,7 @@ As of `Beta V1.16.16`, roles are enforced at method level:
 As of `Beta V1.16.17`, transition operations also write audit events (`audit_logs`) for improved traceability.
 
 As of `Beta V1.16.18`, alert resolution is treated as an approval-sensitive action role.
+As of `Beta V1.16.23`, the distribution data model includes warehouse location and lot/pick-pack foundations for phase-2 logistics workflows.
 
 ## Response Shape
 
@@ -105,6 +106,16 @@ Aggregates are computed from distribution foundation tables:
 - `stock_alerts`
 - `branches`
 
+Phase-2 logistics foundations now available in schema:
+
+- `warehouse_locations`
+- `inventory_lots`
+- `inventory_lot_balances`
+- `dispatch_pick_jobs`
+- `dispatch_pick_lines`
+- `dispatch_pack_jobs`
+- `dispatch_pack_lines`
+
 ## Current Behavior Notes
 
 - Low-stock logic currently requires:
@@ -116,7 +127,10 @@ Aggregates are computed from distribution foundation tables:
 
 ## Next API Steps
 
-1. Add advanced KPI/analytics rollups (supplier fulfillment, fast/slow movers, branch SLA metrics).
+1. Add warehouse-location CRUD and branch-level stock visibility APIs.
+2. Add lot-level stock tracing endpoints and reporting.
+3. Add pick/pack job APIs to support outbound operational execution.
+4. Add advanced KPI/analytics rollups (supplier fulfillment, fast/slow movers, branch SLA metrics).
 
 ## Movement API Notes (V1.16.3)
 

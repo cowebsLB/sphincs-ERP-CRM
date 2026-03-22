@@ -159,6 +159,11 @@ model Organization {
   inventory_reservations InventoryReservation[]
   reorder_rules          ReorderRule[]
   stock_alerts           StockAlert[]
+  warehouse_locations    WarehouseLocation[]
+  inventory_lots         InventoryLot[]
+  inventory_lot_balances InventoryLotBalance[]
+  dispatch_pick_jobs     DispatchPickJob[]
+  dispatch_pack_jobs     DispatchPackJob[]
 
   @@map("organizations")
 }
@@ -195,6 +200,11 @@ model Branch {
   inventory_reservations InventoryReservation[]
   reorder_rules          ReorderRule[]
   stock_alerts           StockAlert[]
+  warehouse_locations    WarehouseLocation[]
+  inventory_lots         InventoryLot[]
+  inventory_lot_balances InventoryLotBalance[]
+  dispatch_pick_jobs     DispatchPickJob[]
+  dispatch_pack_jobs     DispatchPackJob[]
 
   @@index([organization_id], map: "idx_branches_org")
   @@index([deleted_at], map: "idx_branches_deleted_at")
@@ -323,6 +333,10 @@ model Item {
   inventory_reservations InventoryReservation[]
   reorder_rules          ReorderRule[]
   stock_alerts           StockAlert[]
+  inventory_lots         InventoryLot[]
+  inventory_lot_balances InventoryLotBalance[]
+  dispatch_pick_lines    DispatchPickLine[]
+  dispatch_pack_lines    DispatchPackLine[]
 
   @@unique([organization_id, sku], map: "uq_items_org_sku")
   @@index([organization_id], map: "idx_items_org")
@@ -375,6 +389,7 @@ model Supplier {
   purchase_orders PurchaseOrder[]
   goods_receipts  GoodsReceipt[]
   reorder_rules   ReorderRule[]
+  inventory_lots  InventoryLot[]
 
   @@unique([organization_id, supplier_code], map: "uq_suppliers_org_supplier_code")
   @@index([organization_id], map: "idx_suppliers_org")
@@ -564,6 +579,8 @@ model InventoryMovement {
   unit                  String                   @default("piece")
   source_branch_id      String?                  @db.Uuid
   destination_branch_id String?                  @db.Uuid
+  source_location_id    String?                  @db.Uuid
+  destination_location_id String?                @db.Uuid
   reference_type        String?
   reference_id          String?                  @db.Uuid
   status                String                   @default("POSTED")
@@ -580,12 +597,16 @@ model InventoryMovement {
   item               Item         @relation(fields: [item_id], references: [id])
   source_branch      Branch?      @relation("InventoryMovementSourceBranch", fields: [source_branch_id], references: [id], onDelete: SetNull)
   destination_branch Branch?      @relation("InventoryMovementDestinationBranch", fields: [destination_branch_id], references: [id], onDelete: SetNull)
+  source_location    WarehouseLocation? @relation("InventoryMovementSourceLocation", fields: [source_location_id], references: [id], onDelete: SetNull)
+  destination_location WarehouseLocation? @relation("InventoryMovementDestinationLocation", fields: [destination_location_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_inventory_movements_org")
   @@index([branch_id], map: "idx_inventory_movements_branch")
   @@index([item_id], map: "idx_inventory_movements_item")
   @@index([movement_type], map: "idx_inventory_movements_type")
   @@index([occurred_at], map: "idx_inventory_movements_occurred_at")
+  @@index([source_location_id], map: "idx_inventory_movements_source_location")
+  @@index([destination_location_id], map: "idx_inventory_movements_destination_location")
   @@index([deleted_at], map: "idx_inventory_movements_deleted_at")
   @@map("inventory_movements")
 }
@@ -596,6 +617,7 @@ model GoodsReceipt {
   branch_id         String             @db.Uuid
   supplier_id       String?            @db.Uuid
   purchase_order_id String?            @db.Uuid
+  receiving_location_id String?        @db.Uuid
   receipt_number    String
   status            GoodsReceiptStatus @default(DRAFT)
   received_date     DateTime?          @db.Timestamptz(6)
@@ -610,13 +632,16 @@ model GoodsReceipt {
   branch         Branch             @relation(fields: [branch_id], references: [id])
   supplier       Supplier?          @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
   purchase_order PurchaseOrder?     @relation(fields: [purchase_order_id], references: [id], onDelete: SetNull)
+  receiving_location WarehouseLocation? @relation("GoodsReceiptReceivingLocation", fields: [receiving_location_id], references: [id], onDelete: SetNull)
   line_items     GoodsReceiptLine[]
+  lot_entries    InventoryLot[]
 
   @@unique([organization_id, receipt_number], map: "uq_goods_receipts_org_number")
   @@index([organization_id], map: "idx_goods_receipts_org")
   @@index([branch_id], map: "idx_goods_receipts_branch")
   @@index([supplier_id], map: "idx_goods_receipts_supplier")
   @@index([purchase_order_id], map: "idx_goods_receipts_po")
+  @@index([receiving_location_id], map: "idx_goods_receipts_receiving_location")
   @@index([status], map: "idx_goods_receipts_status")
   @@index([deleted_at], map: "idx_goods_receipts_deleted_at")
   @@map("goods_receipts")
@@ -648,6 +673,8 @@ model StockTransfer {
   transfer_number       String
   source_branch_id      String              @db.Uuid
   destination_branch_id String              @db.Uuid
+  source_location_id    String?             @db.Uuid
+  destination_location_id String?           @db.Uuid
   status                StockTransferStatus @default(DRAFT)
   requested_by          String?             @db.Uuid
   approved_by           String?             @db.Uuid
@@ -663,12 +690,16 @@ model StockTransfer {
   organization       Organization        @relation(fields: [organization_id], references: [id])
   source_branch      Branch              @relation("StockTransferSourceBranch", fields: [source_branch_id], references: [id])
   destination_branch Branch              @relation("StockTransferDestinationBranch", fields: [destination_branch_id], references: [id])
+  source_location    WarehouseLocation?  @relation("StockTransferSourceLocation", fields: [source_location_id], references: [id], onDelete: SetNull)
+  destination_location WarehouseLocation? @relation("StockTransferDestinationLocation", fields: [destination_location_id], references: [id], onDelete: SetNull)
   line_items         StockTransferLine[]
 
   @@unique([organization_id, transfer_number], map: "uq_stock_transfers_org_number")
   @@index([organization_id], map: "idx_stock_transfers_org")
   @@index([source_branch_id], map: "idx_stock_transfers_source_branch")
   @@index([destination_branch_id], map: "idx_stock_transfers_destination_branch")
+  @@index([source_location_id], map: "idx_stock_transfers_source_location")
+  @@index([destination_location_id], map: "idx_stock_transfers_destination_location")
   @@index([status], map: "idx_stock_transfers_status")
   @@index([deleted_at], map: "idx_stock_transfers_deleted_at")
   @@map("stock_transfers")
@@ -743,6 +774,7 @@ model StockDispatch {
   id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id   String         @db.Uuid
   branch_id         String         @db.Uuid
+  dispatch_location_id String?     @db.Uuid
   dispatch_number   String
   destination       String
   status            DispatchStatus @default(DRAFT)
@@ -759,11 +791,15 @@ model StockDispatch {
 
   organization Organization        @relation(fields: [organization_id], references: [id])
   branch       Branch              @relation(fields: [branch_id], references: [id])
+  dispatch_location WarehouseLocation? @relation("StockDispatchLocation", fields: [dispatch_location_id], references: [id], onDelete: SetNull)
   line_items   StockDispatchLine[]
+  pick_jobs    DispatchPickJob[]
+  pack_jobs    DispatchPackJob[]
 
   @@unique([organization_id, dispatch_number], map: "uq_stock_dispatches_org_number")
   @@index([organization_id], map: "idx_stock_dispatches_org")
   @@index([branch_id], map: "idx_stock_dispatches_branch")
+  @@index([dispatch_location_id], map: "idx_stock_dispatches_location")
   @@index([status], map: "idx_stock_dispatches_status")
   @@index([deleted_at], map: "idx_stock_dispatches_deleted_at")
   @@map("stock_dispatches")
@@ -779,6 +815,8 @@ model StockDispatchLine {
 
   stock_dispatch StockDispatch @relation(fields: [stock_dispatch_id], references: [id], onDelete: Cascade)
   item           Item          @relation(fields: [item_id], references: [id])
+  pick_lines     DispatchPickLine[]
+  pack_lines     DispatchPackLine[]
 
   @@index([stock_dispatch_id], map: "idx_stock_dispatch_lines_dispatch")
   @@index([item_id], map: "idx_stock_dispatch_lines_item")
@@ -795,6 +833,8 @@ model StockReturn {
   linked_source_id      String?           @db.Uuid
   source_branch_id      String?           @db.Uuid
   destination_branch_id String?           @db.Uuid
+  source_location_id    String?           @db.Uuid
+  destination_location_id String?         @db.Uuid
   reason                String?
   condition_notes       String?
   restock               Boolean           @default(true)
@@ -809,12 +849,16 @@ model StockReturn {
   organization       Organization      @relation(fields: [organization_id], references: [id])
   source_branch      Branch?           @relation("StockReturnSourceBranch", fields: [source_branch_id], references: [id], onDelete: SetNull)
   destination_branch Branch?           @relation("StockReturnDestinationBranch", fields: [destination_branch_id], references: [id], onDelete: SetNull)
+  source_location    WarehouseLocation? @relation("StockReturnSourceLocation", fields: [source_location_id], references: [id], onDelete: SetNull)
+  destination_location WarehouseLocation? @relation("StockReturnDestinationLocation", fields: [destination_location_id], references: [id], onDelete: SetNull)
   line_items         StockReturnLine[]
 
   @@unique([organization_id, return_number], map: "uq_stock_returns_org_number")
   @@index([organization_id], map: "idx_stock_returns_org")
   @@index([source_branch_id], map: "idx_stock_returns_source_branch")
   @@index([destination_branch_id], map: "idx_stock_returns_destination_branch")
+  @@index([source_location_id], map: "idx_stock_returns_source_location")
+  @@index([destination_location_id], map: "idx_stock_returns_destination_location")
   @@index([status], map: "idx_stock_returns_status")
   @@index([deleted_at], map: "idx_stock_returns_deleted_at")
   @@map("stock_returns")
@@ -895,6 +939,208 @@ model ReorderRule {
   @@index([preferred_supplier_id], map: "idx_reorder_rules_supplier")
   @@index([deleted_at], map: "idx_reorder_rules_deleted_at")
   @@map("reorder_rules")
+}
+
+model WarehouseLocation {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id    String    @db.Uuid
+  branch_id          String    @db.Uuid
+  parent_location_id String?   @db.Uuid
+  code               String
+  name               String
+  location_type      String    @default("GENERAL")
+  is_active          Boolean   @default(true)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at         DateTime? @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  parent       WarehouseLocation? @relation("WarehouseLocationParentChild", fields: [parent_location_id], references: [id], onDelete: SetNull)
+  children     WarehouseLocation[] @relation("WarehouseLocationParentChild")
+  source_movements InventoryMovement[] @relation("InventoryMovementSourceLocation")
+  destination_movements InventoryMovement[] @relation("InventoryMovementDestinationLocation")
+  receiving_receipts GoodsReceipt[] @relation("GoodsReceiptReceivingLocation")
+  transfer_sources StockTransfer[] @relation("StockTransferSourceLocation")
+  transfer_destinations StockTransfer[] @relation("StockTransferDestinationLocation")
+  dispatches StockDispatch[] @relation("StockDispatchLocation")
+  return_sources StockReturn[] @relation("StockReturnSourceLocation")
+  return_destinations StockReturn[] @relation("StockReturnDestinationLocation")
+  lot_balances InventoryLotBalance[]
+
+  @@unique([organization_id, branch_id, code], map: "uq_warehouse_locations_org_branch_code")
+  @@index([organization_id], map: "idx_warehouse_locations_org")
+  @@index([branch_id], map: "idx_warehouse_locations_branch")
+  @@index([parent_location_id], map: "idx_warehouse_locations_parent")
+  @@index([deleted_at], map: "idx_warehouse_locations_deleted_at")
+  @@map("warehouse_locations")
+}
+
+model InventoryLot {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id  String    @db.Uuid
+  branch_id        String    @db.Uuid
+  item_id          String    @db.Uuid
+  supplier_id      String?   @db.Uuid
+  goods_receipt_id String?   @db.Uuid
+  batch_number     String?
+  serial_number    String?
+  manufacture_date DateTime? @db.Date
+  expiry_date      DateTime? @db.Date
+  quantity_received Int      @default(0)
+  quantity_available Int     @default(0)
+  status           String    @default("ACTIVE")
+  notes            String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at       DateTime? @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  item         Item         @relation(fields: [item_id], references: [id])
+  supplier     Supplier?    @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  goods_receipt GoodsReceipt? @relation(fields: [goods_receipt_id], references: [id], onDelete: SetNull)
+  balances     InventoryLotBalance[]
+
+  @@index([organization_id], map: "idx_inventory_lots_org")
+  @@index([branch_id], map: "idx_inventory_lots_branch")
+  @@index([item_id], map: "idx_inventory_lots_item")
+  @@index([supplier_id], map: "idx_inventory_lots_supplier")
+  @@index([goods_receipt_id], map: "idx_inventory_lots_receipt")
+  @@index([batch_number], map: "idx_inventory_lots_batch")
+  @@index([serial_number], map: "idx_inventory_lots_serial")
+  @@index([deleted_at], map: "idx_inventory_lots_deleted_at")
+  @@map("inventory_lots")
+}
+
+model InventoryLotBalance {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id     String    @db.Uuid
+  branch_id           String    @db.Uuid
+  item_id             String    @db.Uuid
+  lot_id              String    @db.Uuid
+  location_id         String?   @db.Uuid
+  quantity_on_hand    Int       @default(0)
+  reserved_quantity   Int       @default(0)
+  available_quantity  Int       @default(0)
+  damaged_quantity    Int       @default(0)
+  in_transit_quantity Int       @default(0)
+  last_movement_at    DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at          DateTime? @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  branch       Branch       @relation(fields: [branch_id], references: [id])
+  item         Item         @relation(fields: [item_id], references: [id])
+  lot          InventoryLot @relation(fields: [lot_id], references: [id], onDelete: Cascade)
+  location     WarehouseLocation? @relation(fields: [location_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id], map: "idx_inventory_lot_balances_org")
+  @@index([branch_id], map: "idx_inventory_lot_balances_branch")
+  @@index([item_id], map: "idx_inventory_lot_balances_item")
+  @@index([lot_id], map: "idx_inventory_lot_balances_lot")
+  @@index([location_id], map: "idx_inventory_lot_balances_location")
+  @@index([deleted_at], map: "idx_inventory_lot_balances_deleted_at")
+  @@map("inventory_lot_balances")
+}
+
+model DispatchPickJob {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String    @db.Uuid
+  branch_id         String    @db.Uuid
+  stock_dispatch_id String    @db.Uuid
+  pick_number       String
+  status            String    @default("DRAFT")
+  started_at        DateTime? @db.Timestamptz(6)
+  completed_at      DateTime? @db.Timestamptz(6)
+  picked_by         String?   @db.Uuid
+  notes             String?
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime? @db.Timestamptz(6)
+
+  organization   Organization   @relation(fields: [organization_id], references: [id])
+  branch         Branch         @relation(fields: [branch_id], references: [id])
+  stock_dispatch StockDispatch  @relation(fields: [stock_dispatch_id], references: [id], onDelete: Cascade)
+  lines          DispatchPickLine[]
+
+  @@unique([organization_id, pick_number], map: "uq_dispatch_pick_jobs_org_number")
+  @@index([organization_id], map: "idx_dispatch_pick_jobs_org")
+  @@index([branch_id], map: "idx_dispatch_pick_jobs_branch")
+  @@index([stock_dispatch_id], map: "idx_dispatch_pick_jobs_dispatch")
+  @@index([deleted_at], map: "idx_dispatch_pick_jobs_deleted_at")
+  @@map("dispatch_pick_jobs")
+}
+
+model DispatchPickLine {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dispatch_pick_job_id  String   @db.Uuid
+  stock_dispatch_line_id String  @db.Uuid
+  item_id               String   @db.Uuid
+  requested_qty         Int      @default(0)
+  picked_qty            Int      @default(0)
+  failed_reason         String?
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @updatedAt @db.Timestamptz(6)
+
+  dispatch_pick_job DispatchPickJob   @relation(fields: [dispatch_pick_job_id], references: [id], onDelete: Cascade)
+  stock_dispatch_line StockDispatchLine @relation(fields: [stock_dispatch_line_id], references: [id], onDelete: Cascade)
+  item             Item               @relation(fields: [item_id], references: [id])
+
+  @@index([dispatch_pick_job_id], map: "idx_dispatch_pick_lines_job")
+  @@index([stock_dispatch_line_id], map: "idx_dispatch_pick_lines_dispatch_line")
+  @@index([item_id], map: "idx_dispatch_pick_lines_item")
+  @@map("dispatch_pick_lines")
+}
+
+model DispatchPackJob {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id   String    @db.Uuid
+  branch_id         String    @db.Uuid
+  stock_dispatch_id String    @db.Uuid
+  pack_number       String
+  status            String    @default("DRAFT")
+  started_at        DateTime? @db.Timestamptz(6)
+  completed_at      DateTime? @db.Timestamptz(6)
+  packed_by         String?   @db.Uuid
+  carrier_info      String?
+  tracking_info     String?
+  notes             String?
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime? @db.Timestamptz(6)
+
+  organization   Organization   @relation(fields: [organization_id], references: [id])
+  branch         Branch         @relation(fields: [branch_id], references: [id])
+  stock_dispatch StockDispatch  @relation(fields: [stock_dispatch_id], references: [id], onDelete: Cascade)
+  lines          DispatchPackLine[]
+
+  @@unique([organization_id, pack_number], map: "uq_dispatch_pack_jobs_org_number")
+  @@index([organization_id], map: "idx_dispatch_pack_jobs_org")
+  @@index([branch_id], map: "idx_dispatch_pack_jobs_branch")
+  @@index([stock_dispatch_id], map: "idx_dispatch_pack_jobs_dispatch")
+  @@index([deleted_at], map: "idx_dispatch_pack_jobs_deleted_at")
+  @@map("dispatch_pack_jobs")
+}
+
+model DispatchPackLine {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dispatch_pack_job_id  String   @db.Uuid
+  stock_dispatch_line_id String  @db.Uuid
+  item_id               String   @db.Uuid
+  packed_qty            Int      @default(0)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @updatedAt @db.Timestamptz(6)
+
+  dispatch_pack_job DispatchPackJob   @relation(fields: [dispatch_pack_job_id], references: [id], onDelete: Cascade)
+  stock_dispatch_line StockDispatchLine @relation(fields: [stock_dispatch_line_id], references: [id], onDelete: Cascade)
+  item             Item               @relation(fields: [item_id], references: [id])
+
+  @@index([dispatch_pack_job_id], map: "idx_dispatch_pack_lines_job")
+  @@index([stock_dispatch_line_id], map: "idx_dispatch_pack_lines_dispatch_line")
+  @@index([item_id], map: "idx_dispatch_pack_lines_item")
+  @@map("dispatch_pack_lines")
 }
 
 model StockAlert {
