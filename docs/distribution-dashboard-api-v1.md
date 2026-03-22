@@ -263,6 +263,29 @@ Behavior:
 - Job line items must map to dispatch lines within the same dispatch.
 - Job transitions enforce `DRAFT -> IN_PROGRESS -> COMPLETED` with cancellation support.
 
+## Location Linkage Notes (V1.16.26)
+
+Operational endpoints now accept location fields tied to warehouse locations:
+
+- Movement create:
+  - `source_location_id`
+  - `destination_location_id`
+- Receipt create:
+  - `receiving_location_id`
+- Transfer create:
+  - `source_location_id`
+  - `destination_location_id`
+- Dispatch create:
+  - `dispatch_location_id`
+- Return create:
+  - `source_location_id`
+  - `destination_location_id`
+
+Validation rules:
+
+- source/destination/receiving/dispatch location must belong to the same branch context as its related branch field.
+- organization and branch scope checks are enforced before write operations.
+
 ## Next API Steps
 
 1. Add warehouse-location CRUD and branch-level stock visibility APIs.

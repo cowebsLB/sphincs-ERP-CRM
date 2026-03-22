@@ -433,7 +433,8 @@ describe("DistributionService", () => {
         movement_type: "TRANSFER_OUT",
         item_id: "11111111-1111-4111-8111-111111111111",
         quantity: 5,
-        source_branch_id: BRANCH_1
+        source_branch_id: BRANCH_1,
+        source_location_id: LOCATION_PARENT_BRANCH_1
       },
       {
         id: "user-1",
@@ -447,6 +448,7 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           movement_type: "TRANSFER_OUT",
           quantity: 5,
+          source_location_id: LOCATION_PARENT_BRANCH_1,
           organization_id: "org-1",
           performed_by: "user-1"
         })
@@ -512,6 +514,7 @@ describe("DistributionService", () => {
         branch_id: BRANCH_1,
         supplier_id: "11111111-1111-4111-8111-111111111111",
         purchase_order_id: "22222222-2222-4222-8222-222222222222",
+        receiving_location_id: LOCATION_PARENT_BRANCH_1,
         line_items: [
           {
             item_id: "33333333-3333-4333-8333-333333333333",
@@ -533,6 +536,7 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           organization_id: "org-1",
           branch_id: BRANCH_1,
+          receiving_location_id: LOCATION_PARENT_BRANCH_1,
           status: "PARTIAL"
         })
       })
@@ -602,6 +606,8 @@ describe("DistributionService", () => {
       {
         source_branch_id: BRANCH_1,
         destination_branch_id: BRANCH_2,
+        source_location_id: LOCATION_PARENT_BRANCH_1,
+        destination_location_id: LOCATION_PARENT_BRANCH_2,
         line_items: [
           {
             item_id: "33333333-3333-4333-8333-333333333333",
@@ -624,6 +630,8 @@ describe("DistributionService", () => {
           organization_id: "org-1",
           source_branch_id: BRANCH_1,
           destination_branch_id: BRANCH_2,
+          source_location_id: LOCATION_PARENT_BRANCH_1,
+          destination_location_id: LOCATION_PARENT_BRANCH_2,
           requested_by: "user-1"
         })
       })
@@ -967,6 +975,7 @@ describe("DistributionService", () => {
     const result = await service.createDispatch(
       {
         branch_id: BRANCH_1,
+        dispatch_location_id: LOCATION_PARENT_BRANCH_1,
         destination: "Customer Beirut",
         status: "READY",
         line_items: [
@@ -988,6 +997,7 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           organization_id: "org-1",
           branch_id: BRANCH_1,
+          dispatch_location_id: LOCATION_PARENT_BRANCH_1,
           destination: "Customer Beirut",
           status: "READY"
         })
@@ -1142,6 +1152,8 @@ describe("DistributionService", () => {
         return_type: "CUSTOMER_RETURN",
         source_branch_id: BRANCH_1,
         destination_branch_id: BRANCH_2,
+        source_location_id: LOCATION_PARENT_BRANCH_1,
+        destination_location_id: LOCATION_PARENT_BRANCH_2,
         line_items: [
           {
             item_id: "33333333-3333-4333-8333-333333333333",
@@ -1163,7 +1175,9 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           organization_id: "org-1",
           return_type: "CUSTOMER_RETURN",
-          source_branch_id: BRANCH_1
+          source_branch_id: BRANCH_1,
+          source_location_id: LOCATION_PARENT_BRANCH_1,
+          destination_location_id: LOCATION_PARENT_BRANCH_2
         })
       })
     );

@@ -607,7 +607,12 @@ export class DistributionService {
     return branch;
   }
 
-  private async validateWarehouseLocationScope(locationId: string | null, fieldName: string, user: UserScope) {
+  private async validateWarehouseLocationScope(
+    locationId: string | null,
+    fieldName: string,
+    user: UserScope,
+    options?: { enforceUserBranch?: boolean }
+  ) {
     if (!locationId) {
       return null;
     }
@@ -621,7 +626,7 @@ export class DistributionService {
     if (!location) {
       throw new BadRequestException(`${fieldName} must reference a warehouse location in your organization`);
     }
-    if (user.branchId && location.branch_id !== user.branchId) {
+    if (options?.enforceUserBranch && user.branchId && location.branch_id !== user.branchId) {
       throw new BadRequestException(`${fieldName} must reference your branch scope`);
     }
     return location;
@@ -999,6 +1004,14 @@ export class DistributionService {
       body.destination_branch_id ?? body.destinationBranchId,
       "destination_branch_id"
     );
+    const sourceLocationId = this.parseOptionalUuid(
+      body.source_location_id ?? body.sourceLocationId,
+      "source_location_id"
+    );
+    const destinationLocationId = this.parseOptionalUuid(
+      body.destination_location_id ?? body.destinationLocationId,
+      "destination_location_id"
+    );
 
     if (quantity < 1) {
       throw new BadRequestException("quantity must be at least 1");
@@ -1011,6 +1024,19 @@ export class DistributionService {
     await this.validateBranchScope(branchId, "branch_id", user);
     await this.validateBranchScope(sourceBranchId, "source_branch_id", user);
     await this.validateBranchScope(destinationBranchId, "destination_branch_id", user);
+    const sourceLocation = await this.validateWarehouseLocationScope(sourceLocationId, "source_location_id", user);
+    const destinationLocation = await this.validateWarehouseLocationScope(
+      destinationLocationId,
+      "destination_location_id",
+      user
+    );
+
+    if (sourceLocation && sourceBranchId && sourceLocation.branch_id !== sourceBranchId) {
+      throw new BadRequestException("source_location_id must belong to source_branch_id");
+    }
+    if (destinationLocation && destinationBranchId && destinationLocation.branch_id !== destinationBranchId) {
+      throw new BadRequestException("destination_location_id must belong to destination_branch_id");
+    }
 
     if (
       user.branchId &&
@@ -1030,6 +1056,8 @@ export class DistributionService {
         unit,
         source_branch_id: sourceBranchId,
         destination_branch_id: destinationBranchId,
+        source_location_id: sourceLocationId,
+        destination_location_id: destinationLocationId,
         reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
         reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
         status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
@@ -1055,6 +1083,20 @@ export class DistributionService {
         destination_branch: {
           select: {
             id: true,
+            name: true
+          }
+        },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
             name: true
           }
         }
@@ -1127,6 +1169,20 @@ export class DistributionService {
             id: true,
             name: true
           }
+        },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
         }
       }
     });
@@ -1169,6 +1225,13 @@ export class DistributionService {
             status: true
           }
         },
+        receiving_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
         line_items: true
       },
       orderBy: { created_at: "desc" },
@@ -1189,9 +1252,21 @@ export class DistributionService {
       body.purchase_order_id ?? body.purchaseOrderId,
       "purchase_order_id"
     );
+    const receivingLocationId = this.parseOptionalUuid(
+      body.receiving_location_id ?? body.receivingLocationId,
+      "receiving_location_id"
+    );
 
     await this.validateSupplierScope(supplierId, user);
     await this.validatePurchaseOrderScope(purchaseOrderId, user);
+    const receivingLocation = await this.validateWarehouseLocationScope(
+      receivingLocationId,
+      "receiving_location_id",
+      user
+    );
+    if (receivingLocation && receivingLocation.branch_id !== branchId) {
+      throw new BadRequestException("receiving_location_id must belong to the same branch as branch_id");
+    }
 
     const lineItems = this.parseReceiptLineItems(body.line_items ?? body.lineItems);
     for (const lineItem of lineItems) {
@@ -1215,6 +1290,7 @@ export class DistributionService {
         purchase_order_id: purchaseOrderId,
         receipt_number: receiptNumber,
         status,
+        receiving_location_id: receivingLocationId,
         received_date: this.parseDate(body.received_date ?? body.receivedDate, "received_date"),
         received_by: user.id,
         notes: this.parseOptionalString(body.notes),
@@ -1235,6 +1311,13 @@ export class DistributionService {
           select: {
             id: true,
             po_number: true
+          }
+        },
+        receiving_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
           }
         },
         line_items: true
@@ -1285,6 +1368,20 @@ export class DistributionService {
             name: true
           }
         },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
         line_items: {
           include: {
             item: {
@@ -1312,6 +1409,14 @@ export class DistributionService {
       body.destination_branch_id ?? body.destinationBranchId,
       "destination_branch_id"
     );
+    const sourceLocationId = this.parseOptionalUuid(
+      body.source_location_id ?? body.sourceLocationId,
+      "source_location_id"
+    );
+    const destinationLocationId = this.parseOptionalUuid(
+      body.destination_location_id ?? body.destinationLocationId,
+      "destination_location_id"
+    );
 
     if (!sourceBranchId) {
       throw new BadRequestException("source_branch_id is required");
@@ -1325,6 +1430,18 @@ export class DistributionService {
 
     await this.validateBranchInOrganization(sourceBranchId, "source_branch_id", user);
     await this.validateBranchInOrganization(destinationBranchId, "destination_branch_id", user);
+    const sourceLocation = await this.validateWarehouseLocationScope(sourceLocationId, "source_location_id", user);
+    const destinationLocation = await this.validateWarehouseLocationScope(
+      destinationLocationId,
+      "destination_location_id",
+      user
+    );
+    if (sourceLocation && sourceLocation.branch_id !== sourceBranchId) {
+      throw new BadRequestException("source_location_id must belong to source_branch_id");
+    }
+    if (destinationLocation && destinationLocation.branch_id !== destinationBranchId) {
+      throw new BadRequestException("destination_location_id must belong to destination_branch_id");
+    }
 
     if (user.branchId && sourceBranchId !== user.branchId && destinationBranchId !== user.branchId) {
       throw new BadRequestException("Transfer must include your branch scope");
@@ -1353,6 +1470,8 @@ export class DistributionService {
         transfer_number: transferNumber,
         source_branch_id: sourceBranchId,
         destination_branch_id: destinationBranchId,
+        source_location_id: sourceLocationId,
+        destination_location_id: destinationLocationId,
         status,
         requested_by: user.id,
         approved_by: approvedBy,
@@ -1375,6 +1494,20 @@ export class DistributionService {
         destination_branch: {
           select: {
             id: true,
+            name: true
+          }
+        },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
             name: true
           }
         },
@@ -1464,6 +1597,20 @@ export class DistributionService {
         destination_branch: {
           select: {
             id: true,
+            name: true
+          }
+        },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
             name: true
           }
         },
@@ -1719,10 +1866,22 @@ export class DistributionService {
   async createDispatch(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
     const branchId = this.parseOptionalUuid(body.branch_id ?? body.branchId, "branch_id") ?? user.branchId ?? null;
+    const dispatchLocationId = this.parseOptionalUuid(
+      body.dispatch_location_id ?? body.dispatchLocationId,
+      "dispatch_location_id"
+    );
     if (!branchId) {
       throw new BadRequestException("branch_id is required");
     }
     await this.validateBranchScope(branchId, "branch_id", user);
+    const dispatchLocation = await this.validateWarehouseLocationScope(
+      dispatchLocationId,
+      "dispatch_location_id",
+      user
+    );
+    if (dispatchLocation && dispatchLocation.branch_id !== branchId) {
+      throw new BadRequestException("dispatch_location_id must belong to the same branch as branch_id");
+    }
 
     const lineItems = this.parseDispatchLineItems(body.line_items ?? body.lineItems);
     for (const lineItem of lineItems) {
@@ -1741,6 +1900,7 @@ export class DistributionService {
       data: {
         organization_id: user.organizationId,
         branch_id: branchId,
+        dispatch_location_id: dispatchLocationId,
         dispatch_number: dispatchNumber,
         destination: this.parseRequiredString(body.destination, "destination"),
         status,
@@ -1762,6 +1922,13 @@ export class DistributionService {
         branch: {
           select: {
             id: true,
+            name: true
+          }
+        },
+        dispatch_location: {
+          select: {
+            id: true,
+            code: true,
             name: true
           }
         },
@@ -1945,11 +2112,31 @@ export class DistributionService {
       body.destination_branch_id ?? body.destinationBranchId,
       "destination_branch_id"
     );
+    const sourceLocationId = this.parseOptionalUuid(
+      body.source_location_id ?? body.sourceLocationId,
+      "source_location_id"
+    );
+    const destinationLocationId = this.parseOptionalUuid(
+      body.destination_location_id ?? body.destinationLocationId,
+      "destination_location_id"
+    );
     if (sourceBranchId) {
       await this.validateBranchInOrganization(sourceBranchId, "source_branch_id", user);
     }
     if (destinationBranchId) {
       await this.validateBranchInOrganization(destinationBranchId, "destination_branch_id", user);
+    }
+    const sourceLocation = await this.validateWarehouseLocationScope(sourceLocationId, "source_location_id", user);
+    const destinationLocation = await this.validateWarehouseLocationScope(
+      destinationLocationId,
+      "destination_location_id",
+      user
+    );
+    if (sourceLocation && sourceBranchId && sourceLocation.branch_id !== sourceBranchId) {
+      throw new BadRequestException("source_location_id must belong to source_branch_id");
+    }
+    if (destinationLocation && destinationBranchId && destinationLocation.branch_id !== destinationBranchId) {
+      throw new BadRequestException("destination_location_id must belong to destination_branch_id");
     }
     if (user.branchId && sourceBranchId !== user.branchId && destinationBranchId !== user.branchId) {
       throw new BadRequestException("Return must include your branch scope");
@@ -1978,6 +2165,8 @@ export class DistributionService {
         linked_source_id: this.parseOptionalUuid(body.linked_source_id ?? body.linkedSourceId, "linked_source_id"),
         source_branch_id: sourceBranchId,
         destination_branch_id: destinationBranchId,
+        source_location_id: sourceLocationId,
+        destination_location_id: destinationLocationId,
         reason: this.parseOptionalString(body.reason),
         condition_notes: this.parseOptionalString(body.condition_notes ?? body.conditionNotes),
         restock: this.parseBoolean(body.restock, true),
@@ -2000,6 +2189,20 @@ export class DistributionService {
         destination_branch: {
           select: {
             id: true,
+            name: true
+          }
+        },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
             name: true
           }
         },
@@ -2122,7 +2325,9 @@ export class DistributionService {
       await this.validateBranchScope(branchId, "branchId", user);
     }
     if (parentLocationId) {
-      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parentLocationId", user);
+      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parentLocationId", user, {
+        enforceUserBranch: true
+      });
       if (branchId && parent && parent.branch_id !== branchId) {
         throw new BadRequestException("parentLocationId must belong to the requested branchId");
       }
@@ -2170,7 +2375,9 @@ export class DistributionService {
       "parent_location_id"
     );
     if (parentLocationId) {
-      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parent_location_id", user);
+      const parent = await this.validateWarehouseLocationScope(parentLocationId, "parent_location_id", user, {
+        enforceUserBranch: true
+      });
       if (parent && parent.branch_id !== branchId) {
         throw new BadRequestException("parent_location_id must reference a location in the same branch");
       }
@@ -3560,7 +3767,9 @@ export class DistributionService {
         source_branch_id: true,
         destination_branch_id: true,
         source_branch: { select: { id: true, name: true } },
-        destination_branch: { select: { id: true, name: true } }
+        destination_branch: { select: { id: true, name: true } },
+        source_location: { select: { id: true, code: true, name: true } },
+        destination_location: { select: { id: true, code: true, name: true } }
       }
     });
 
@@ -3669,7 +3878,9 @@ export class DistributionService {
         notes: movement.notes,
         item: movement.item,
         source_branch: movement.source_branch,
-        destination_branch: movement.destination_branch
+        destination_branch: movement.destination_branch,
+        source_location: movement.source_location,
+        destination_location: movement.destination_location
       })),
       alerts_and_exceptions: openAlerts,
       generated_at: new Date().toISOString()

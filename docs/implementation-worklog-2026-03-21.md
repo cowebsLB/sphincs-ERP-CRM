@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Operational Location Linkage (V1.16.26)
+
+Date: 2026-03-22
+
+### Scope
+
+- Wired location IDs into existing operational distribution create flows:
+  - movements (`source_location_id`, `destination_location_id`)
+  - receipts (`receiving_location_id`)
+  - transfers (`source_location_id`, `destination_location_id`)
+  - dispatches (`dispatch_location_id`)
+  - returns (`source_location_id`, `destination_location_id`)
+- Added branch/location consistency checks so location references cannot cross branch boundaries for the same operation.
+- Expanded response includes to expose location context in list/create payloads for linked operations.
+- Extended distribution unit tests to assert location field handling across movement, receipt, transfer, dispatch, and return create flows.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `102/102` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This task completes core table-to-flow linkage for the new warehouse location model across operational APIs.
+
 ## Task: Distribution Bulk Routing Expansion (Lots + Pick/Pack) (V1.16.25)
 
 Date: 2026-03-22

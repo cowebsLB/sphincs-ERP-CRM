@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.25` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.26` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.26 - 2026-03-22
+
+### Changed
+
+- Connected warehouse-location relations into existing operational distribution APIs:
+  - movements now support `source_location_id` / `destination_location_id`
+  - receipts now support `receiving_location_id`
+  - transfers now support `source_location_id` / `destination_location_id`
+  - dispatches now support `dispatch_location_id`
+  - returns now support `source_location_id` / `destination_location_id`
+- Added branch-consistency validations between branch and location fields in create flows.
+- Extended include payloads for list/create responses to return location context where applicable.
+- Extended unit tests to assert location linkage in movement/receipt/transfer/dispatch/return creation flows.
+- System fallback version updated to `Beta V1.16.26`.
 
 ## Beta V1.16.25 - 2026-03-22
 
