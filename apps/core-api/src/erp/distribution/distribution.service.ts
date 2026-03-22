@@ -164,6 +164,8 @@ type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAI
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
 type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
 type DispatchJobTransitionAction = "START" | "COMPLETE" | "CANCEL";
+type WarehouseLocationTransitionAction = "ACTIVATE" | "DEACTIVATE";
+type LotTransitionAction = "ACTIVATE" | "HOLD" | "EXHAUST" | "CLOSE";
 
 @Injectable()
 export class DistributionService {
@@ -476,6 +478,22 @@ export class DistributionService {
       throw new BadRequestException("action must be one of: START, COMPLETE, CANCEL");
     }
     return text as DispatchJobTransitionAction;
+  }
+
+  private parseWarehouseLocationTransitionAction(value: unknown): WarehouseLocationTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!["ACTIVATE", "DEACTIVATE"].includes(text)) {
+      throw new BadRequestException("action must be one of: ACTIVATE, DEACTIVATE");
+    }
+    return text as WarehouseLocationTransitionAction;
+  }
+
+  private parseLotTransitionAction(value: unknown): LotTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!["ACTIVATE", "HOLD", "EXHAUST", "CLOSE"].includes(text)) {
+      throw new BadRequestException("action must be one of: ACTIVATE, HOLD, EXHAUST, CLOSE");
+    }
+    return text as LotTransitionAction;
   }
 
   private parseLotQuantity(value: unknown, fieldName: string, fallback = 0): number {
@@ -2424,6 +2442,36 @@ export class DistributionService {
     });
   }
 
+  async transitionWarehouseLocation(locationIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const locationId = this.parseRequiredUuid(locationIdRaw, "locationId");
+    const action = this.parseWarehouseLocationTransitionAction(body.action);
+    const location = await this.validateWarehouseLocationScope(locationId, "locationId", user, {
+      enforceUserBranch: true
+    });
+    if (!location) {
+      throw new NotFoundException("Warehouse location not found");
+    }
+
+    const updated = await this.prisma.warehouseLocation.update({
+      where: { id: location.id },
+      data: {
+        is_active: action === "ACTIVATE"
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        parent: { select: { id: true, code: true, name: true } }
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_WAREHOUSE_LOCATION_TRANSITION", "warehouse_location", location.id, {
+      action,
+      from_is_active: location.is_active,
+      to_is_active: updated.is_active
+    });
+    return updated;
+  }
+
   async listLots(filters: LotListFilters, scope?: UserScope) {
     const user = this.requireScope(scope);
     const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
@@ -2530,6 +2578,39 @@ export class DistributionService {
         supplier: { select: { id: true, name: true, supplier_code: true } }
       }
     });
+  }
+
+  async transitionLotStatus(lotIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const lotId = this.parseRequiredUuid(lotIdRaw, "lotId");
+    const action = this.parseLotTransitionAction(body.action);
+    const lot = await this.validateInventoryLotScope(lotId, "lotId", user);
+    if (!lot) {
+      throw new NotFoundException("Lot not found");
+    }
+
+    const nextStatus =
+      action === "ACTIVATE" ? "ACTIVE" : action === "HOLD" ? "HOLD" : action === "EXHAUST" ? "EXHAUSTED" : "CLOSED";
+    const updated = await this.prisma.inventoryLot.update({
+      where: { id: lot.id },
+      data: {
+        status: nextStatus,
+        ...(nextStatus === "EXHAUSTED" || nextStatus === "CLOSED" ? { quantity_available: 0 } : {}),
+        notes: this.parseOptionalString(body.notes) ?? undefined
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: { select: { id: true, name: true, sku: true } },
+        supplier: { select: { id: true, name: true, supplier_code: true } }
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_LOT_TRANSITION", "inventory_lot", lot.id, {
+      action,
+      from_status: lot.status,
+      to_status: nextStatus
+    });
+    return updated;
   }
 
   async listLotBalances(filters: LotBalanceListFilters, scope?: UserScope) {
@@ -2773,7 +2854,7 @@ export class DistributionService {
       throw new BadRequestException(`Cannot transition pick job from ${currentStatus} to ${targetStatus}`);
     }
 
-    return this.prisma.dispatchPickJob.update({
+    const updated = await this.prisma.dispatchPickJob.update({
       where: { id: pickJob.id },
       data: {
         status: targetStatus,
@@ -2792,6 +2873,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_PICK_JOB_TRANSITION", "dispatch_pick_job", pickJob.id, {
+      action,
+      from_status: currentStatus,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listDispatchPackJobs(dispatchIdRaw: string, filters: DispatchJobListFilters, scope?: UserScope) {
@@ -2919,7 +3006,7 @@ export class DistributionService {
       throw new BadRequestException(`Cannot transition pack job from ${currentStatus} to ${targetStatus}`);
     }
 
-    return this.prisma.dispatchPackJob.update({
+    const updated = await this.prisma.dispatchPackJob.update({
       where: { id: packJob.id },
       data: {
         status: targetStatus,
@@ -2938,6 +3025,12 @@ export class DistributionService {
         }
       }
     });
+    await this.recordAuditEvent(user, "DISTRIBUTION_PACK_JOB_TRANSITION", "dispatch_pack_job", packJob.id, {
+      action,
+      from_status: currentStatus,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listReservations(filters: ReservationListFilters, scope?: UserScope) {

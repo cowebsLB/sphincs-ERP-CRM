@@ -515,6 +515,30 @@ export class DistributionController {
     return this.distributionService.createWarehouseLocation(body, req?.user);
   }
 
+  @Patch("warehouse-locations/:locationId/activate")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  activateWarehouseLocation(
+    @Param("locationId") locationId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionWarehouseLocation(locationId, { ...body, action: "ACTIVATE" }, req?.user);
+  }
+
+  @Patch("warehouse-locations/:locationId/deactivate")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  deactivateWarehouseLocation(
+    @Param("locationId") locationId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionWarehouseLocation(
+      locationId,
+      { ...body, action: "DEACTIVATE" },
+      req?.user
+    );
+  }
+
   @Get("lots")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listLots(
@@ -541,6 +565,38 @@ export class DistributionController {
   @Roles(...DISTRIBUTION_WRITE_ROLES)
   createLot(@Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest): unknown {
     return this.distributionService.createLot(body, req?.user);
+  }
+
+  @Patch("lots/:lotId/activate")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  activateLot(
+    @Param("lotId") lotId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionLotStatus(lotId, { ...body, action: "ACTIVATE" }, req?.user);
+  }
+
+  @Patch("lots/:lotId/hold")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  holdLot(@Param("lotId") lotId: string, @Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest) {
+    return this.distributionService.transitionLotStatus(lotId, { ...body, action: "HOLD" }, req?.user);
+  }
+
+  @Patch("lots/:lotId/exhaust")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  exhaustLot(
+    @Param("lotId") lotId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionLotStatus(lotId, { ...body, action: "EXHAUST" }, req?.user);
+  }
+
+  @Patch("lots/:lotId/close")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  closeLot(@Param("lotId") lotId: string, @Body() body: Record<string, unknown>, @Req() req?: AuthenticatedRequest) {
+    return this.distributionService.transitionLotStatus(lotId, { ...body, action: "CLOSE" }, req?.user);
   }
 
   @Get("lot-balances")

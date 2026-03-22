@@ -7,7 +7,31 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.26` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.27` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.27 - 2026-03-22
+
+### Added
+
+- Warehouse location lifecycle endpoints:
+  - `PATCH /api/v1/distribution/warehouse-locations/:locationId/activate`
+  - `PATCH /api/v1/distribution/warehouse-locations/:locationId/deactivate`
+- Lot lifecycle endpoints:
+  - `PATCH /api/v1/distribution/lots/:lotId/activate`
+  - `PATCH /api/v1/distribution/lots/:lotId/hold`
+  - `PATCH /api/v1/distribution/lots/:lotId/exhaust`
+  - `PATCH /api/v1/distribution/lots/:lotId/close`
+- Audit events for new lifecycle and workflow actions:
+  - warehouse location transitions
+  - lot transitions
+  - dispatch pick job transitions
+  - dispatch pack job transitions
+
+### Changed
+
+- Lifecycle transitions now enforce status/action validation for lots and warehouse locations.
+- Lot transitions to `EXHAUSTED`/`CLOSED` now force `quantity_available = 0`.
+- System fallback version updated to `Beta V1.16.27`.
 
 ## Beta V1.16.26 - 2026-03-22
 

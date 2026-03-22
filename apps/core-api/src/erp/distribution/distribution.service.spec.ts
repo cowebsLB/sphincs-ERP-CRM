@@ -222,6 +222,17 @@ describe("DistributionService", () => {
               deleted_at: null
             };
           }
+          if (where.id === "77777777-7777-4777-8777-777777777777") {
+            return {
+              id: "77777777-7777-4777-8777-777777777777",
+              organization_id: "org-1",
+              branch_id: BRANCH_1,
+              code: "BIN-A2",
+              name: "Bin A2",
+              is_active: true,
+              deleted_at: null
+            };
+          }
           if (
             where.organization_id === "org-1" &&
             where.branch_id === BRANCH_1 &&
@@ -247,6 +258,13 @@ describe("DistributionService", () => {
         is_active: true,
         branch: { id: BRANCH_1, name: "Main" },
         parent: { id: LOCATION_PARENT_BRANCH_1, code: "ZONE-A", name: "Zone A" }
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "77777777-7777-4777-8777-777777777777",
+        code: "BIN-A2",
+        is_active: false,
+        branch: { id: BRANCH_1, name: "Main" },
+        parent: { id: LOCATION_PARENT_BRANCH_1, code: "ZONE-A", name: "Zone A" }
       })
     },
     inventoryLot: {
@@ -270,6 +288,7 @@ describe("DistributionService", () => {
             organization_id: "org-1",
             branch_id: BRANCH_1,
             item_id: "33333333-3333-4333-8333-333333333333",
+            status: "ACTIVE",
             deleted_at: null
           };
         }
@@ -280,6 +299,12 @@ describe("DistributionService", () => {
         branch_id: BRANCH_1,
         item_id: "33333333-3333-4333-8333-333333333333",
         status: "ACTIVE"
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "99999999-9999-4999-8999-999999999999",
+        branch_id: BRANCH_1,
+        item_id: "33333333-3333-4333-8333-333333333333",
+        status: "HOLD"
       })
     },
     inventoryLotBalance: {
@@ -1411,6 +1436,38 @@ describe("DistributionService", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it("deactivates warehouse location and writes audit", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transitionWarehouseLocation(
+      "77777777-7777-4777-8777-777777777777",
+      { action: "DEACTIVATE" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.warehouseLocation.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          is_active: false
+        })
+      })
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_WAREHOUSE_LOCATION_TRANSITION",
+          entity_type: "warehouse_location"
+        })
+      })
+    );
+    expect(result.id).toBe("77777777-7777-4777-8777-777777777777");
+  });
+
   it("lists lots with scoped filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -1471,6 +1528,38 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("99999999-9999-4999-8999-999999999999");
+  });
+
+  it("transitions lot status to HOLD and writes audit", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transitionLotStatus(
+      "88888888-8888-4888-8888-888888888888",
+      { action: "HOLD" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryLot.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "HOLD"
+        })
+      })
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_LOT_TRANSITION",
+          entity_type: "inventory_lot"
+        })
+      })
+    );
+    expect(result.status).toBe("HOLD");
   });
 
   it("creates lot balances with same-branch lot linkage", async () => {
@@ -1557,6 +1646,30 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+  });
+
+  it("writes audit for dispatch pick job transition", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatchPickJob(
+      "14141414-1414-4141-8141-141414141414",
+      { action: "START" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_PICK_JOB_TRANSITION",
+          entity_type: "dispatch_pick_job"
+        })
+      })
+    );
   });
 
   it("creates reservations with scoped validation", async () => {

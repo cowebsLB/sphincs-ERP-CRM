@@ -37,8 +37,14 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/returns/:returnId/cancel`
 - `GET /api/v1/distribution/warehouse-locations`
 - `POST /api/v1/distribution/warehouse-locations`
+- `PATCH /api/v1/distribution/warehouse-locations/:locationId/activate`
+- `PATCH /api/v1/distribution/warehouse-locations/:locationId/deactivate`
 - `GET /api/v1/distribution/lots`
 - `POST /api/v1/distribution/lots`
+- `PATCH /api/v1/distribution/lots/:lotId/activate`
+- `PATCH /api/v1/distribution/lots/:lotId/hold`
+- `PATCH /api/v1/distribution/lots/:lotId/exhaust`
+- `PATCH /api/v1/distribution/lots/:lotId/close`
 - `GET /api/v1/distribution/lot-balances`
 - `POST /api/v1/distribution/lot-balances`
 - `GET /api/v1/distribution/dispatches/:dispatchId/pick-jobs`
@@ -176,6 +182,11 @@ Validation includes:
 - parent location must belong to the same branch
 - branch-level unique `code` enforcement
 
+Lifecycle:
+
+- `PATCH /warehouse-locations/:locationId/activate`
+- `PATCH /warehouse-locations/:locationId/deactivate`
+
 ## Lot API Notes (V1.16.25)
 
 ### `GET /api/v1/distribution/lots`
@@ -212,6 +223,13 @@ Validation includes:
 
 - `quantity_available <= quantity_received`
 - organization and branch scope checks for related entities
+
+Lifecycle:
+
+- `PATCH /lots/:lotId/activate`
+- `PATCH /lots/:lotId/hold`
+- `PATCH /lots/:lotId/exhaust`
+- `PATCH /lots/:lotId/close`
 
 ## Lot Balance API Notes (V1.16.25)
 

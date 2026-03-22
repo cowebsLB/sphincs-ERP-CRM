@@ -1,5 +1,38 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Lifecycle Controls For Locations And Lots (V1.16.27)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added warehouse location lifecycle actions:
+  - activate
+  - deactivate
+- Added lot lifecycle actions:
+  - activate
+  - hold
+  - exhaust
+  - close
+- Added audit event writes for:
+  - warehouse location transitions
+  - lot transitions
+  - pick-job transitions
+  - pack-job transitions
+- Added unit coverage for:
+  - warehouse location transition behavior
+  - lot transition behavior
+  - pick-job transition audit behavior
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `105/105` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This completes lifecycle control on newly introduced phase-2 entities so operations can manage active/hold/exhausted states via API without direct DB changes.
+
 ## Task: Distribution Operational Location Linkage (V1.16.26)
 
 Date: 2026-03-22
