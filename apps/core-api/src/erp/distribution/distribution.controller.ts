@@ -950,4 +950,22 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/branch-sla")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  branchSlaReport(
+    @Query("branchId") branchId?: string,
+    @Query("slaDays") slaDays?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.branchSlaReport(
+      {
+        branchId,
+        slaDays: slaDays ? Number(slaDays) : undefined,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

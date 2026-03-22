@@ -2515,6 +2515,75 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds branch SLA report with on-time and overdue metrics", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.branch.findMany.mockResolvedValue([
+      { id: BRANCH_1, name: "Main" },
+      { id: BRANCH_2, name: "North" }
+    ]);
+    prismaMock.goodsReceipt.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        status: "RECEIVED",
+        created_at: new Date("2026-03-20T10:00:00.000Z"),
+        received_date: new Date("2026-03-21T09:00:00.000Z")
+      },
+      {
+        branch_id: BRANCH_2,
+        status: "PARTIAL",
+        created_at: new Date("2026-03-01T10:00:00.000Z"),
+        received_date: null
+      }
+    ]);
+    prismaMock.stockTransfer.findMany.mockResolvedValue([
+      {
+        source_branch_id: BRANCH_1,
+        status: "COMPLETED",
+        created_date: new Date("2026-03-20T10:00:00.000Z"),
+        received_date: new Date("2026-03-21T08:00:00.000Z")
+      }
+    ]);
+    prismaMock.stockDispatch.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        status: "DELIVERED",
+        created_at: new Date("2026-03-20T10:00:00.000Z"),
+        dispatch_date: new Date("2026-03-21T12:00:00.000Z")
+      },
+      {
+        branch_id: BRANCH_2,
+        status: "READY",
+        created_at: new Date("2026-03-01T10:00:00.000Z"),
+        dispatch_date: null
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.branchSlaReport(
+      {
+        slaDays: 2,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1"
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_branches: 2,
+        receipt_on_time_rate_pct: 50
+      })
+    );
+    expect(result.rows.find((row: { branch_id: string }) => row.branch_id === BRANCH_2)).toEqual(
+      expect.objectContaining({
+        receipt_overdue_open: 1,
+        dispatch_overdue_open: 1
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

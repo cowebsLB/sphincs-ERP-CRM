@@ -1,5 +1,35 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Branch SLA Report (V1.16.32)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/branch-sla`
+- Added branch-level SLA metrics for:
+  - receipts
+  - transfers
+  - dispatches
+- Added per-branch output fields for:
+  - totals
+  - on-time counts
+  - overdue-open counts
+  - on-time rate percentages
+- Added summary-level SLA percentages aggregated across all included branches.
+- Added configurable SLA window support (`slaDays`).
+- Added unit coverage for branch SLA calculations and overdue detection behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `112/112` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This report introduces branch health visibility for operations performance monitoring and SLA-oriented management.
+
 ## Task: Distribution Operations Exceptions Report (V1.16.31)
 
 Date: 2026-03-22

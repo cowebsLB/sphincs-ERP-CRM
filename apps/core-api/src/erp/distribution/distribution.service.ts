@@ -205,6 +205,12 @@ type OperationsExceptionsReportFilters = {
   includeDeleted?: boolean;
 };
 
+type BranchSlaReportFilters = {
+  branchId?: string;
+  slaDays?: number;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -4354,6 +4360,210 @@ export class DistributionService {
       overdue_transfers: overdueTransfers,
       overdue_dispatches: overdueDispatches,
       negative_stock_risks: negativeStockRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async branchSlaReport(filters: BranchSlaReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const slaDays = this.parseInteger(filters.slaDays, "slaDays", 2);
+    if (slaDays < 1) {
+      throw new BadRequestException("slaDays must be at least 1");
+    }
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const branches = await this.prisma.branch.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { id: branchId } : {}),
+        ...(user.branchId ? { id: user.branchId } : {})
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    });
+    const branchIds = branches.map((row) => row.id);
+    if (branchIds.length === 0) {
+      return {
+        summary: {
+          total_branches: 0,
+          receipt_on_time_rate_pct: 0,
+          transfer_on_time_rate_pct: 0,
+          dispatch_on_time_rate_pct: 0
+        },
+        rows: [],
+        generated_at: new Date().toISOString()
+      };
+    }
+
+    const receipts = await this.prisma.goodsReceipt.findMany({
+      where: {
+        organization_id: user.organizationId,
+        branch_id: { in: branchIds },
+        ...(filters.includeDeleted ? {} : { deleted_at: null })
+      },
+      select: {
+        branch_id: true,
+        status: true,
+        created_at: true,
+        received_date: true
+      },
+      take: 3000
+    });
+
+    const transfers = await this.prisma.stockTransfer.findMany({
+      where: {
+        organization_id: user.organizationId,
+        source_branch_id: { in: branchIds },
+        ...(filters.includeDeleted ? {} : { deleted_at: null })
+      },
+      select: {
+        source_branch_id: true,
+        status: true,
+        created_date: true,
+        received_date: true
+      },
+      take: 3000
+    });
+
+    const dispatches = await this.prisma.stockDispatch.findMany({
+      where: {
+        organization_id: user.organizationId,
+        branch_id: { in: branchIds },
+        ...(filters.includeDeleted ? {} : { deleted_at: null })
+      },
+      select: {
+        branch_id: true,
+        status: true,
+        created_at: true,
+        dispatch_date: true
+      },
+      take: 3000
+    });
+
+    const now = new Date();
+    const rows = branches.map((branch) => {
+      const branchReceipts = receipts.filter((row) => row.branch_id === branch.id);
+      const branchTransfers = transfers.filter((row) => row.source_branch_id === branch.id);
+      const branchDispatches = dispatches.filter((row) => row.branch_id === branch.id);
+
+      const receiptOnTime = branchReceipts.filter((row) => {
+        if (!row.received_date) {
+          return false;
+        }
+        const deadline = new Date(row.created_at.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return row.received_date <= deadline;
+      }).length;
+      const receiptOverdueOpen = branchReceipts.filter((row) => {
+        const isOpen = row.status === GoodsReceiptStatus.DRAFT || row.status === GoodsReceiptStatus.PARTIAL;
+        if (!isOpen) {
+          return false;
+        }
+        const deadline = new Date(row.created_at.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return deadline <= now;
+      }).length;
+
+      const transferOnTime = branchTransfers.filter((row) => {
+        if (!row.received_date) {
+          return false;
+        }
+        const deadline = new Date(row.created_date.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return row.received_date <= deadline;
+      }).length;
+      const transferOverdueOpen = branchTransfers.filter((row) => {
+        const isOpen =
+          row.status === StockTransferStatus.REQUESTED ||
+          row.status === StockTransferStatus.APPROVED ||
+          row.status === StockTransferStatus.DISPATCHED;
+        if (!isOpen) {
+          return false;
+        }
+        const deadline = new Date(row.created_date.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return deadline <= now;
+      }).length;
+
+      const dispatchOnTime = branchDispatches.filter((row) => {
+        if (row.status !== DispatchStatus.DELIVERED || !row.dispatch_date) {
+          return false;
+        }
+        const deadline = new Date(row.created_at.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return row.dispatch_date <= deadline;
+      }).length;
+      const dispatchOverdueOpen = branchDispatches.filter((row) => {
+        const isOpen =
+          row.status === DispatchStatus.READY ||
+          row.status === DispatchStatus.PACKED ||
+          row.status === DispatchStatus.DISPATCHED;
+        if (!isOpen) {
+          return false;
+        }
+        const deadline = new Date(row.created_at.getTime() + slaDays * 24 * 60 * 60 * 1000);
+        return deadline <= now;
+      }).length;
+
+      return {
+        branch_id: branch.id,
+        branch_name: branch.name,
+        receipt_total: branchReceipts.length,
+        receipt_on_time: receiptOnTime,
+        receipt_overdue_open: receiptOverdueOpen,
+        receipt_on_time_rate_pct:
+          branchReceipts.length > 0 ? Number(((receiptOnTime / branchReceipts.length) * 100).toFixed(2)) : 0,
+        transfer_total: branchTransfers.length,
+        transfer_on_time: transferOnTime,
+        transfer_overdue_open: transferOverdueOpen,
+        transfer_on_time_rate_pct:
+          branchTransfers.length > 0 ? Number(((transferOnTime / branchTransfers.length) * 100).toFixed(2)) : 0,
+        dispatch_total: branchDispatches.length,
+        dispatch_on_time: dispatchOnTime,
+        dispatch_overdue_open: dispatchOverdueOpen,
+        dispatch_on_time_rate_pct:
+          branchDispatches.length > 0 ? Number(((dispatchOnTime / branchDispatches.length) * 100).toFixed(2)) : 0
+      };
+    });
+
+    const summary = {
+      total_branches: rows.length,
+      receipt_on_time_rate_pct:
+        rows.reduce((sum, row) => sum + row.receipt_total, 0) > 0
+          ? Number(
+              (
+                (rows.reduce((sum, row) => sum + row.receipt_on_time, 0) /
+                  rows.reduce((sum, row) => sum + row.receipt_total, 0)) *
+                100
+              ).toFixed(2)
+            )
+          : 0,
+      transfer_on_time_rate_pct:
+        rows.reduce((sum, row) => sum + row.transfer_total, 0) > 0
+          ? Number(
+              (
+                (rows.reduce((sum, row) => sum + row.transfer_on_time, 0) /
+                  rows.reduce((sum, row) => sum + row.transfer_total, 0)) *
+                100
+              ).toFixed(2)
+            )
+          : 0,
+      dispatch_on_time_rate_pct:
+        rows.reduce((sum, row) => sum + row.dispatch_total, 0) > 0
+          ? Number(
+              (
+                (rows.reduce((sum, row) => sum + row.dispatch_on_time, 0) /
+                  rows.reduce((sum, row) => sum + row.dispatch_total, 0)) *
+                100
+              ).toFixed(2)
+            )
+          : 0
+    };
+
+    return {
+      summary,
+      rows,
       generated_at: new Date().toISOString()
     };
   }

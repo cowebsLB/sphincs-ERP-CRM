@@ -74,6 +74,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/fast-slow-movers`
 - `GET /api/v1/distribution/reports/supplier-fulfillment`
 - `GET /api/v1/distribution/reports/operations-exceptions`
+- `GET /api/v1/distribution/reports/branch-sla`
 
 ## Purpose
 
@@ -906,3 +907,20 @@ Behavior:
   - overdue dispatches
   - negative stock risks
 - Includes summary totals for each category plus combined total exceptions.
+
+### `GET /api/v1/distribution/reports/branch-sla` (V1.16.32)
+
+Supported query parameters:
+
+- `branchId`
+- `slaDays`
+- `includeDeleted`
+
+Behavior:
+
+- Returns per-branch SLA metrics across:
+  - receipts
+  - transfers
+  - dispatches
+- Includes on-time counts, overdue-open counts, and on-time rate percentages by flow.
+- Includes global summary percentages across all included branches.

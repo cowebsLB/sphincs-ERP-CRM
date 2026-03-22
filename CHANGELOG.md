@@ -7,7 +7,27 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.31` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.32` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.32 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/branch-sla`
+- Branch SLA report includes:
+  - receipt on-time and overdue-open metrics by branch
+  - transfer on-time and overdue-open metrics by branch
+  - dispatch on-time and overdue-open metrics by branch
+  - global SLA summary percentages
+- Configurable SLA window:
+  - `slaDays`
+- Unit coverage for branch SLA summary and overdue behavior.
+
+### Changed
+
+- Distribution analytics now includes per-branch SLA health for inbound, transfer, and dispatch pipelines.
+- System fallback version updated to `Beta V1.16.32`.
 
 ## Beta V1.16.31 - 2026-03-22
 
