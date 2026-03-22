@@ -7,7 +7,29 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.27` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.28` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.28 - 2026-03-22
+
+### Added
+
+- Distribution report endpoints:
+  - `GET /api/v1/distribution/reports/receipts`
+  - `GET /api/v1/distribution/reports/stock-loss`
+- Receipt fulfillment report includes:
+  - ordered/received/rejected/remaining quantity totals
+  - fill-rate metrics
+  - status grouping
+- Stock-loss report includes:
+  - damaged return losses
+  - decrease adjustment losses
+  - aggregate lost quantity summaries by source
+- Unit coverage for both new report flows.
+
+### Changed
+
+- Distribution reporting surface now includes stock-on-hand, movements, transfers, adjustments, receipts, and stock-loss slices.
+- System fallback version updated to `Beta V1.16.28`.
 
 ## Beta V1.16.27 - 2026-03-22
 

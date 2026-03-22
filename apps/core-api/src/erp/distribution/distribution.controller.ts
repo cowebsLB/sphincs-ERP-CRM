@@ -822,4 +822,48 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/receipts")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  receiptFulfillmentReport(
+    @Query("status") status?: string,
+    @Query("supplierId") supplierId?: string,
+    @Query("branchId") branchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.receiptFulfillmentReport(
+      {
+        status,
+        supplierId,
+        branchId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
+
+  @Get("reports/stock-loss")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  stockLossReport(
+    @Query("branchId") branchId?: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.stockLossReport(
+      {
+        branchId,
+        from,
+        to,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

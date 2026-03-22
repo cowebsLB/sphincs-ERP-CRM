@@ -1,5 +1,33 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Receipts + Stock Loss Reports (V1.16.28)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoints:
+  - `GET /api/v1/distribution/reports/receipts`
+  - `GET /api/v1/distribution/reports/stock-loss`
+- Added receipt fulfillment reporting with:
+  - per-receipt ordered/received/rejected/remaining totals
+  - fill-rate metrics
+  - grouped status summary
+- Added stock-loss reporting with consolidated rows from:
+  - damaged return lines
+  - decrease adjustment lines
+- Added summary outputs for loss event count, lost quantity totals, and source grouping.
+- Added unit coverage for both reporting methods.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `107/107` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This extends distribution reporting toward the full operational reporting set by covering inbound fulfillment and loss visibility.
+
 ## Task: Distribution Lifecycle Controls For Locations And Lots (V1.16.27)
 
 Date: 2026-03-22

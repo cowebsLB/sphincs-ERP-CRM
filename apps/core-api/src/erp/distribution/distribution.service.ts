@@ -159,6 +159,22 @@ type AdjustmentReportFilters = {
   includeDeleted?: boolean;
 };
 
+type ReceiptReportFilters = {
+  status?: string;
+  supplierId?: string;
+  branchId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
+type StockLossReportFilters = {
+  branchId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -3745,6 +3761,217 @@ export class DistributionService {
     return {
       summary,
       rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async receiptFulfillmentReport(filters: ReceiptReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const status = this.parseOptionalGoodsReceiptStatus(filters.status);
+    const supplierId = filters.supplierId ? this.parseRequiredUuid(filters.supplierId, "supplierId") : undefined;
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+
+    if (supplierId) {
+      await this.validateSupplierScope(supplierId, user);
+    }
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rows = await this.prisma.goodsReceipt.findMany({
+      where: {
+        organization_id: user.organizationId,
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(status ? { status } : {}),
+        ...(supplierId ? { supplier_id: supplierId } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(fromDate || toDate
+          ? {
+              received_date: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {})
+              }
+            }
+          : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {})
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true, supplier_code: true } },
+        line_items: true
+      },
+      orderBy: { created_at: "desc" },
+      take: 300
+    });
+
+    const reportRows = rows.map((row) => {
+      const orderedQty = row.line_items.reduce((sum, line) => sum + line.ordered_qty, 0);
+      const receivedQty = row.line_items.reduce((sum, line) => sum + line.received_qty, 0);
+      const rejectedQty = row.line_items.reduce((sum, line) => sum + line.rejected_qty, 0);
+      const remainingQty = row.line_items.reduce((sum, line) => sum + line.remaining_qty, 0);
+      const fillRatePct = orderedQty > 0 ? Number(((receivedQty / orderedQty) * 100).toFixed(2)) : 0;
+      return {
+        id: row.id,
+        receipt_number: row.receipt_number,
+        status: row.status,
+        branch_id: row.branch_id,
+        branch_name: row.branch.name,
+        supplier_id: row.supplier_id,
+        supplier_name: row.supplier?.name ?? null,
+        ordered_qty_total: orderedQty,
+        received_qty_total: receivedQty,
+        rejected_qty_total: rejectedQty,
+        remaining_qty_total: remainingQty,
+        fill_rate_pct: fillRatePct,
+        received_date: row.received_date,
+        created_at: row.created_at
+      };
+    });
+
+    const summary = {
+      total_receipts: reportRows.length,
+      ordered_qty_total: reportRows.reduce((sum, row) => sum + row.ordered_qty_total, 0),
+      received_qty_total: reportRows.reduce((sum, row) => sum + row.received_qty_total, 0),
+      rejected_qty_total: reportRows.reduce((sum, row) => sum + row.rejected_qty_total, 0),
+      remaining_qty_total: reportRows.reduce((sum, row) => sum + row.remaining_qty_total, 0),
+      by_status: reportRows.reduce<Record<string, number>>((acc, row) => {
+        acc[row.status] = (acc[row.status] ?? 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return {
+      summary,
+      rows: reportRows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async stockLossReport(filters: StockLossReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    const fromDate = this.parseDate(filters.from, "from");
+    const toDate = this.parseDate(filters.to, "to");
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const damagedReturns = await this.prisma.stockReturnLine.findMany({
+      where: {
+        damaged: true,
+        stock_return: {
+          organization_id: user.organizationId,
+          ...(filters.includeDeleted ? {} : { deleted_at: null }),
+          ...(branchId
+            ? {
+                OR: [{ source_branch_id: branchId }, { destination_branch_id: branchId }]
+              }
+            : {}),
+          ...(user.branchId
+            ? {
+                OR: [{ source_branch_id: user.branchId }, { destination_branch_id: user.branchId }]
+              }
+            : {}),
+          ...(fromDate || toDate
+            ? {
+                processed_date: {
+                  ...(fromDate ? { gte: fromDate } : {}),
+                  ...(toDate ? { lte: toDate } : {})
+                }
+              }
+            : {})
+        }
+      },
+      include: {
+        item: { select: { id: true, name: true, sku: true } },
+        stock_return: {
+          select: {
+            id: true,
+            return_number: true,
+            processed_date: true,
+            source_branch_id: true,
+            destination_branch_id: true
+          }
+        }
+      },
+      take: 500
+    });
+
+    const decreaseAdjustments = await this.prisma.stockAdjustmentLine.findMany({
+      where: {
+        variance: { lt: 0 },
+        stock_adjustment: {
+          organization_id: user.organizationId,
+          adjustment_type: StockAdjustmentType.DECREASE,
+          ...(filters.includeDeleted ? {} : { deleted_at: null }),
+          ...(branchId ? { branch_id: branchId } : {}),
+          ...(user.branchId ? { branch_id: user.branchId } : {}),
+          ...(fromDate || toDate
+            ? {
+                created_at: {
+                  ...(fromDate ? { gte: fromDate } : {}),
+                  ...(toDate ? { lte: toDate } : {})
+                }
+              }
+            : {})
+        }
+      },
+      include: {
+        item: { select: { id: true, name: true, sku: true } },
+        stock_adjustment: {
+          select: {
+            id: true,
+            adjustment_number: true,
+            reason: true,
+            created_at: true,
+            branch_id: true
+          }
+        }
+      },
+      take: 500
+    });
+
+    const returnRows = damagedReturns.map((row) => ({
+      source: "RETURN_DAMAGED",
+      reference_number: row.stock_return.return_number,
+      item_id: row.item_id,
+      item_name: row.item.name,
+      sku: row.item.sku,
+      quantity_lost: row.quantity,
+      reason: row.condition ?? "damaged return",
+      occurred_at: row.stock_return.processed_date,
+      branch_id: row.stock_return.destination_branch_id ?? row.stock_return.source_branch_id
+    }));
+
+    const adjustmentRows = decreaseAdjustments.map((row) => ({
+      source: "ADJUSTMENT_DECREASE",
+      reference_number: row.stock_adjustment.adjustment_number,
+      item_id: row.item_id,
+      item_name: row.item.name,
+      sku: row.item.sku,
+      quantity_lost: Math.abs(row.variance),
+      reason: row.stock_adjustment.reason ?? "stock decrease",
+      occurred_at: row.stock_adjustment.created_at,
+      branch_id: row.stock_adjustment.branch_id
+    }));
+
+    const rows = [...returnRows, ...adjustmentRows].sort(
+      (a, b) => (new Date(b.occurred_at ?? 0).getTime() || 0) - (new Date(a.occurred_at ?? 0).getTime() || 0)
+    );
+    const summary = {
+      total_events: rows.length,
+      total_quantity_lost: rows.reduce((sum, row) => sum + row.quantity_lost, 0),
+      by_source: rows.reduce<Record<string, number>>((acc, row) => {
+        acc[row.source] = (acc[row.source] ?? 0) + row.quantity_lost;
+        return acc;
+      }, {})
+    };
+
+    return {
+      summary,
+      rows,
       generated_at: new Date().toISOString()
     };
   }

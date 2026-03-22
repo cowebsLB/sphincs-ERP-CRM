@@ -68,6 +68,8 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/movements`
 - `GET /api/v1/distribution/reports/transfers`
 - `GET /api/v1/distribution/reports/adjustments`
+- `GET /api/v1/distribution/reports/receipts`
+- `GET /api/v1/distribution/reports/stock-loss`
 
 ## Purpose
 
@@ -306,10 +308,7 @@ Validation rules:
 
 ## Next API Steps
 
-1. Add warehouse-location CRUD and branch-level stock visibility APIs.
-2. Add lot-level stock tracing endpoints and reporting.
-3. Add pick/pack job APIs to support outbound operational execution.
-4. Add advanced KPI/analytics rollups (supplier fulfillment, fast/slow movers, branch SLA metrics).
+1. Add advanced KPI/analytics rollups (supplier fulfillment accuracy trendlines, fast/slow movers, branch SLA metrics).
 
 ## Movement API Notes (V1.16.3)
 
@@ -786,3 +785,44 @@ Behavior:
   - increase total
   - decrease total
   - grouped adjustment counts by status
+
+### `GET /api/v1/distribution/reports/receipts` (V1.16.28)
+
+Supported query parameters:
+
+- `status`
+- `supplierId`
+- `branchId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Returns receipt rows with branch and supplier context.
+- Includes fulfillment metrics per receipt:
+  - `ordered_qty_total`
+  - `received_qty_total`
+  - `rejected_qty_total`
+  - `remaining_qty_total`
+  - `fill_rate_pct`
+- Includes a summary block with total quantities and grouped status counts.
+
+### `GET /api/v1/distribution/reports/stock-loss` (V1.16.28)
+
+Supported query parameters:
+
+- `branchId`
+- `from`
+- `to`
+- `includeDeleted`
+
+Behavior:
+
+- Returns unified loss rows from:
+  - damaged return lines
+  - decrease adjustment lines
+- Includes a summary block with:
+  - total events
+  - total lost quantity
+  - grouped totals by loss source

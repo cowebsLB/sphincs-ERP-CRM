@@ -399,6 +399,9 @@ describe("DistributionService", () => {
         }
       ])
     },
+    stockAdjustmentLine: {
+      findMany: jest.fn().mockResolvedValue([])
+    },
     auditLog: {
       create: jest.fn().mockResolvedValue({
         id: "audit-1"
@@ -2188,6 +2191,120 @@ describe("DistributionService", () => {
         variance_total: -2
       })
     );
+  });
+
+  it("builds receipt fulfillment report with quantity summaries", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.goodsReceipt.findMany.mockResolvedValue([
+      {
+        id: "gr-1",
+        receipt_number: "GR-1001",
+        status: "PARTIAL",
+        branch_id: BRANCH_1,
+        supplier_id: "sup-1",
+        received_date: new Date("2026-03-21T11:00:00.000Z"),
+        created_at: new Date("2026-03-21T10:00:00.000Z"),
+        branch: { id: BRANCH_1, name: "Main" },
+        supplier: { id: "sup-1", name: "Supplier A", supplier_code: "SUP-A" },
+        line_items: [
+          { ordered_qty: 10, received_qty: 7, rejected_qty: 1, remaining_qty: 2 },
+          { ordered_qty: 5, received_qty: 5, rejected_qty: 0, remaining_qty: 0 }
+        ]
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.receiptFulfillmentReport(
+      {
+        status: "PARTIAL",
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.goodsReceipt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          status: "PARTIAL",
+          branch_id: BRANCH_1,
+          deleted_at: null
+        })
+      })
+    );
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_receipts: 1,
+        ordered_qty_total: 15,
+        received_qty_total: 12,
+        rejected_qty_total: 1,
+        remaining_qty_total: 2
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        receipt_number: "GR-1001",
+        fill_rate_pct: 80
+      })
+    );
+  });
+
+  it("builds stock-loss report from returns and adjustment decreases", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockReturnLine.findMany.mockResolvedValue([
+      {
+        quantity: 3,
+        condition: "damaged",
+        item_id: "item-1",
+        item: { id: "item-1", name: "Widget A", sku: "W-A" },
+        stock_return: {
+          id: "ret-1",
+          return_number: "RET-1001",
+          processed_date: new Date("2026-03-21T12:00:00.000Z"),
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2
+        }
+      }
+    ]);
+    prismaMock.stockAdjustmentLine.findMany.mockResolvedValue([
+      {
+        variance: -4,
+        item_id: "item-2",
+        item: { id: "item-2", name: "Widget B", sku: "W-B" },
+        stock_adjustment: {
+          id: "adj-1",
+          adjustment_number: "ADJ-1001",
+          reason: "expired",
+          created_at: new Date("2026-03-21T11:00:00.000Z"),
+          branch_id: BRANCH_1
+        }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.stockLossReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_events: 2,
+        total_quantity_lost: 7
+      })
+    );
+    expect(result.summary.by_source.RETURN_DAMAGED).toBe(3);
+    expect(result.summary.by_source.ADJUSTMENT_DECREASE).toBe(4);
   });
 
   it("enforces user scope for dashboard access", async () => {
