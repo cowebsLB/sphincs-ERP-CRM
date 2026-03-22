@@ -27,6 +27,7 @@ type DashboardMetric = {
 type MovementListFilters = {
   movementType?: string;
   itemId?: string;
+  branchId?: string;
   status?: string;
   from?: string;
   to?: string;
@@ -1356,11 +1357,15 @@ export class DistributionService {
     const user = this.requireScope(scope);
     const movementType = this.parseOptionalMovementType(filters.movementType);
     const itemId = filters.itemId ? this.parseRequiredUuid(filters.itemId, "itemId") : undefined;
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
     const fromDate = this.parseDate(filters.from, "from");
     const toDate = this.parseDate(filters.to, "to");
 
     if (fromDate && toDate && fromDate > toDate) {
       throw new BadRequestException("from must be before to");
+    }
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
     }
 
     const where: Record<string, unknown> = {
@@ -1384,7 +1389,9 @@ export class DistributionService {
       };
     }
 
-    if (user.branchId) {
+    if (branchId) {
+      where.OR = [{ branch_id: branchId }, { source_branch_id: branchId }, { destination_branch_id: branchId }];
+    } else if (user.branchId) {
       where.OR = [
         { branch_id: user.branchId },
         { source_branch_id: user.branchId },

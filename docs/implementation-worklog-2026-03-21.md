@@ -1,5 +1,27 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Movement Branch Filter Support (V1.16.41)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added `branchId` filter support to `GET /api/v1/distribution/movements`.
+- Extended movement list service filtering to:
+  - validate requested branch scope
+  - apply branch-level movement filtering against `branch_id`, `source_branch_id`, and `destination_branch_id`
+  - preserve user scope enforcement behavior
+- Added unit coverage for explicit branch-filtered movement listing.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `125/125` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This improves movement-log usability for branch operations by enabling direct branch-targeted queries.
+
 ## Task: Movement-to-Stock Auto Sync (V1.16.40)
 
 Date: 2026-03-22

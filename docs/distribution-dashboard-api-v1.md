@@ -94,6 +94,10 @@ Date: 2026-03-21
 
 Provides the first unified distribution overview payload for operational triage ("what is on fire today?").
 
+## Query Notes
+
+- `GET /api/v1/distribution/movements` supports `branchId` for explicit branch-level movement filtering.
+
 ## Access
 
 Role-gated via `@Roles(...)` on controller:

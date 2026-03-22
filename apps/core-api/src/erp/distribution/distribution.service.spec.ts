@@ -591,6 +591,39 @@ describe("DistributionService", () => {
     );
   });
 
+  it("lists movements with explicit branch filter", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.listMovements(
+      {
+        movementType: "TRANSFER_IN",
+        branchId: BRANCH_1,
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: "org-1",
+          movement_type: "TRANSFER_IN",
+          deleted_at: null,
+          OR: [
+            { branch_id: BRANCH_1 },
+            { source_branch_id: BRANCH_1 },
+            { destination_branch_id: BRANCH_1 }
+          ]
+        })
+      })
+    );
+  });
+
   it("lists inventory stocks with branch and item scope", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

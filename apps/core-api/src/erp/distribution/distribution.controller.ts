@@ -38,6 +38,7 @@ export class DistributionController {
   listMovements(
     @Query("movementType") movementType?: string,
     @Query("itemId") itemId?: string,
+    @Query("branchId") branchId?: string,
     @Query("status") status?: string,
     @Query("from") from?: string,
     @Query("to") to?: string,
@@ -48,6 +49,7 @@ export class DistributionController {
       {
         movementType,
         itemId,
+        branchId,
         status,
         from,
         to,

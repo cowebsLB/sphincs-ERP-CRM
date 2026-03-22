@@ -7,7 +7,19 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.40` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.41` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.41 - 2026-03-22
+
+### Added
+
+- `GET /api/v1/distribution/movements` now accepts `branchId` as an explicit filter query parameter.
+- Unit coverage for branch-filtered movement listing behavior.
+
+### Changed
+
+- Movement list filtering now supports direct branch-centric queries while preserving user branch scope enforcement.
+- System fallback version updated to `Beta V1.16.41`.
 
 ## Beta V1.16.40 - 2026-03-22
 
