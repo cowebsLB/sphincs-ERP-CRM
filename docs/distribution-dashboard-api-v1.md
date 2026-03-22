@@ -75,6 +75,7 @@ Date: 2026-03-21
 - `GET /api/v1/distribution/reports/supplier-fulfillment`
 - `GET /api/v1/distribution/reports/operations-exceptions`
 - `GET /api/v1/distribution/reports/branch-sla`
+- `GET /api/v1/distribution/reports/inactive-stock`
 
 ## Purpose
 
@@ -924,3 +925,16 @@ Behavior:
   - dispatches
 - Includes on-time counts, overdue-open counts, and on-time rate percentages by flow.
 - Includes global summary percentages across all included branches.
+
+### `GET /api/v1/distribution/reports/inactive-stock` (V1.16.33)
+
+Supported query parameters:
+
+- `branchId`
+- `includeDeleted`
+
+Behavior:
+
+- Returns stock rows where item status is `INACTIVE` but quantity on hand remains positive.
+- Includes branch/item stock quantities and last movement context.
+- Includes summary totals for affected rows, quantities, and branches.

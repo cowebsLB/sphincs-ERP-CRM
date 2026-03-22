@@ -1,5 +1,32 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Inactive Stock Exceptions Report (V1.16.33)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added reporting endpoint:
+  - `GET /api/v1/distribution/reports/inactive-stock`
+- Added inactive-stock reporting to surface items with:
+  - `item.status = INACTIVE`
+  - `quantity_on_hand > 0`
+- Added row outputs with branch/item stock context and movement timestamps.
+- Added summary totals for:
+  - affected rows
+  - total quantity on hand
+  - affected branches
+- Added unit coverage for inactive-stock summary and row shape validation.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `113/113` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This report addresses inventory cleanup governance by surfacing inactive catalog items still carrying stock.
+
 ## Task: Distribution Branch SLA Report (V1.16.32)
 
 Date: 2026-03-22

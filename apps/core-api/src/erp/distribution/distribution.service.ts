@@ -211,6 +211,11 @@ type BranchSlaReportFilters = {
   includeDeleted?: boolean;
 };
 
+type InactiveStockReportFilters = {
+  branchId?: string;
+  includeDeleted?: boolean;
+};
+
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
@@ -4564,6 +4569,69 @@ export class DistributionService {
     return {
       summary,
       rows,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  async inactiveStockReport(filters: InactiveStockReportFilters, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const branchId = filters.branchId ? this.parseRequiredUuid(filters.branchId, "branchId") : undefined;
+    if (branchId) {
+      await this.validateBranchScope(branchId, "branchId", user);
+    }
+
+    const rows = await this.prisma.inventoryStock.findMany({
+      where: {
+        organization_id: user.organizationId,
+        quantity_on_hand: { gt: 0 },
+        ...(filters.includeDeleted ? {} : { deleted_at: null }),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(user.branchId ? { branch_id: user.branchId } : {}),
+        item: {
+          status: "INACTIVE"
+        }
+      },
+      include: {
+        branch: { select: { id: true, name: true } },
+        item: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            status: true,
+            track_inventory: true
+          }
+        }
+      },
+      orderBy: [{ branch_id: "asc" }, { quantity_on_hand: "desc" }],
+      take: 500
+    });
+
+    const reportRows = rows.map((row) => ({
+      branch_id: row.branch_id,
+      branch_name: row.branch?.name ?? null,
+      item_id: row.item_id,
+      item_name: row.item.name,
+      sku: row.item.sku,
+      item_status: row.item.status,
+      quantity_on_hand: row.quantity_on_hand,
+      available_quantity: row.available_quantity,
+      reserved_quantity: row.reserved_quantity,
+      in_transit_quantity: row.in_transit_quantity,
+      incoming_quantity: row.incoming_quantity,
+      last_movement_at: row.last_movement_at
+    }));
+
+    const summary = {
+      total_rows: reportRows.length,
+      total_quantity_on_hand: reportRows.reduce((sum, row) => sum + row.quantity_on_hand, 0),
+      total_available_quantity: reportRows.reduce((sum, row) => sum + row.available_quantity, 0),
+      affected_branches: [...new Set(reportRows.map((row) => row.branch_id))].length
+    };
+
+    return {
+      summary,
+      rows: reportRows,
       generated_at: new Date().toISOString()
     };
   }

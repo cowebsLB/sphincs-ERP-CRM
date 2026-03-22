@@ -2584,6 +2584,56 @@ describe("DistributionService", () => {
     );
   });
 
+  it("builds inactive-stock report for inactive items with quantity on hand", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryStock.findMany.mockResolvedValue([
+      {
+        branch_id: BRANCH_1,
+        item_id: "item-9",
+        quantity_on_hand: 7,
+        available_quantity: 5,
+        reserved_quantity: 2,
+        in_transit_quantity: 0,
+        incoming_quantity: 0,
+        last_movement_at: new Date("2026-03-21T10:00:00.000Z"),
+        branch: { id: BRANCH_1, name: "Main" },
+        item: {
+          id: "item-9",
+          name: "Legacy Item",
+          sku: "LEG-9",
+          status: "INACTIVE",
+          track_inventory: true
+        }
+      }
+    ]);
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.inactiveStockReport(
+      {
+        includeDeleted: false
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        total_rows: 1,
+        total_quantity_on_hand: 7,
+        affected_branches: 1
+      })
+    );
+    expect(result.rows[0]).toEqual(
+      expect.objectContaining({
+        item_status: "INACTIVE",
+        sku: "LEG-9"
+      })
+    );
+  });
+
   it("enforces user scope for dashboard access", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

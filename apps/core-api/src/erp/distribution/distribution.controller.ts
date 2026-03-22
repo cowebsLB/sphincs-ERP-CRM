@@ -968,4 +968,20 @@ export class DistributionController {
       req?.user
     );
   }
+
+  @Get("reports/inactive-stock")
+  @Roles(...DISTRIBUTION_READ_ROLES)
+  inactiveStockReport(
+    @Query("branchId") branchId?: string,
+    @Query("includeDeleted") includeDeleted?: string,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.inactiveStockReport(
+      {
+        branchId,
+        includeDeleted: includeDeleted === "true"
+      },
+      req?.user
+    );
+  }
 }

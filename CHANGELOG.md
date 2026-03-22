@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.32` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.33` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.33 - 2026-03-22
+
+### Added
+
+- Distribution report endpoint:
+  - `GET /api/v1/distribution/reports/inactive-stock`
+- Inactive-stock report includes:
+  - inactive items that still have positive on-hand quantity
+  - branch/item stock breakdown rows
+  - summary totals for affected quantity and branches
+- Unit coverage for inactive-stock summary output.
+
+### Changed
+
+- Distribution reporting now explicitly surfaces inactive-inventory cleanup risk.
+- System fallback version updated to `Beta V1.16.33`.
 
 ## Beta V1.16.32 - 2026-03-22
 
