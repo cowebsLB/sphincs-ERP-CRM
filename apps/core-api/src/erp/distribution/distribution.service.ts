@@ -229,6 +229,7 @@ type ShortageReportFilters = {
 };
 
 type TransferTransitionAction = "REQUEST" | "APPROVE" | "DISPATCH" | "RECEIVE";
+type ReceiptTransitionAction = "RECEIVE" | "CLOSE" | "CANCEL";
 type DispatchTransitionAction = "READY" | "PACK" | "DISPATCH" | "DELIVER" | "FAIL" | "RETURN";
 type ReturnTransitionAction = "RECEIVE" | "INSPECT" | "COMPLETE" | "CANCEL";
 type AdjustmentTransitionAction = "SUBMIT" | "APPROVE" | "APPLY" | "REVERSE";
@@ -572,6 +573,14 @@ export class DistributionService {
       throw new BadRequestException("action must be one of: RELEASE, FULFILL, CANCEL");
     }
     return text as ReservationTransitionAction;
+  }
+
+  private parseReceiptTransitionAction(value: unknown): ReceiptTransitionAction {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!["RECEIVE", "CLOSE", "CANCEL"].includes(text)) {
+      throw new BadRequestException("action must be one of: RECEIVE, CLOSE, CANCEL");
+    }
+    return text as ReceiptTransitionAction;
   }
 
   private parseLotQuantity(value: unknown, fieldName: string, fallback = 0): number {
@@ -1658,6 +1667,90 @@ export class DistributionService {
         line_items: true
       }
     });
+  }
+
+  async transitionReceipt(receiptIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
+    const user = this.requireScope(scope);
+    const receiptId = this.parseRequiredUuid(receiptIdRaw, "receiptId");
+    const action = this.parseReceiptTransitionAction(body.action);
+
+    const receipt = await this.prisma.goodsReceipt.findFirst({
+      where: {
+        id: receiptId,
+        organization_id: user.organizationId,
+        deleted_at: null
+      },
+      select: {
+        id: true,
+        branch_id: true,
+        status: true
+      }
+    });
+    if (!receipt) {
+      throw new NotFoundException("Receipt not found");
+    }
+    await this.validateBranchScope(receipt.branch_id, "goods_receipt.branch_id", user);
+
+    const currentStatus = receipt.status;
+    const targetStatus =
+      action === "RECEIVE"
+        ? GoodsReceiptStatus.RECEIVED
+        : action === "CLOSE"
+          ? GoodsReceiptStatus.CLOSED
+          : GoodsReceiptStatus.CANCELLED;
+    const allowed: Record<GoodsReceiptStatus, GoodsReceiptStatus[]> = {
+      [GoodsReceiptStatus.DRAFT]: [GoodsReceiptStatus.RECEIVED, GoodsReceiptStatus.CANCELLED],
+      [GoodsReceiptStatus.PARTIAL]: [GoodsReceiptStatus.RECEIVED, GoodsReceiptStatus.CLOSED, GoodsReceiptStatus.CANCELLED],
+      [GoodsReceiptStatus.RECEIVED]: [GoodsReceiptStatus.CLOSED],
+      [GoodsReceiptStatus.CLOSED]: [],
+      [GoodsReceiptStatus.CANCELLED]: []
+    };
+    if (!allowed[currentStatus].includes(targetStatus)) {
+      throw new BadRequestException(`Cannot transition receipt from ${currentStatus} to ${targetStatus}`);
+    }
+
+    const updated = await this.prisma.goodsReceipt.update({
+      where: { id: receipt.id },
+      data: {
+        status: targetStatus,
+        received_date:
+          targetStatus === GoodsReceiptStatus.RECEIVED
+            ? this.parseDate(body.received_date ?? body.receivedDate, "received_date") ?? new Date()
+            : undefined,
+        received_by: targetStatus === GoodsReceiptStatus.RECEIVED ? user.id : undefined,
+        notes: this.parseOptionalString(body.notes) ?? undefined
+      },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            supplier_code: true
+          }
+        },
+        purchase_order: {
+          select: {
+            id: true,
+            po_number: true
+          }
+        },
+        receiving_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        line_items: true
+      }
+    });
+
+    await this.recordAuditEvent(user, "DISTRIBUTION_RECEIPT_TRANSITION", "goods_receipt", receipt.id, {
+      action,
+      from_status: currentStatus,
+      to_status: targetStatus
+    });
+    return updated;
   }
 
   async listTransfers(filters: TransferListFilters, scope?: UserScope) {

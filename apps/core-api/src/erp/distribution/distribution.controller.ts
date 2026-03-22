@@ -123,6 +123,36 @@ export class DistributionController {
     return this.distributionService.createReceipt(body, req?.user);
   }
 
+  @Patch("receipts/:receiptId/receive")
+  @Roles(...DISTRIBUTION_WRITE_ROLES)
+  receiveReceipt(
+    @Param("receiptId") receiptId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReceipt(receiptId, { ...body, action: "RECEIVE" }, req?.user);
+  }
+
+  @Patch("receipts/:receiptId/close")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
+  closeReceipt(
+    @Param("receiptId") receiptId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReceipt(receiptId, { ...body, action: "CLOSE" }, req?.user);
+  }
+
+  @Patch("receipts/:receiptId/cancel")
+  @Roles(...DISTRIBUTION_APPROVAL_ROLES)
+  cancelReceipt(
+    @Param("receiptId") receiptId: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req?: AuthenticatedRequest
+  ): unknown {
+    return this.distributionService.transitionReceipt(receiptId, { ...body, action: "CANCEL" }, req?.user);
+  }
+
   @Get("transfers")
   @Roles(...DISTRIBUTION_READ_ROLES)
   listTransfers(

@@ -12,6 +12,9 @@ Date: 2026-03-21
 - `PATCH /api/v1/distribution/inventory-stocks/:stockId`
 - `GET /api/v1/distribution/receipts`
 - `POST /api/v1/distribution/receipts`
+- `PATCH /api/v1/distribution/receipts/:receiptId/receive`
+- `PATCH /api/v1/distribution/receipts/:receiptId/close`
+- `PATCH /api/v1/distribution/receipts/:receiptId/cancel`
 - `GET /api/v1/distribution/transfers`
 - `POST /api/v1/distribution/transfers`
 - `PATCH /api/v1/distribution/transfers/:transferId/request`

@@ -7,7 +7,29 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.36` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.37` - current active beta snapshot as of 2026-03-22
+
+## Beta V1.16.37 - 2026-03-22
+
+### Added
+
+- Goods receipt lifecycle endpoints:
+  - `PATCH /api/v1/distribution/receipts/:receiptId/receive`
+  - `PATCH /api/v1/distribution/receipts/:receiptId/close`
+  - `PATCH /api/v1/distribution/receipts/:receiptId/cancel`
+- Receipt transition service workflow with:
+  - transition action parsing and status guardrails
+  - branch-scope validation for receipt ownership
+  - automatic receive metadata assignment (`received_date`, `received_by`) on receive transition
+  - audit events (`DISTRIBUTION_RECEIPT_TRANSITION`)
+- Unit coverage for:
+  - successful receipt transition to `RECEIVED`
+  - invalid terminal-state transition rejection
+
+### Changed
+
+- Distribution receipts now support controlled operational lifecycle transitions after creation.
+- System fallback version updated to `Beta V1.16.37`.
 
 ## Beta V1.16.36 - 2026-03-22
 

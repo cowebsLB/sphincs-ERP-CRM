@@ -80,12 +80,19 @@ describe("DistributionService", () => {
       findFirst: jest.fn().mockResolvedValue({
         id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
         organization_id: "org-1",
-        branch_id: BRANCH_1
+        branch_id: BRANCH_1,
+        status: "DRAFT"
       }),
       create: jest.fn().mockResolvedValue({
         id: "gr-1",
         receipt_number: "GR-20260321120000-ABCD",
         status: "PARTIAL",
+        line_items: []
+      }),
+      update: jest.fn().mockResolvedValue({
+        id: "gr-1",
+        receipt_number: "GR-20260321120000-ABCD",
+        status: "RECEIVED",
         line_items: []
       })
     },
@@ -750,6 +757,64 @@ describe("DistributionService", () => {
         })
       })
     );
+  });
+
+  it("transitions receipt status to RECEIVED", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.goodsReceipt.findFirst.mockResolvedValueOnce({
+      id: "gr-1",
+      branch_id: BRANCH_1,
+      status: "DRAFT"
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    const result = await service.transitionReceipt(
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      {
+        action: "RECEIVE",
+        notes: "Received at dock"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.goodsReceipt.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "gr-1" },
+        data: expect.objectContaining({
+          status: "RECEIVED",
+          received_by: "user-1"
+        })
+      })
+    );
+    expect(result.status).toBe("RECEIVED");
+  });
+
+  it("rejects invalid receipt transitions from CLOSED state", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.goodsReceipt.findFirst.mockResolvedValueOnce({
+      id: "gr-1",
+      branch_id: BRANCH_1,
+      status: "CLOSED"
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.transitionReceipt(
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        {
+          action: "RECEIVE"
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it("rejects receipt lines when received and rejected exceed ordered qty", async () => {

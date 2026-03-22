@@ -1,5 +1,34 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Goods Receipt Lifecycle Transitions (V1.16.37)
+
+Date: 2026-03-22
+
+### Scope
+
+- Added goods receipt transition endpoints:
+  - `PATCH /api/v1/distribution/receipts/:receiptId/receive`
+  - `PATCH /api/v1/distribution/receipts/:receiptId/close`
+  - `PATCH /api/v1/distribution/receipts/:receiptId/cancel`
+- Added receipt transition service logic with:
+  - transition action parser (`RECEIVE`, `CLOSE`, `CANCEL`)
+  - status transition guardrails for `DRAFT`, `PARTIAL`, `RECEIVED`, `CLOSED`, `CANCELLED`
+  - branch-scope validation per targeted receipt
+  - receive transition metadata handling (`received_date`, `received_by`)
+  - audit logging (`DISTRIBUTION_RECEIPT_TRANSITION`)
+- Added unit coverage for:
+  - successful receive transition
+  - invalid transition rejection from `CLOSED`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `121/121` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes the receipt status lifecycle gap so receiving operations can progress from draft/partial to terminal states with explicit controls.
+
 ## Task: Distribution Inventory Stock Records APIs (V1.16.36)
 
 Date: 2026-03-22
