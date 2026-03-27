@@ -1472,6 +1472,13 @@ export class DistributionService {
     if (sourceBranchId && destinationBranchId && sourceBranchId === destinationBranchId) {
       throw new BadRequestException("source_branch_id and destination_branch_id cannot be identical");
     }
+    const movementDeltas = this.movementStockDeltas(movementType, quantity);
+    const requiresStockBranchContext =
+      movementDeltas.onHandDelta !== 0 || movementDeltas.availableDelta !== 0 || movementDeltas.damagedDelta !== 0;
+    const stockBranchId = this.movementBranchForStock(movementType, branchId, sourceBranchId, destinationBranchId);
+    if (requiresStockBranchContext && !stockBranchId) {
+      throw new BadRequestException("movement_type requires branch context (branch_id/source_branch_id/destination_branch_id)");
+    }
 
     await this.validateItemScope(itemId, user);
     await this.validateBranchScope(branchId, "branch_id", user);
@@ -1489,6 +1496,12 @@ export class DistributionService {
     }
     if (destinationLocation && destinationBranchId && destinationLocation.branch_id !== destinationBranchId) {
       throw new BadRequestException("destination_location_id must belong to destination_branch_id");
+    }
+    if (sourceLocation && !sourceBranchId && branchId && sourceLocation.branch_id !== branchId) {
+      throw new BadRequestException("source_location_id must belong to source_branch_id or branch_id");
+    }
+    if (destinationLocation && !destinationBranchId && branchId && destinationLocation.branch_id !== branchId) {
+      throw new BadRequestException("destination_location_id must belong to destination_branch_id or branch_id");
     }
 
     if (

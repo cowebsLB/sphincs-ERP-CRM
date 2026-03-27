@@ -1,5 +1,32 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Movement Branch-Context Guardrails (V1.16.64)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_movement_branch_context_guardrails`
+- Added DB check constraints for `inventory_movements`:
+  - movement-type branch context requirement using `branch_id` / `source_branch_id` / `destination_branch_id`
+  - source and destination branch ids must differ when both are provided
+- Updated movement create validation:
+  - rejects stock-impacting movement payloads with no resolvable branch context
+  - validates source/destination location branch alignment against fallback `branch_id` when explicit branch ids are omitted
+- Added unit coverage for:
+  - missing movement branch context rejection
+  - source location mismatch against fallback `branch_id` rejection
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `146/146` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This prevents movements from being posted without valid stock branch routing and closes a silent stock-sync bypass path.
+
 ## Task: Reservation Quantity and Expiry Guardrails (V1.16.63)
 
 Date: 2026-03-27

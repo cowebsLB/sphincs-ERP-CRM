@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.63` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.64` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.64 - 2026-03-27
+
+### Added
+
+- Database-level movement branch-context guardrail migration:
+  - `20260327_distribution_movement_branch_context_guardrails`
+- Added `NOT VALID` movement constraints for:
+  - branch context required by movement type (`branch_id` / `source_branch_id` / `destination_branch_id`)
+  - distinct source and destination branch ids when both are present
+
+### Changed
+
+- `createMovement` now rejects stock-impacting movement payloads with no resolvable branch context.
+- `createMovement` now validates source/destination locations against fallback `branch_id` when explicit source/destination branch ids are omitted.
+- Unit coverage updated for missing movement branch-context and fallback location mismatch rejection.
+- System fallback version updated to `Beta V1.16.64`.
 
 ## Beta V1.16.63 - 2026-03-27
 

@@ -596,6 +596,50 @@ describe("DistributionService", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it("rejects movement create when stock-impacting type has no branch context", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createMovement(
+        {
+          movement_type: "DISPATCH_ISSUE",
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity: 1
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: null
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects movement create when source location mismatches fallback branch_id", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createMovement(
+        {
+          movement_type: "TRANSFER_OUT",
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity: 1,
+          branch_id: BRANCH_1,
+          source_location_id: LOCATION_PARENT_BRANCH_2
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: null
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
+  });
+
   it("creates movement when both reference_type and reference_id are provided", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
