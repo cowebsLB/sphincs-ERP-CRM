@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Movement Auto-Post Idempotency Guard (V1.16.47)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added duplicate-suppression logic for system-generated movement posting helper.
+- Auto-post integration now checks for existing movement rows by organization/reference/movement type/item/quantity before creating a new movement record.
+- Added unit coverage for duplicate-suppression behavior in transition-driven movement posting.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `133/133` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This hardens movement integration reliability for retry/re-entrant workflows and reduces duplicate ledger row risk.
+
 ## Task: Dispatch Return Movement Auto-Posting (V1.16.46)
 
 Date: 2026-03-27

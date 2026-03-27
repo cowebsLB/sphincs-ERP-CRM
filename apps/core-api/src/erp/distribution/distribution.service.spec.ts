@@ -202,6 +202,7 @@ describe("DistributionService", () => {
           destination_branch: { id: BRANCH_1, name: "Main" }
         }
       ]),
+      findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockResolvedValue({
         id: "m2",
         movement_type: "TRANSFER_OUT",
@@ -1803,6 +1804,43 @@ describe("DistributionService", () => {
         })
       })
     );
+  });
+
+  it("skips duplicate system movement posting when matching movement already exists", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryMovement.findFirst.mockResolvedValueOnce({ id: "existing-movement" });
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "DELIVERED",
+      branch_id: BRANCH_1
+    });
+    prismaMock.stockDispatch.update.mockResolvedValue({
+      id: "disp-1",
+      dispatch_number: "DISP-20260321120000-ABCD",
+      status: "RETURNED",
+      branch_id: BRANCH_1,
+      dispatch_date: new Date("2026-03-27T15:10:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity: 4,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "RETURN" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
   });
 
   it("transitions dispatch to CANCELLED from DRAFT", async () => {

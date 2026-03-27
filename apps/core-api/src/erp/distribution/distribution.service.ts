@@ -1247,6 +1247,22 @@ export class DistributionService {
       return;
     }
 
+    const existing = await this.prisma.inventoryMovement.findFirst({
+      where: {
+        organization_id: input.organizationId,
+        reference_type: input.referenceType,
+        reference_id: input.referenceId,
+        movement_type: input.movementType,
+        item_id: input.itemId,
+        quantity: input.quantity,
+        deleted_at: null
+      },
+      select: { id: true }
+    });
+    if (existing) {
+      return;
+    }
+
     await this.prisma.inventoryMovement.create({
       data: {
         organization_id: input.organizationId,

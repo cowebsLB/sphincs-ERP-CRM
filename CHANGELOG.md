@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.46` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.47` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.47 - 2026-03-27
+
+### Added
+
+- Idempotency guard for system-generated movement posting:
+  - auto-post integration flows now skip creating a duplicate movement row when a matching movement already exists for the same organization/reference/movement type/item/quantity tuple.
+- Unit coverage for duplicate-suppression behavior in system movement posting.
+
+### Changed
+
+- Auto-post movement integration is now safer under retry/re-entrant execution paths, reducing duplicate movement log risk.
+- System fallback version updated to `Beta V1.16.47`.
 
 ## Beta V1.16.46 - 2026-03-27
 
