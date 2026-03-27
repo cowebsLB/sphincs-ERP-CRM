@@ -786,6 +786,15 @@ describe("DistributionService", () => {
         })
       })
     );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_SYSTEM_MOVEMENT_POSTED",
+          entity_type: "inventory_movement",
+          entity_id: "m2"
+        })
+      })
+    );
     expect(result.id).toBe("gr-1");
   });
 

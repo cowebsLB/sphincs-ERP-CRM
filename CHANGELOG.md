@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.47` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.48` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.48 - 2026-03-27
+
+### Added
+
+- System movement auto-posting now writes dedicated audit log events:
+  - action: `DISTRIBUTION_SYSTEM_MOVEMENT_POSTED`
+  - entity: `inventory_movement`
+  - metadata includes movement type, quantity, item, and reference linkage.
+- Unit coverage for system movement audit event emission in auto-post flows.
+
+### Changed
+
+- Automated movement posting is now fully traceable through audit logs in addition to parent workflow transition audits.
+- System fallback version updated to `Beta V1.16.48`.
 
 ## Beta V1.16.47 - 2026-03-27
 

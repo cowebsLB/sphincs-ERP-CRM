@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: System Movement Audit Trail (V1.16.48)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added explicit audit logging for system-generated movement auto-post operations.
+- Auto-post helper now writes `DISTRIBUTION_SYSTEM_MOVEMENT_POSTED` events with movement + reference metadata.
+- Added unit coverage to validate audit event emission in helper-backed movement posting.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `133/133` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This improves operational traceability by providing direct audit entries for every automated movement post, independent of parent transition events.
+
 ## Task: Movement Auto-Post Idempotency Guard (V1.16.47)
 
 Date: 2026-03-27

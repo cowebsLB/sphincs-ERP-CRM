@@ -1263,7 +1263,7 @@ export class DistributionService {
       return;
     }
 
-    await this.prisma.inventoryMovement.create({
+    const created = await this.prisma.inventoryMovement.create({
       data: {
         organization_id: input.organizationId,
         branch_id: input.branchId ?? null,
@@ -1281,6 +1281,25 @@ export class DistributionService {
         notes: input.notes ?? null,
         performed_by: input.performedBy,
         occurred_at: input.occurredAt
+      }
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        user_id: input.performedBy,
+        action: "DISTRIBUTION_SYSTEM_MOVEMENT_POSTED",
+        entity_type: "inventory_movement",
+        entity_id: created.id,
+        metadata: {
+          movement_type: input.movementType,
+          quantity: input.quantity,
+          item_id: input.itemId,
+          reference_type: input.referenceType,
+          reference_id: input.referenceId
+        } as any,
+        created_by: input.performedBy,
+        updated_by: input.performedBy
       }
     });
 
