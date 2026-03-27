@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB UpdatedAt Trigger Guardrails (V1.16.59)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_updated_at_triggers`
+- Introduced DB trigger function and table triggers that force `updated_at = now()` on updates across distribution/logistics tables.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `138/138` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This ensures `updated_at` remains trustworthy even when rows are modified outside Prisma-managed update paths.
+
 ## Task: DB Temporal Order Guardrails (V1.16.58)
 
 Date: 2026-03-27

@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.58` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.59` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.59 - 2026-03-27
+
+### Added
+
+- Database-level `updated_at` trigger migration:
+  - `20260327_distribution_updated_at_triggers`
+- Added `BEFORE UPDATE` triggers for distribution/logistics tables to set `updated_at = now()` on direct SQL updates.
+
+### Changed
+
+- Timestamp consistency is now DB-enforced for distribution entities, including non-ORM update paths.
+- System fallback version updated to `Beta V1.16.59`.
 
 ## Beta V1.16.58 - 2026-03-27
 
