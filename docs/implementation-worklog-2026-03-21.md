@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Posted-Only Movement Branch Routing Guardrails (V1.16.66)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_movement_posted_branch_context_guardrails`
+- Refined DB constraint:
+  - `ck_inventory_movements_branch_context_by_type` now applies branch-routing requirements when `status = 'POSTED'`
+- Updated movement create validation:
+  - movement-type branch-context requirement now applies only for posted stock-mutating writes
+  - non-posted movement logs (`DRAFT`/`CANCELLED`) can be created without branch-routing fields
+- Added unit coverage for non-posted movement create without branch context.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `149/149` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This keeps strict branch-routing invariants for stock-mutating posts while preserving flexibility for non-posted movement logging workflows.
+
 ## Task: Manual Movement Status + Stock Sync Semantics (V1.16.65)
 
 Date: 2026-03-27

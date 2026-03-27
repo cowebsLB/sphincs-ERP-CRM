@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.65` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.66` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.66 - 2026-03-27
+
+### Added
+
+- Database-level movement branch-context refinement migration:
+  - `20260327_distribution_movement_posted_branch_context_guardrails`
+- Updated `ck_inventory_movements_branch_context_by_type` to require movement-type branch routing when `status = 'POSTED'`.
+
+### Changed
+
+- `createMovement` now applies movement-type branch-context enforcement only for stock-mutating posted movements.
+- Non-posted movements (`DRAFT`/`CANCELLED`) are now accepted without mandatory branch-routing context.
+- Unit coverage updated for non-posted/no-branch movement create behavior.
+- System fallback version updated to `Beta V1.16.66`.
 
 ## Beta V1.16.65 - 2026-03-27
 

@@ -617,6 +617,38 @@ describe("DistributionService", () => {
     expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
   });
 
+  it("allows non-posted movement create without branch context", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createMovement(
+      {
+        movement_type: "DISPATCH_ISSUE",
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity: 1,
+        status: "CANCELLED"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: null
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "CANCELLED",
+          branch_id: null,
+          source_branch_id: null,
+          destination_branch_id: null
+        })
+      })
+    );
+    expect(prismaMock.inventoryStock.create).not.toHaveBeenCalled();
+    expect(prismaMock.inventoryStock.update).not.toHaveBeenCalled();
+  });
+
   it("rejects movement create when source location mismatches fallback branch_id", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

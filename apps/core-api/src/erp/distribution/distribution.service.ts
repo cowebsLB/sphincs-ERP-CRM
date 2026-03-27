@@ -1476,6 +1476,7 @@ export class DistributionService {
       body.destination_location_id ?? body.destinationLocationId,
       "destination_location_id"
     );
+    const status = this.parseMovementStatus(body.status);
 
     if (quantity < 1) {
       throw new BadRequestException("quantity must be at least 1");
@@ -1485,7 +1486,8 @@ export class DistributionService {
     }
     const movementDeltas = this.movementStockDeltas(movementType, quantity);
     const requiresStockBranchContext =
-      movementDeltas.onHandDelta !== 0 || movementDeltas.availableDelta !== 0 || movementDeltas.damagedDelta !== 0;
+      status === "POSTED" &&
+      (movementDeltas.onHandDelta !== 0 || movementDeltas.availableDelta !== 0 || movementDeltas.damagedDelta !== 0);
     const stockBranchId = this.movementBranchForStock(movementType, branchId, sourceBranchId, destinationBranchId);
     if (requiresStockBranchContext && !stockBranchId) {
       throw new BadRequestException("movement_type requires branch context (branch_id/source_branch_id/destination_branch_id)");
@@ -1528,7 +1530,6 @@ export class DistributionService {
     if ((referenceType && !referenceId) || (!referenceType && referenceId)) {
       throw new BadRequestException("reference_type and reference_id must be provided together");
     }
-    const status = this.parseMovementStatus(body.status);
     return this.runInTransaction(async (db) => {
       const created = await db.inventoryMovement.create({
         data: {

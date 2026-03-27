@@ -146,6 +146,7 @@ As of `Beta V1.16.62`, reservation reference fields also enforce pairwise consis
 As of `Beta V1.16.63`, reservations enforce quantity and expiry chronology guardrails (`reserved_quantity >= 1`, `expires_at >= reserved_date`) at service and DB levels.
 As of `Beta V1.16.64`, stock-impacting movements enforce movement-type branch context and fallback location-to-branch consistency at service and DB levels.
 As of `Beta V1.16.65`, manual movement stock sync is applied only for `POSTED` movements, and movement `status` input is validated (`DRAFT|POSTED|CANCELLED`) before persistence.
+As of `Beta V1.16.66`, movement-type branch-context requirements are scoped to `POSTED` movements so `DRAFT`/`CANCELLED` movement logs can be persisted without stock-routing context.
 
 ## Response Shape
 
