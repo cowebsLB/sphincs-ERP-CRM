@@ -670,6 +670,59 @@ describe("DistributionService", () => {
     );
   });
 
+  it("rejects movement create when status is outside allowed domain", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createMovement(
+        {
+          movement_type: "TRANSFER_OUT",
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity: 1,
+          source_branch_id: BRANCH_1,
+          status: "INVALID_STATUS"
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
+  });
+
+  it("does not sync inventory stock when movement status is CANCELLED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createMovement(
+      {
+        movement_type: "TRANSFER_OUT",
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity: 1,
+        source_branch_id: BRANCH_1,
+        status: "CANCELLED"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "CANCELLED"
+        })
+      })
+    );
+    expect(prismaMock.inventoryStock.create).not.toHaveBeenCalled();
+    expect(prismaMock.inventoryStock.update).not.toHaveBeenCalled();
+  });
+
   it("lists movements with scoped filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

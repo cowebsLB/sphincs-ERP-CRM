@@ -7,7 +7,19 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.64` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.65` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.65 - 2026-03-27
+
+### Changed
+
+- Movement create status handling hardening:
+  - `createMovement` now validates `status` as one of `DRAFT`, `POSTED`, or `CANCELLED`.
+  - Stock snapshot sync is now applied only when movement status is `POSTED`.
+- Added unit coverage for:
+  - invalid movement status rejection
+  - no stock sync on `CANCELLED` manual movements
+- System fallback version updated to `Beta V1.16.65`.
 
 ## Beta V1.16.64 - 2026-03-27
 

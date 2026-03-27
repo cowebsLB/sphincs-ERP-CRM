@@ -370,6 +370,17 @@ export class DistributionService {
     return text as DistributionMovementType;
   }
 
+  private parseMovementStatus(value: unknown): "DRAFT" | "POSTED" | "CANCELLED" {
+    const text = String(value ?? "").trim().toUpperCase();
+    if (!text) {
+      return "POSTED";
+    }
+    if (text !== "DRAFT" && text !== "POSTED" && text !== "CANCELLED") {
+      throw new BadRequestException("status must be one of: DRAFT, POSTED, CANCELLED");
+    }
+    return text as "DRAFT" | "POSTED" | "CANCELLED";
+  }
+
   private parseOptionalGoodsReceiptStatus(value: unknown): GoodsReceiptStatus | undefined {
     const text = String(value ?? "").trim().toUpperCase();
     if (!text) {
@@ -1517,6 +1528,7 @@ export class DistributionService {
     if ((referenceType && !referenceId) || (!referenceType && referenceId)) {
       throw new BadRequestException("reference_type and reference_id must be provided together");
     }
+    const status = this.parseMovementStatus(body.status);
     return this.runInTransaction(async (db) => {
       const created = await db.inventoryMovement.create({
         data: {
@@ -1532,7 +1544,7 @@ export class DistributionService {
           destination_location_id: destinationLocationId,
           reference_type: referenceType,
           reference_id: referenceId,
-          status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
+          status,
           notes: this.parseOptionalString(body.notes),
           cost_impact: this.parseNumber(body.cost_impact ?? body.costImpact, "cost_impact"),
           performed_by: user.id,
@@ -1575,16 +1587,18 @@ export class DistributionService {
         }
       });
 
-      await this.applyMovementToInventoryStock(db, {
-        organization_id: user.organizationId,
-        movement_type: movementType,
-        quantity,
-        item_id: itemId,
-        branch_id: branchId,
-        source_branch_id: sourceBranchId,
-        destination_branch_id: destinationBranchId,
-        occurred_at: occurredAt
-      });
+      if (status === "POSTED") {
+        await this.applyMovementToInventoryStock(db, {
+          organization_id: user.organizationId,
+          movement_type: movementType,
+          quantity,
+          item_id: itemId,
+          branch_id: branchId,
+          source_branch_id: sourceBranchId,
+          destination_branch_id: destinationBranchId,
+          occurred_at: occurredAt
+        });
+      }
 
       await db.auditLog.create({
         data: {

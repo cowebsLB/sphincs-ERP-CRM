@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Manual Movement Status + Stock Sync Semantics (V1.16.65)
+
+Date: 2026-03-27
+
+### Scope
+
+- Updated movement create validation:
+  - `status` is now explicitly validated as one of `DRAFT`, `POSTED`, `CANCELLED`
+- Updated stock-sync behavior:
+  - `createMovement` now applies inventory stock updates only for `POSTED` movements
+  - `DRAFT` and `CANCELLED` movements persist ledger/audit but do not mutate stock snapshots
+- Added unit coverage for:
+  - invalid movement status rejection
+  - no stock-sync side effects on `CANCELLED` movement create
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `148/148` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This aligns movement stock mutation semantics with posting state and removes a path where cancelled movements could incorrectly alter inventory snapshots.
+
 ## Task: Movement Branch-Context Guardrails (V1.16.64)
 
 Date: 2026-03-27
