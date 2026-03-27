@@ -1260,6 +1260,24 @@ export class DistributionService {
       select: { id: true }
     });
     if (existing) {
+      await this.prisma.auditLog.create({
+        data: {
+          organization_id: input.organizationId,
+          user_id: input.performedBy,
+          action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+          entity_type: "inventory_movement",
+          entity_id: existing.id,
+          metadata: {
+            movement_type: input.movementType,
+            quantity: input.quantity,
+            item_id: input.itemId,
+            reference_type: input.referenceType,
+            reference_id: input.referenceId
+          } as any,
+          created_by: input.performedBy,
+          updated_by: input.performedBy
+        }
+      });
       return;
     }
 

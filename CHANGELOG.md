@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.48` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.49` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.49 - 2026-03-27
+
+### Added
+
+- Duplicate-suppression skip path now emits explicit audit events:
+  - action: `DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE`
+  - entity: `inventory_movement`
+  - metadata includes movement + reference context for traceability.
+
+### Changed
+
+- System movement auto-posting now records both successful posts and duplicate-skip decisions in audit logs.
+- System fallback version updated to `Beta V1.16.49`.
 
 ## Beta V1.16.48 - 2026-03-27
 

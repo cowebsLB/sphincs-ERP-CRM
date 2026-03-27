@@ -129,6 +129,7 @@ As of `Beta V1.16.45`, receipt/adjustment/dispatch transition flows also auto-po
 As of `Beta V1.16.46`, dispatch return transitions also auto-post `RETURN_IN` movements when outbound stock is returned.
 As of `Beta V1.16.47`, system-generated movement auto-posting applies duplicate-suppression checks for safer retry/idempotent behavior.
 As of `Beta V1.16.48`, system-generated movement auto-posting also emits dedicated movement audit events for traceability.
+As of `Beta V1.16.49`, duplicate-suppression skip decisions are also explicitly audit-logged.
 
 ## Response Shape
 

@@ -1850,6 +1850,15 @@ describe("DistributionService", () => {
     );
 
     expect(prismaMock.inventoryMovement.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+          entity_type: "inventory_movement",
+          entity_id: "existing-movement"
+        })
+      })
+    );
   });
 
   it("transitions dispatch to CANCELLED from DRAFT", async () => {

@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Duplicate-Skip Audit Visibility (V1.16.49)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added explicit audit logging when system movement auto-posting skips a duplicate movement.
+- Duplicate suppression now emits `DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE` with movement/reference metadata.
+- Added unit coverage for duplicate-skip audit emission.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `133/133` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This improves operational diagnostics by making idempotency-driven skips visible in the audit stream.
+
 ## Task: System Movement Audit Trail (V1.16.48)
 
 Date: 2026-03-27
