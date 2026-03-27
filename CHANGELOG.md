@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.42` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.43` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.43 - 2026-03-27
+
+### Added
+
+- Automatic transfer movement-ledger posting for transfer workflows:
+  - `POST /api/v1/distribution/transfers` now auto-posts `TRANSFER_OUT` movements when created in `DISPATCHED`, `PARTIAL`, or `COMPLETED` status using `quantity_sent`.
+  - `POST /api/v1/distribution/transfers` now auto-posts `TRANSFER_IN` movements when created in `PARTIAL` or `COMPLETED` status using `quantity_received`.
+  - `PATCH /api/v1/distribution/transfers/:transferId/*` transition flows now auto-post:
+    - `TRANSFER_OUT` on transition to `DISPATCHED`
+    - `TRANSFER_IN` on first receive transition from `DISPATCHED` to `PARTIAL`/`COMPLETED`
+- Unit coverage for transfer movement auto-post behavior on create and transition paths.
+
+### Changed
+
+- Transfer operational flows now write movement ledger entries and stock snapshots automatically instead of relying on manual movement posting.
+- System fallback version updated to `Beta V1.16.43`.
 
 ## Beta V1.16.42 - 2026-03-27
 

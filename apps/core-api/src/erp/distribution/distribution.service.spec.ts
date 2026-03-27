@@ -941,6 +941,49 @@ describe("DistributionService", () => {
     expect(result.id).toBe("tr-1");
   });
 
+  it("auto-posts transfer outbound movements when transfer is created as DISPATCHED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createTransfer(
+      {
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        source_location_id: LOCATION_PARENT_BRANCH_1,
+        destination_location_id: LOCATION_PARENT_BRANCH_2,
+        status: "DISPATCHED",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity_requested: 10,
+            quantity_sent: 8,
+            quantity_received: 0
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "TRANSFER_OUT",
+          quantity: 8,
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          source_location_id: LOCATION_PARENT_BRANCH_1,
+          destination_location_id: LOCATION_PARENT_BRANCH_2,
+          reference_type: "STOCK_TRANSFER",
+          reference_id: "tr-1"
+        })
+      })
+    );
+  });
+
   it("lists transfers with status filter", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -1044,6 +1087,24 @@ describe("DistributionService", () => {
       destination_branch_id: BRANCH_2,
       status_history: []
     });
+    prismaMock.stockTransfer.update.mockResolvedValue({
+      id: "tr-1",
+      transfer_number: "TR-20260321120000-ABCD",
+      status: "COMPLETED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      source_location_id: LOCATION_PARENT_BRANCH_1,
+      destination_location_id: LOCATION_PARENT_BRANCH_2,
+      received_date: new Date("2026-03-27T12:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity_sent: 8,
+          quantity_received: 5,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
     const service = new DistributionService(prismaMock as never);
 
     await service.transitionTransfer(
@@ -1061,6 +1122,71 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           status: "COMPLETED",
           received_date: expect.any(Date)
+        })
+      })
+    );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "TRANSFER_IN",
+          quantity: 5,
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          reference_type: "STOCK_TRANSFER",
+          reference_id: "tr-1"
+        })
+      })
+    );
+  });
+
+  it("auto-posts transfer outbound movements on DISPATCH transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findFirst.mockResolvedValue({
+      id: "tr-1",
+      status: "APPROVED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      status_history: []
+    });
+    prismaMock.stockTransfer.update.mockResolvedValue({
+      id: "tr-1",
+      transfer_number: "TR-20260321120000-ABCD",
+      status: "DISPATCHED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      source_location_id: LOCATION_PARENT_BRANCH_1,
+      destination_location_id: LOCATION_PARENT_BRANCH_2,
+      dispatched_date: new Date("2026-03-27T11:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity_sent: 7,
+          quantity_received: 0,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionTransfer(
+      "33333333-3333-4333-8333-333333333333",
+      { action: "DISPATCH" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "TRANSFER_OUT",
+          quantity: 7,
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          reference_type: "STOCK_TRANSFER",
+          reference_id: "tr-1"
         })
       })
     );

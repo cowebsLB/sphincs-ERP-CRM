@@ -123,6 +123,7 @@ As of `Beta V1.16.18`, alert resolution is treated as an approval-sensitive acti
 As of `Beta V1.16.23`, the distribution data model includes warehouse location and lot/pick-pack foundations for phase-2 logistics workflows.
 As of `Beta V1.16.40`, `POST /api/v1/distribution/movements` also auto-syncs `inventory_stocks` snapshots for the affected branch/item.
 As of `Beta V1.16.42`, receipt/adjustment/dispatch create flows also auto-post movement ledger rows when stock-changing quantities are present.
+As of `Beta V1.16.43`, transfer create/transition flows auto-post transfer out/in movement entries based on sent/received quantities.
 
 ## Response Shape
 

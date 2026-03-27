@@ -2117,8 +2117,11 @@ export class DistributionService {
       status === StockTransferStatus.APPROVED || status === StockTransferStatus.DISPATCHED
         ? user.id
         : this.parseOptionalUuid(body.approved_by ?? body.approvedBy, "approved_by");
+    const createdDate = this.parseDate(body.created_date ?? body.createdDate, "created_date") ?? new Date();
+    const dispatchedDate = this.parseDate(body.dispatched_date ?? body.dispatchedDate, "dispatched_date");
+    const receivedDate = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
 
-    return this.prisma.stockTransfer.create({
+    const created = await this.prisma.stockTransfer.create({
       data: {
         organization_id: user.organizationId,
         transfer_number: transferNumber,
@@ -2129,9 +2132,9 @@ export class DistributionService {
         status,
         requested_by: user.id,
         approved_by: approvedBy,
-        created_date: this.parseDate(body.created_date ?? body.createdDate, "created_date") ?? new Date(),
-        dispatched_date: this.parseDate(body.dispatched_date ?? body.dispatchedDate, "dispatched_date"),
-        received_date: this.parseDate(body.received_date ?? body.receivedDate, "received_date"),
+        created_date: createdDate,
+        dispatched_date: dispatchedDate,
+        received_date: receivedDate,
         status_history: (body.status_history as object | null | undefined) ?? undefined,
         notes: this.parseOptionalString(body.notes),
         line_items: {
@@ -2178,6 +2181,56 @@ export class DistributionService {
         }
       }
     });
+
+    if (status === StockTransferStatus.DISPATCHED || status === StockTransferStatus.PARTIAL || status === StockTransferStatus.COMPLETED) {
+      const occurredAt = dispatchedDate ?? createdDate;
+      for (const lineItem of lineItems) {
+        if (lineItem.quantity_sent < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.TRANSFER_OUT,
+          quantity: lineItem.quantity_sent,
+          itemId: lineItem.item_id,
+          sourceBranchId,
+          destinationBranchId,
+          sourceLocationId,
+          destinationLocationId,
+          referenceType: "STOCK_TRANSFER",
+          referenceId: created.id,
+          notes: `Auto-posted outbound from stock transfer ${created.id}`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    if (status === StockTransferStatus.PARTIAL || status === StockTransferStatus.COMPLETED) {
+      const occurredAt = receivedDate ?? dispatchedDate ?? createdDate;
+      for (const lineItem of lineItems) {
+        if (lineItem.quantity_received < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.TRANSFER_IN,
+          quantity: lineItem.quantity_received,
+          itemId: lineItem.item_id,
+          sourceBranchId,
+          destinationBranchId,
+          sourceLocationId,
+          destinationLocationId,
+          referenceType: "STOCK_TRANSFER",
+          referenceId: created.id,
+          notes: `Auto-posted inbound from stock transfer ${created.id}`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    return created;
   }
 
   async transitionTransfer(
@@ -2283,6 +2336,58 @@ export class DistributionService {
         }
       }
     });
+
+    if (targetStatus === StockTransferStatus.DISPATCHED) {
+      const occurredAt = updated.dispatched_date ?? new Date();
+      for (const lineItem of updated.line_items) {
+        if (lineItem.quantity_sent < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.TRANSFER_OUT,
+          quantity: lineItem.quantity_sent,
+          itemId: lineItem.item_id,
+          sourceBranchId: updated.source_branch_id,
+          destinationBranchId: updated.destination_branch_id,
+          sourceLocationId: updated.source_location_id,
+          destinationLocationId: updated.destination_location_id,
+          referenceType: "STOCK_TRANSFER",
+          referenceId: updated.id,
+          notes: `Auto-posted outbound from stock transfer ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    if (
+      (targetStatus === StockTransferStatus.PARTIAL || targetStatus === StockTransferStatus.COMPLETED) &&
+      transfer.status === StockTransferStatus.DISPATCHED
+    ) {
+      const occurredAt = updated.received_date ?? new Date();
+      for (const lineItem of updated.line_items) {
+        if (lineItem.quantity_received < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.TRANSFER_IN,
+          quantity: lineItem.quantity_received,
+          itemId: lineItem.item_id,
+          sourceBranchId: updated.source_branch_id,
+          destinationBranchId: updated.destination_branch_id,
+          sourceLocationId: updated.source_location_id,
+          destinationLocationId: updated.destination_location_id,
+          referenceType: "STOCK_TRANSFER",
+          referenceId: updated.id,
+          notes: `Auto-posted inbound from stock transfer ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_TRANSFER_TRANSITION", "stock_transfer", updated.id, {
       action,
       from_status: transfer.status,

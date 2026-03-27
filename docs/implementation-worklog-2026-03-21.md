@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Transfer Movement Auto-Posting (V1.16.43)
+
+Date: 2026-03-27
+
+### Scope
+
+- Integrated transfer workflow movement auto-posting into both create and transition service paths.
+- Added auto-post behavior for transfer create:
+  - `TRANSFER_OUT` entries from `quantity_sent` when transfer starts in `DISPATCHED`, `PARTIAL`, or `COMPLETED`.
+  - `TRANSFER_IN` entries from `quantity_received` when transfer starts in `PARTIAL` or `COMPLETED`.
+- Added auto-post behavior for transfer transitions:
+  - `TRANSFER_OUT` on transition to `DISPATCHED`.
+  - `TRANSFER_IN` on first receive transition from `DISPATCHED` to `PARTIAL`/`COMPLETED` (guarded to avoid duplicate inbound posting on later transitions).
+- Added unit coverage for transfer auto-post behavior on create and transition flows.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `129/129` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes another core movement-history gap by ensuring transfer operations produce deterministic ledger entries and stock snapshot synchronization.
+
 ## Task: Workflow Auto-Posting to Movement Ledger (V1.16.42)
 
 Date: 2026-03-27
