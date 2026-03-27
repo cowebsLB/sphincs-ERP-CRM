@@ -1,5 +1,27 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Distribution Reporting Indexes (V1.16.54)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_reporting_indexes`
+- Introduced targeted indexes for high-frequency distribution filters/sorts:
+  - inventory movements (org + deleted + occurred_at, org + reference)
+  - inventory stock snapshots (org + branch + item + deleted)
+  - status/timeline listings on receipts, transfers, dispatches, adjustments, and returns
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `134/134` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This improves backend list/report performance as data volume grows and reduces planner variance on common operational queries.
+
 ## Task: DB Line Quantity Invariants (V1.16.53)
 
 Date: 2026-03-27

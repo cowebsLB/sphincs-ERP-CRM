@@ -7,7 +7,23 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.53` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.54` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.54 - 2026-03-27
+
+### Added
+
+- Distribution reporting/performance index migration:
+  - `20260327_distribution_reporting_indexes`
+- Added targeted indexes for common distribution query patterns:
+  - movement listing and reference lookups
+  - stock snapshot organization/branch/item filters
+  - status + recency queries for receipts, transfers, dispatches, adjustments, and returns
+
+### Changed
+
+- Backend query performance and plan stability for distribution list/report endpoints is improved under larger datasets.
+- System fallback version updated to `Beta V1.16.54`.
 
 ## Beta V1.16.53 - 2026-03-27
 

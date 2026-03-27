@@ -134,6 +134,7 @@ As of `Beta V1.16.50`, movement auto-post write path runs atomically in a databa
 As of `Beta V1.16.51`, database-level unique constraints now enforce idempotency for active referenced system movement posts.
 As of `Beta V1.16.52`, DB-level quantity check constraints protect inventory stock and lot-balance integrity on new writes.
 As of `Beta V1.16.53`, DB-level line-item quantity invariants enforce receipt/transfer/adjustment/dispatch/return math rules on new writes.
+As of `Beta V1.16.54`, additional DB indexes optimize distribution report/list query patterns for larger datasets.
 
 ## Response Shape
 
