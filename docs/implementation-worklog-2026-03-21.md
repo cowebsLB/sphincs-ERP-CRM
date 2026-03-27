@@ -1,5 +1,28 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Manual Movement Transaction Hardening (V1.16.60)
+
+Date: 2026-03-27
+
+### Scope
+
+- Updated `createMovement` to run as one transaction unit:
+  - movement row creation
+  - stock snapshot synchronization
+  - movement-created audit event
+- Added dedicated audit action for manual movement writes:
+  - `DISTRIBUTION_MOVEMENT_CREATED`
+- Added unit assertion coverage for movement-created audit emission.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `138/138` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This aligns manual movement writes with the same atomic consistency model used for system auto-post movement flows.
+
 ## Task: DB UpdatedAt Trigger Guardrails (V1.16.59)
 
 Date: 2026-03-27

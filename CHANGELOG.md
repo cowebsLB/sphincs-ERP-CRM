@@ -7,7 +7,17 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.59` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.60` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.60 - 2026-03-27
+
+### Changed
+
+- Manual movement creation hardening:
+  - `createMovement` now runs movement insert, stock sync, and audit write in one transaction.
+  - Added dedicated audit action: `DISTRIBUTION_MOVEMENT_CREATED`.
+- Unit coverage updated for movement-created audit emission.
+- System fallback version updated to `Beta V1.16.60`.
 
 ## Beta V1.16.59 - 2026-03-27
 

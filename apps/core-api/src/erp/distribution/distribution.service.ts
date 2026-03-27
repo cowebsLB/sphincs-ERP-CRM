@@ -1499,75 +1499,96 @@ export class DistributionService {
     }
 
     const occurredAt = this.parseDate(body.occurred_at ?? body.occurredAt, "occurred_at") ?? new Date();
-    const created = await this.prisma.inventoryMovement.create({
-      data: {
-        organization_id: user.organizationId,
-        branch_id: branchId,
-        item_id: itemId,
-        movement_type: movementType,
-        quantity,
-        unit,
-        source_branch_id: sourceBranchId,
-        destination_branch_id: destinationBranchId,
-        source_location_id: sourceLocationId,
-        destination_location_id: destinationLocationId,
-        reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
-        reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
-        status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
-        notes: this.parseOptionalString(body.notes),
-        cost_impact: this.parseNumber(body.cost_impact ?? body.costImpact, "cost_impact"),
-        performed_by: user.id,
-        occurred_at: occurredAt
-      },
-      include: {
-        item: {
-          select: {
-            id: true,
-            name: true,
-            sku: true
-          }
+    return this.runInTransaction(async (db) => {
+      const created = await db.inventoryMovement.create({
+        data: {
+          organization_id: user.organizationId,
+          branch_id: branchId,
+          item_id: itemId,
+          movement_type: movementType,
+          quantity,
+          unit,
+          source_branch_id: sourceBranchId,
+          destination_branch_id: destinationBranchId,
+          source_location_id: sourceLocationId,
+          destination_location_id: destinationLocationId,
+          reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
+          reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
+          status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
+          notes: this.parseOptionalString(body.notes),
+          cost_impact: this.parseNumber(body.cost_impact ?? body.costImpact, "cost_impact"),
+          performed_by: user.id,
+          occurred_at: occurredAt
         },
-        source_branch: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        destination_branch: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        source_location: {
-          select: {
-            id: true,
-            code: true,
-            name: true
-          }
-        },
-        destination_location: {
-          select: {
-            id: true,
-            code: true,
-            name: true
+        include: {
+          item: {
+            select: {
+              id: true,
+              name: true,
+              sku: true
+            }
+          },
+          source_branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          destination_branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          source_location: {
+            select: {
+              id: true,
+              code: true,
+              name: true
+            }
+          },
+          destination_location: {
+            select: {
+              id: true,
+              code: true,
+              name: true
+            }
           }
         }
-      }
-    });
+      });
 
-    await this.applyMovementToInventoryStock(this.prisma, {
-      organization_id: user.organizationId,
-      movement_type: movementType,
-      quantity,
-      item_id: itemId,
-      branch_id: branchId,
-      source_branch_id: sourceBranchId,
-      destination_branch_id: destinationBranchId,
-      occurred_at: occurredAt
-    });
+      await this.applyMovementToInventoryStock(db, {
+        organization_id: user.organizationId,
+        movement_type: movementType,
+        quantity,
+        item_id: itemId,
+        branch_id: branchId,
+        source_branch_id: sourceBranchId,
+        destination_branch_id: destinationBranchId,
+        occurred_at: occurredAt
+      });
 
-    return created;
+      await db.auditLog.create({
+        data: {
+          organization_id: user.organizationId,
+          user_id: user.id,
+          action: "DISTRIBUTION_MOVEMENT_CREATED",
+          entity_type: "inventory_movement",
+          entity_id: created.id,
+          metadata: {
+            movement_type: movementType,
+            quantity,
+            branch_id: branchId,
+            source_branch_id: sourceBranchId,
+            destination_branch_id: destinationBranchId
+          } as any,
+          created_by: user.id,
+          updated_by: user.id
+        }
+      });
+
+      return created;
+    });
   }
 
   async listMovements(filters: MovementListFilters, scope?: UserScope) {

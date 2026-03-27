@@ -140,6 +140,7 @@ As of `Beta V1.16.56`, DB-level temporal invariants enforce required lifecycle d
 As of `Beta V1.16.57`, DB-level lot/pick/pack quantity guardrails enforce additional logistics quantity consistency rules.
 As of `Beta V1.16.58`, DB-level temporal order guardrails enforce chronological consistency across lifecycle timestamps.
 As of `Beta V1.16.59`, DB triggers enforce `updated_at` maintenance for distribution/logistics tables on direct updates.
+As of `Beta V1.16.60`, manual movement creation is transactionally bound to stock sync and movement-created audit logging.
 
 ## Response Shape
 
