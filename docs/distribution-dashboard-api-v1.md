@@ -137,6 +137,7 @@ As of `Beta V1.16.53`, DB-level line-item quantity invariants enforce receipt/tr
 As of `Beta V1.16.54`, additional DB indexes optimize distribution report/list query patterns for larger datasets.
 As of `Beta V1.16.55`, DB-level status/type domain constraints protect key distribution/logistics status fields on new writes.
 As of `Beta V1.16.56`, DB-level temporal invariants enforce required lifecycle dates for progressed statuses.
+As of `Beta V1.16.57`, DB-level lot/pick/pack quantity guardrails enforce additional logistics quantity consistency rules.
 
 ## Response Shape
 

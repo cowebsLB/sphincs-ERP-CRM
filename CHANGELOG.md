@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.56` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.57` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.57 - 2026-03-27
+
+### Added
+
+- Database-level lot/job quantity guardrail migration:
+  - `20260327_distribution_lot_and_job_quantity_guardrails`
+- Added `NOT VALID` check constraints for:
+  - `inventory_movements.quantity >= 1`
+  - `inventory_lots`: non-negative quantities and `quantity_available <= quantity_received`
+  - `dispatch_pick_lines`: non-negative quantities and `picked_qty <= requested_qty`
+  - `dispatch_pack_lines.packed_qty >= 0`
+
+### Changed
+
+- Lot/picking/packing quantity consistency is now enforced in DB for new writes, complementing service-level validation.
+- System fallback version updated to `Beta V1.16.57`.
 
 ## Beta V1.16.56 - 2026-03-27
 

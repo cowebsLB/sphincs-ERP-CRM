@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Lot/Pick/Pack Quantity Guardrails (V1.16.57)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_lot_and_job_quantity_guardrails`
+- Added DB check constraints for quantity integrity in:
+  - `inventory_movements`
+  - `inventory_lots`
+  - `dispatch_pick_lines`
+  - `dispatch_pack_lines`
+- Constraints are `NOT VALID` for safe rollout while enforcing new writes.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `138/138` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This strengthens logistics-layer data integrity by ensuring lot and execution-line quantity relationships remain valid at DB level.
+
 ## Task: DB Temporal Status Invariants (V1.16.56)
 
 Date: 2026-03-27
