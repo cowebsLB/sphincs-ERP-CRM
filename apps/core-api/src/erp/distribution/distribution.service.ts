@@ -2968,6 +2968,30 @@ export class DistributionService {
       }
     }
 
+    if (
+      targetStatus === DispatchStatus.RETURNED &&
+      (dispatch.status === DispatchStatus.DISPATCHED || dispatch.status === DispatchStatus.DELIVERED)
+    ) {
+      const occurredAt = updated.dispatch_date ?? new Date();
+      for (const lineItem of updated.line_items) {
+        if (lineItem.quantity < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.RETURN_IN,
+          quantity: lineItem.quantity,
+          itemId: lineItem.item_id,
+          branchId: updated.branch_id,
+          referenceType: "STOCK_DISPATCH",
+          referenceId: updated.id,
+          notes: `Auto-posted return-in from stock dispatch ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_DISPATCH_TRANSITION", "stock_dispatch", updated.id, {
       action,
       from_status: dispatch.status,

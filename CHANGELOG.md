@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.45` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.46` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.46 - 2026-03-27
+
+### Added
+
+- Dispatch return transition now auto-posts `RETURN_IN` movement entries:
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/return` posts return-in ledger rows when transitioning from `DISPATCHED` or `DELIVERED` to `RETURNED`.
+- Unit coverage for dispatch return transition movement auto-post behavior.
+
+### Changed
+
+- Dispatch return workflows now restore movement-ledger + stock snapshot consistency when outbound stock is returned.
+- System fallback version updated to `Beta V1.16.46`.
 
 ## Beta V1.16.45 - 2026-03-27
 

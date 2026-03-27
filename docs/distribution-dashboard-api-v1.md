@@ -126,6 +126,7 @@ As of `Beta V1.16.42`, receipt/adjustment/dispatch create flows also auto-post m
 As of `Beta V1.16.43`, transfer create/transition flows auto-post transfer out/in movement entries based on sent/received quantities.
 As of `Beta V1.16.44`, return completion flows auto-post restock (`RETURN_IN`) and damaged (`DAMAGED_WRITE_OFF`) movement entries.
 As of `Beta V1.16.45`, receipt/adjustment/dispatch transition flows also auto-post movement entries on receive/apply/dispatch status actions.
+As of `Beta V1.16.46`, dispatch return transitions also auto-post `RETURN_IN` movements when outbound stock is returned.
 
 ## Response Shape
 

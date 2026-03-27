@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Dispatch Return Movement Auto-Posting (V1.16.46)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added movement auto-post support for dispatch return transitions.
+- Integrated transition behavior so dispatch status transition to `RETURNED` from `DISPATCHED`/`DELIVERED` posts `RETURN_IN` movements for line quantities.
+- Added unit coverage for dispatch return transition auto-post behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `132/132` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes the dispatch reversal movement gap and keeps outbound-return scenarios synchronized with movement ledger and inventory stock snapshots.
+
 ## Task: Transition Flow Movement Auto-Posting (V1.16.45)
 
 Date: 2026-03-27

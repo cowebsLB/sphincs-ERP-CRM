@@ -1759,6 +1759,52 @@ describe("DistributionService", () => {
     );
   });
 
+  it("auto-posts return-in movement on RETURN dispatch transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "DELIVERED",
+      branch_id: BRANCH_1
+    });
+    prismaMock.stockDispatch.update.mockResolvedValue({
+      id: "disp-1",
+      dispatch_number: "DISP-20260321120000-ABCD",
+      status: "RETURNED",
+      branch_id: BRANCH_1,
+      dispatch_date: new Date("2026-03-27T15:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity: 4,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "RETURN" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "RETURN_IN",
+          quantity: 4,
+          branch_id: BRANCH_1,
+          reference_type: "STOCK_DISPATCH",
+          reference_id: "disp-1"
+        })
+      })
+    );
+  });
+
   it("transitions dispatch to CANCELLED from DRAFT", async () => {
     const prismaMock = createPrismaMock();
     prismaMock.stockDispatch.findFirst.mockResolvedValue({
