@@ -1227,6 +1227,59 @@ export class DistributionService {
     });
   }
 
+  private async createSystemMovementEntry(input: {
+    organizationId: string;
+    movementType: DistributionMovementType;
+    quantity: number;
+    itemId: string;
+    branchId?: string | null;
+    sourceBranchId?: string | null;
+    destinationBranchId?: string | null;
+    sourceLocationId?: string | null;
+    destinationLocationId?: string | null;
+    referenceType: string;
+    referenceId: string;
+    notes?: string | null;
+    performedBy: string;
+    occurredAt: Date;
+  }) {
+    if (input.quantity < 1) {
+      return;
+    }
+
+    await this.prisma.inventoryMovement.create({
+      data: {
+        organization_id: input.organizationId,
+        branch_id: input.branchId ?? null,
+        item_id: input.itemId,
+        movement_type: input.movementType,
+        quantity: input.quantity,
+        unit: "piece",
+        source_branch_id: input.sourceBranchId ?? null,
+        destination_branch_id: input.destinationBranchId ?? null,
+        source_location_id: input.sourceLocationId ?? null,
+        destination_location_id: input.destinationLocationId ?? null,
+        reference_type: input.referenceType,
+        reference_id: input.referenceId,
+        status: "POSTED",
+        notes: input.notes ?? null,
+        performed_by: input.performedBy,
+        occurred_at: input.occurredAt
+      }
+    });
+
+    await this.applyMovementToInventoryStock({
+      organization_id: input.organizationId,
+      movement_type: input.movementType,
+      quantity: input.quantity,
+      item_id: input.itemId,
+      branch_id: input.branchId ?? null,
+      source_branch_id: input.sourceBranchId ?? null,
+      destination_branch_id: input.destinationBranchId ?? null,
+      occurred_at: input.occurredAt
+    });
+  }
+
   async createMovement(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
 
@@ -1767,6 +1820,7 @@ export class DistributionService {
 
     const requestedStatus = this.parseOptionalGoodsReceiptStatus(body.status);
     const status = this.deriveGoodsReceiptStatus(requestedStatus, lineItems);
+    const receivedDate = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
     const receiptNumber =
       this.parseOptionalString(body.receipt_number ?? body.receiptNumber) ??
       `GR-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
@@ -1774,7 +1828,7 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
 
-    return this.prisma.goodsReceipt.create({
+    const created = await this.prisma.goodsReceipt.create({
       data: {
         organization_id: user.organizationId,
         branch_id: branchId,
@@ -1783,7 +1837,7 @@ export class DistributionService {
         receipt_number: receiptNumber,
         status,
         receiving_location_id: receivingLocationId,
-        received_date: this.parseDate(body.received_date ?? body.receivedDate, "received_date"),
+        received_date: receivedDate,
         received_by: user.id,
         notes: this.parseOptionalString(body.notes),
         attachments: (body.attachments as object | null | undefined) ?? undefined,
@@ -1815,6 +1869,30 @@ export class DistributionService {
         line_items: true
       }
     });
+
+    if (status === GoodsReceiptStatus.PARTIAL || status === GoodsReceiptStatus.RECEIVED) {
+      const occurredAt = receivedDate ?? new Date();
+      for (const lineItem of lineItems) {
+        if (lineItem.received_qty < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.PURCHASE_RECEIPT,
+          quantity: lineItem.received_qty,
+          itemId: lineItem.item_id,
+          branchId,
+          destinationLocationId: receivingLocationId,
+          referenceType: "GOODS_RECEIPT",
+          referenceId: created.id,
+          notes: `Auto-posted from goods receipt ${created.id}`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    return created;
   }
 
   async transitionReceipt(receiptIdRaw: string, body: Record<string, unknown>, scope?: UserScope) {
@@ -2280,8 +2358,9 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
     const status = this.parseOptionalStockAdjustmentStatus(body.status) ?? StockAdjustmentStatus.DRAFT;
+    const appliedAt = this.parseDate(body.applied_at ?? body.appliedAt, "applied_at");
 
-    return this.prisma.stockAdjustment.create({
+    const created = await this.prisma.stockAdjustment.create({
       data: {
         organization_id: user.organizationId,
         branch_id: branchId,
@@ -2291,7 +2370,7 @@ export class DistributionService {
         reason: this.parseRequiredString(body.reason, "reason"),
         approved_by: this.parseOptionalUuid(body.approved_by ?? body.approvedBy, "approved_by"),
         created_by_user: user.id,
-        applied_at: this.parseDate(body.applied_at ?? body.appliedAt, "applied_at"),
+        applied_at: appliedAt,
         notes: this.parseOptionalString(body.notes),
         supporting_file: this.parseOptionalString(body.supporting_file ?? body.supportingFile),
         line_items: {
@@ -2318,6 +2397,34 @@ export class DistributionService {
         }
       }
     });
+
+    if (status === StockAdjustmentStatus.APPLIED) {
+      const occurredAt = appliedAt ?? new Date();
+      const movementType =
+        adjustmentType === StockAdjustmentType.INCREASE
+          ? DistributionMovementType.ADJUSTMENT_INCREASE
+          : DistributionMovementType.ADJUSTMENT_DECREASE;
+      for (const lineItem of lineItems) {
+        const movementQty = Math.abs(lineItem.variance);
+        if (movementQty < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType,
+          quantity: movementQty,
+          itemId: lineItem.item_id,
+          branchId,
+          referenceType: "STOCK_ADJUSTMENT",
+          referenceId: created.id,
+          notes: `Auto-posted from stock adjustment ${created.id}`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    return created;
   }
 
   async transitionAdjustment(
@@ -2473,8 +2580,9 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
     const status = this.parseOptionalDispatchStatus(body.status) ?? DispatchStatus.DRAFT;
+    const dispatchDate = this.parseDate(body.dispatch_date ?? body.dispatchDate, "dispatch_date");
 
-    return this.prisma.stockDispatch.create({
+    const created = await this.prisma.stockDispatch.create({
       data: {
         organization_id: user.organizationId,
         branch_id: branchId,
@@ -2482,7 +2590,7 @@ export class DistributionService {
         dispatch_number: dispatchNumber,
         destination: this.parseRequiredString(body.destination, "destination"),
         status,
-        dispatch_date: this.parseDate(body.dispatch_date ?? body.dispatchDate, "dispatch_date"),
+        dispatch_date: dispatchDate,
         packed_by: this.parseOptionalUuid(body.packed_by ?? body.packedBy, "packed_by"),
         dispatched_by:
           status === DispatchStatus.DISPATCHED || status === DispatchStatus.DELIVERED
@@ -2523,6 +2631,27 @@ export class DistributionService {
         }
       }
     });
+
+    if (status === DispatchStatus.DISPATCHED || status === DispatchStatus.DELIVERED) {
+      const occurredAt = dispatchDate ?? new Date();
+      for (const lineItem of lineItems) {
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.DISPATCH_ISSUE,
+          quantity: lineItem.quantity,
+          itemId: lineItem.item_id,
+          branchId,
+          sourceLocationId: dispatchLocationId,
+          referenceType: "STOCK_DISPATCH",
+          referenceId: created.id,
+          notes: `Auto-posted from stock dispatch ${created.id}`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
+    return created;
   }
 
   async transitionDispatch(

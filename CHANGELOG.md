@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.41` - current active beta snapshot as of 2026-03-22
+- `Beta V1.16.42` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.42 - 2026-03-27
+
+### Added
+
+- Automatic movement-ledger posting from operational create flows:
+  - `POST /api/v1/distribution/receipts` now auto-posts `PURCHASE_RECEIPT` movements for received quantities.
+  - `POST /api/v1/distribution/adjustments` now auto-posts `ADJUSTMENT_INCREASE`/`ADJUSTMENT_DECREASE` movements when created in `APPLIED` status.
+  - `POST /api/v1/distribution/dispatches` now auto-posts `DISPATCH_ISSUE` movements when created in `DISPATCHED` or `DELIVERED` status.
+- Unit coverage for auto-posted movement behavior on receipt/adjustment/dispatch create paths.
+
+### Changed
+
+- Workflow-originated stock activity now writes movement ledger records and stock snapshots together via existing movement-to-stock sync behavior.
+- System fallback version updated to `Beta V1.16.42`.
 
 ## Beta V1.16.41 - 2026-03-22
 

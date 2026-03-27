@@ -773,6 +773,18 @@ describe("DistributionService", () => {
         })
       })
     );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "PURCHASE_RECEIPT",
+          quantity: 6,
+          branch_id: BRANCH_1,
+          destination_location_id: LOCATION_PARENT_BRANCH_1,
+          reference_type: "GOODS_RECEIPT",
+          reference_id: "gr-1"
+        })
+      })
+    );
     expect(result.id).toBe("gr-1");
   });
 
@@ -1146,6 +1158,45 @@ describe("DistributionService", () => {
     expect(result.id).toBe("adj-1");
   });
 
+  it("auto-posts movement entries when adjustment is created as APPLIED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createAdjustment(
+      {
+        branch_id: BRANCH_1,
+        adjustment_type: "DECREASE",
+        status: "APPLIED",
+        reason: "damage",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            previous_qty: 20,
+            adjusted_qty: 15,
+            variance: -5
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "ADJUSTMENT_DECREASE",
+          quantity: 5,
+          branch_id: BRANCH_1,
+          reference_type: "STOCK_ADJUSTMENT",
+          reference_id: "adj-1"
+        })
+      })
+    );
+  });
+
   it("lists adjustments with filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -1324,6 +1375,44 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("disp-1");
+  });
+
+  it("auto-posts movement entries when dispatch is created as DISPATCHED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createDispatch(
+      {
+        branch_id: BRANCH_1,
+        dispatch_location_id: LOCATION_PARENT_BRANCH_1,
+        destination: "Customer Beirut",
+        status: "DISPATCHED",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 4
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "DISPATCH_ISSUE",
+          quantity: 4,
+          branch_id: BRANCH_1,
+          source_location_id: LOCATION_PARENT_BRANCH_1,
+          reference_type: "STOCK_DISPATCH",
+          reference_id: "disp-1"
+        })
+      })
+    );
   });
 
   it("lists dispatches with status filter", async () => {

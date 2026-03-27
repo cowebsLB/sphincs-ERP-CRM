@@ -1,5 +1,28 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Workflow Auto-Posting to Movement Ledger (V1.16.42)
+
+Date: 2026-03-27
+
+### Scope
+
+- Integrated movement-ledger auto-posting into distribution create workflows that represent stock-impacting operations.
+- Added internal system movement writer to create movement rows and apply inventory stock sync consistently.
+- Wired auto-post behavior for:
+  - goods receipt create (`PURCHASE_RECEIPT`) based on per-line `received_qty`
+  - stock adjustment create in `APPLIED` status (`ADJUSTMENT_INCREASE` / `ADJUSTMENT_DECREASE`) based on line variance
+  - stock dispatch create in `DISPATCHED`/`DELIVERED` status (`DISPATCH_ISSUE`) based on line quantity
+- Added unit coverage validating auto-posted movement behavior for receipt/adjustment/dispatch create flows.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `127/127` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This extends movement-to-stock consistency from manual movement posting to core operational workflow entry points.
+
 ## Task: Movement Branch Filter Support (V1.16.41)
 
 Date: 2026-03-22

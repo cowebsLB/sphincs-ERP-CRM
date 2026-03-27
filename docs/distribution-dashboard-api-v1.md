@@ -122,6 +122,7 @@ As of `Beta V1.16.17`, transition operations also write audit events (`audit_log
 As of `Beta V1.16.18`, alert resolution is treated as an approval-sensitive action role.
 As of `Beta V1.16.23`, the distribution data model includes warehouse location and lot/pick-pack foundations for phase-2 logistics workflows.
 As of `Beta V1.16.40`, `POST /api/v1/distribution/movements` also auto-syncs `inventory_stocks` snapshots for the affected branch/item.
+As of `Beta V1.16.42`, receipt/adjustment/dispatch create flows also auto-post movement ledger rows when stock-changing quantities are present.
 
 ## Response Shape
 
