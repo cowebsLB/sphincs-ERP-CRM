@@ -1,5 +1,26 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Temporal Status Invariants (V1.16.56)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_temporal_status_invariants`
+- Added DB temporal constraints binding required dates to progressed statuses in receipts, transfers, adjustments, dispatches, and returns.
+- Updated create flows to auto-assign required lifecycle dates when status implies progressed state and the input omits date values.
+- Added unit coverage for status-driven timestamp autofill behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `138/138` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This enforces lifecycle time completeness at DB layer while keeping API create flows compatible through deterministic date defaults.
+
 ## Task: DB Status Domain Guardrails (V1.16.55)
 
 Date: 2026-03-27

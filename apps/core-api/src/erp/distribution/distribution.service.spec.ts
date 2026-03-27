@@ -798,6 +798,40 @@ describe("DistributionService", () => {
     expect(result.id).toBe("gr-1");
   });
 
+  it("auto-assigns received_date when goods receipt is created in RECEIVED status", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReceipt(
+      {
+        branch_id: BRANCH_1,
+        status: "RECEIVED",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            ordered_qty: 5,
+            received_qty: 5,
+            rejected_qty: 0
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.goodsReceipt.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "RECEIVED",
+          received_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
   it("lists receipts with status filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -978,6 +1012,41 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("tr-1");
+  });
+
+  it("auto-assigns dispatched_date when transfer is created as DISPATCHED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createTransfer(
+      {
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        status: "DISPATCHED",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity_requested: 10,
+            quantity_sent: 8,
+            quantity_received: 0
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockTransfer.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "DISPATCHED",
+          dispatched_date: expect.any(Date)
+        })
+      })
+    );
   });
 
   it("auto-posts transfer outbound movements when transfer is created as DISPATCHED", async () => {
@@ -1570,6 +1639,39 @@ describe("DistributionService", () => {
     expect(result.id).toBe("disp-1");
   });
 
+  it("auto-assigns dispatch_date when dispatch is created as DELIVERED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createDispatch(
+      {
+        branch_id: BRANCH_1,
+        destination: "Customer Beirut",
+        status: "DELIVERED",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 2
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockDispatch.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "DELIVERED",
+          dispatch_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
   it("auto-posts movement entries when dispatch is created as DISPATCHED", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -1989,6 +2091,40 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("ret-1");
+  });
+
+  it("auto-assigns processed_date when return is created as COMPLETED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReturn(
+      {
+        return_type: "CUSTOMER_RETURN",
+        status: "COMPLETED",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 1
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "COMPLETED",
+          processed_date: expect.any(Date)
+        })
+      })
+    );
   });
 
   it("auto-posts return completion movements when return is created as COMPLETED", async () => {

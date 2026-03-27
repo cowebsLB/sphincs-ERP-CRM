@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.55` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.56` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.56 - 2026-03-27
+
+### Added
+
+- Database-level temporal status invariant migration:
+  - `20260327_distribution_temporal_status_invariants`
+- Added `NOT VALID` check constraints requiring lifecycle timestamps when status implies progression:
+  - `goods_receipts`: `received_date` required for `RECEIVED`/`CLOSED`
+  - `stock_transfers`: `dispatched_date` required for `DISPATCHED`/`PARTIAL`/`COMPLETED`, and `received_date` required for `PARTIAL`/`COMPLETED`
+  - `stock_adjustments`: `applied_at` required for `APPLIED`
+  - `stock_dispatches`: `dispatch_date` required for `DISPATCHED`/`DELIVERED`/`RETURNED`
+  - `stock_returns`: `processed_date` required for `RECEIVED`/`INSPECTED`/`COMPLETED`
+
+### Changed
+
+- Create flows now auto-assign required lifecycle dates when omitted and status implies progression (receipt, transfer, dispatch, return).
+- Added backend unit coverage for status-driven timestamp autofill.
+- System fallback version updated to `Beta V1.16.56`.
 
 ## Beta V1.16.55 - 2026-03-27
 

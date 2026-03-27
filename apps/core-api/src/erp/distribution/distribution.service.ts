@@ -1984,7 +1984,11 @@ export class DistributionService {
 
     const requestedStatus = this.parseOptionalGoodsReceiptStatus(body.status);
     const status = this.deriveGoodsReceiptStatus(requestedStatus, lineItems);
-    const receivedDate = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
+    const receivedDateInput = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
+    const receivedDate =
+      status === GoodsReceiptStatus.RECEIVED || status === GoodsReceiptStatus.CLOSED
+        ? receivedDateInput ?? new Date()
+        : receivedDateInput;
     const receiptNumber =
       this.parseOptionalString(body.receipt_number ?? body.receiptNumber) ??
       `GR-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random()
@@ -2304,8 +2308,18 @@ export class DistributionService {
         ? user.id
         : this.parseOptionalUuid(body.approved_by ?? body.approvedBy, "approved_by");
     const createdDate = this.parseDate(body.created_date ?? body.createdDate, "created_date") ?? new Date();
-    const dispatchedDate = this.parseDate(body.dispatched_date ?? body.dispatchedDate, "dispatched_date");
-    const receivedDate = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
+    const dispatchedDateInput = this.parseDate(body.dispatched_date ?? body.dispatchedDate, "dispatched_date");
+    const receivedDateInput = this.parseDate(body.received_date ?? body.receivedDate, "received_date");
+    const dispatchedDate =
+      status === StockTransferStatus.DISPATCHED ||
+      status === StockTransferStatus.PARTIAL ||
+      status === StockTransferStatus.COMPLETED
+        ? dispatchedDateInput ?? createdDate
+        : dispatchedDateInput;
+    const receivedDate =
+      status === StockTransferStatus.PARTIAL || status === StockTransferStatus.COMPLETED
+        ? receivedDateInput ?? dispatchedDate ?? createdDate
+        : receivedDateInput;
 
     const created = await this.prisma.stockTransfer.create({
       data: {
@@ -2898,7 +2912,11 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
     const status = this.parseOptionalDispatchStatus(body.status) ?? DispatchStatus.DRAFT;
-    const dispatchDate = this.parseDate(body.dispatch_date ?? body.dispatchDate, "dispatch_date");
+    const dispatchDateInput = this.parseDate(body.dispatch_date ?? body.dispatchDate, "dispatch_date");
+    const dispatchDate =
+      status === DispatchStatus.DISPATCHED || status === DispatchStatus.DELIVERED || status === DispatchStatus.RETURNED
+        ? dispatchDateInput ?? new Date()
+        : dispatchDateInput;
 
     const created = await this.prisma.stockDispatch.create({
       data: {
@@ -3227,7 +3245,13 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
     const status = this.parseOptionalStockReturnStatus(body.status) ?? StockReturnStatus.DRAFT;
-    const processedDate = this.parseDate(body.processed_date ?? body.processedDate, "processed_date");
+    const processedDateInput = this.parseDate(body.processed_date ?? body.processedDate, "processed_date");
+    const processedDate =
+      status === StockReturnStatus.RECEIVED ||
+      status === StockReturnStatus.INSPECTED ||
+      status === StockReturnStatus.COMPLETED
+        ? processedDateInput ?? new Date()
+        : processedDateInput;
 
     const created = await this.prisma.stockReturn.create({
       data: {
