@@ -125,6 +125,7 @@ As of `Beta V1.16.40`, `POST /api/v1/distribution/movements` also auto-syncs `in
 As of `Beta V1.16.42`, receipt/adjustment/dispatch create flows also auto-post movement ledger rows when stock-changing quantities are present.
 As of `Beta V1.16.43`, transfer create/transition flows auto-post transfer out/in movement entries based on sent/received quantities.
 As of `Beta V1.16.44`, return completion flows auto-post restock (`RETURN_IN`) and damaged (`DAMAGED_WRITE_OFF`) movement entries.
+As of `Beta V1.16.45`, receipt/adjustment/dispatch transition flows also auto-post movement entries on receive/apply/dispatch status actions.
 
 ## Response Shape
 

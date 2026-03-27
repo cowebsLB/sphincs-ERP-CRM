@@ -823,6 +823,23 @@ describe("DistributionService", () => {
       branch_id: BRANCH_1,
       status: "DRAFT"
     });
+    prismaMock.goodsReceipt.update.mockResolvedValue({
+      id: "gr-1",
+      receipt_number: "GR-20260321120000-ABCD",
+      status: "RECEIVED",
+      branch_id: BRANCH_1,
+      receiving_location_id: LOCATION_PARENT_BRANCH_1,
+      received_date: new Date("2026-03-27T14:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          ordered_qty: 10,
+          received_qty: 6,
+          rejected_qty: 0,
+          remaining_qty: 4
+        }
+      ]
+    });
     const service = new DistributionService(prismaMock as never);
 
     const result = await service.transitionReceipt(
@@ -844,6 +861,18 @@ describe("DistributionService", () => {
         data: expect.objectContaining({
           status: "RECEIVED",
           received_by: "user-1"
+        })
+      })
+    );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "PURCHASE_RECEIPT",
+          quantity: 6,
+          branch_id: BRANCH_1,
+          destination_location_id: LOCATION_PARENT_BRANCH_1,
+          reference_type: "GOODS_RECEIPT",
+          reference_id: "gr-1"
         })
       })
     );
@@ -1420,6 +1449,23 @@ describe("DistributionService", () => {
       status: "APPROVED",
       branch_id: BRANCH_1
     });
+    prismaMock.stockAdjustment.update.mockResolvedValue({
+      id: "adj-1",
+      adjustment_number: "ADJ-20260321120000-ABCD",
+      status: "APPLIED",
+      adjustment_type: "DECREASE",
+      branch_id: BRANCH_1,
+      applied_at: new Date("2026-03-27T14:10:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          previous_qty: 20,
+          adjusted_qty: 15,
+          variance: -5,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
     const service = new DistributionService(prismaMock as never);
 
     await service.transitionAdjustment(
@@ -1438,6 +1484,17 @@ describe("DistributionService", () => {
           status: "APPLIED",
           approved_by: "user-1",
           applied_at: expect.any(Date)
+        })
+      })
+    );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "ADJUSTMENT_DECREASE",
+          quantity: 5,
+          branch_id: BRANCH_1,
+          reference_type: "STOCK_ADJUSTMENT",
+          reference_id: "adj-1"
         })
       })
     );
@@ -1651,6 +1708,52 @@ describe("DistributionService", () => {
           status: "DELIVERED",
           dispatched_by: "user-1",
           dispatch_date: expect.any(Date)
+        })
+      })
+    );
+  });
+
+  it("auto-posts dispatch movement on DISPATCH transition", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockDispatch.findFirst.mockResolvedValue({
+      id: "disp-1",
+      status: "PACKED",
+      branch_id: BRANCH_1
+    });
+    prismaMock.stockDispatch.update.mockResolvedValue({
+      id: "disp-1",
+      dispatch_number: "DISP-20260321120000-ABCD",
+      status: "DISPATCHED",
+      branch_id: BRANCH_1,
+      dispatch_date: new Date("2026-03-27T14:20:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity: 4,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionDispatch(
+      "44444444-4444-4444-8444-444444444444",
+      { action: "DISPATCH" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "DISPATCH_ISSUE",
+          quantity: 4,
+          branch_id: BRANCH_1,
+          reference_type: "STOCK_DISPATCH",
+          reference_id: "disp-1"
         })
       })
     );

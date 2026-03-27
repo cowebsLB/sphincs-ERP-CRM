@@ -2024,6 +2024,28 @@ export class DistributionService {
       }
     });
 
+    if (targetStatus === GoodsReceiptStatus.RECEIVED && currentStatus === GoodsReceiptStatus.DRAFT) {
+      const occurredAt = updated.received_date ?? new Date();
+      for (const lineItem of updated.line_items) {
+        if (lineItem.received_qty < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.PURCHASE_RECEIPT,
+          quantity: lineItem.received_qty,
+          itemId: lineItem.item_id,
+          branchId: updated.branch_id,
+          destinationLocationId: updated.receiving_location_id,
+          referenceType: "GOODS_RECEIPT",
+          referenceId: updated.id,
+          notes: `Auto-posted from goods receipt ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_RECEIPT_TRANSITION", "goods_receipt", receipt.id, {
       action,
       from_status: currentStatus,
@@ -2658,6 +2680,33 @@ export class DistributionService {
         }
       }
     });
+
+    if (targetStatus === StockAdjustmentStatus.APPLIED && adjustment.status === StockAdjustmentStatus.APPROVED) {
+      const occurredAt = updated.applied_at ?? new Date();
+      const movementType =
+        updated.adjustment_type === StockAdjustmentType.INCREASE
+          ? DistributionMovementType.ADJUSTMENT_INCREASE
+          : DistributionMovementType.ADJUSTMENT_DECREASE;
+      for (const lineItem of updated.line_items) {
+        const movementQty = Math.abs(lineItem.variance);
+        if (movementQty < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType,
+          quantity: movementQty,
+          itemId: lineItem.item_id,
+          branchId: updated.branch_id,
+          referenceType: "STOCK_ADJUSTMENT",
+          referenceId: updated.id,
+          notes: `Auto-posted from stock adjustment ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_ADJUSTMENT_TRANSITION", "stock_adjustment", updated.id, {
       action,
       from_status: adjustment.status,
@@ -2897,6 +2946,28 @@ export class DistributionService {
         }
       }
     });
+
+    if (targetStatus === DispatchStatus.DISPATCHED && dispatch.status === DispatchStatus.PACKED) {
+      const occurredAt = updated.dispatch_date ?? new Date();
+      for (const lineItem of updated.line_items) {
+        if (lineItem.quantity < 1) {
+          continue;
+        }
+        await this.createSystemMovementEntry({
+          organizationId: user.organizationId,
+          movementType: DistributionMovementType.DISPATCH_ISSUE,
+          quantity: lineItem.quantity,
+          itemId: lineItem.item_id,
+          branchId: updated.branch_id,
+          referenceType: "STOCK_DISPATCH",
+          referenceId: updated.id,
+          notes: `Auto-posted from stock dispatch ${updated.id} transition`,
+          performedBy: user.id,
+          occurredAt
+        });
+      }
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_DISPATCH_TRANSITION", "stock_dispatch", updated.id, {
       action,
       from_status: dispatch.status,

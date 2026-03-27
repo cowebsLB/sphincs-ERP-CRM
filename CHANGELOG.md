@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.44` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.45` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.45 - 2026-03-27
+
+### Added
+
+- Automatic movement-ledger posting for status-transition flows:
+  - `PATCH /api/v1/distribution/receipts/:receiptId/receive` now auto-posts `PURCHASE_RECEIPT` movement rows when transitioning `DRAFT -> RECEIVED` with received quantities.
+  - `PATCH /api/v1/distribution/adjustments/:adjustmentId/apply` now auto-posts `ADJUSTMENT_INCREASE` / `ADJUSTMENT_DECREASE` movement rows on `APPROVED -> APPLIED`.
+  - `PATCH /api/v1/distribution/dispatches/:dispatchId/dispatch` now auto-posts `DISPATCH_ISSUE` movement rows on `PACKED -> DISPATCHED`.
+- Unit coverage for receipt/adjustment/dispatch transition auto-post behavior.
+
+### Changed
+
+- Lifecycle transition actions now emit movement ledger records and stock sync updates consistently, matching create-flow auto-post behavior.
+- System fallback version updated to `Beta V1.16.45`.
 
 ## Beta V1.16.44 - 2026-03-27
 

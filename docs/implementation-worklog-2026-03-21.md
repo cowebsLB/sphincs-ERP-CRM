@@ -1,5 +1,28 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Transition Flow Movement Auto-Posting (V1.16.45)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added movement auto-post behavior to stock-impacting lifecycle transition actions.
+- Integrated transition-time movement posting for:
+  - goods receipt transition `DRAFT -> RECEIVED` (`PURCHASE_RECEIPT`)
+  - stock adjustment transition `APPROVED -> APPLIED` (`ADJUSTMENT_INCREASE` / `ADJUSTMENT_DECREASE`)
+  - stock dispatch transition `PACKED -> DISPATCHED` (`DISPATCH_ISSUE`)
+- Added transition guards to prevent broad duplicate posting by only emitting movement entries on first stock-impacting status edges.
+- Added unit coverage for receipt/adjustment/dispatch transition auto-post behavior.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `131/131` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This aligns transition actions with create-flow integrations so movement ledger and inventory stock snapshots remain synchronized across both workflow entry modes.
+
 ## Task: Return Completion Movement Auto-Posting (V1.16.44)
 
 Date: 2026-03-27
