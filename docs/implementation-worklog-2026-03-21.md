@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Full GET/POST Live Smoke Runner + Return Scope Fallback (V1.16.70)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added live backend smoke script:
+  - `scripts/live-api-full-smoke.mjs`
+  - exercises a broad one-go GET/POST sweep across core + distribution endpoints
+  - includes retry/backoff for transient `5xx` responses
+- Adjusted smoke receipt payload to draft (`received_qty: 0`) so live run can proceed while receipt auto-post stabilization remains pending.
+- Fixed return create branch-scope behavior:
+  - `createReturn` now defaults `source_branch_id` to authenticated `user.branchId` when omitted.
+  - preserves branch-scope enforcement while allowing scoped users to create returns without explicitly sending branch ids.
+- Added unit test coverage for omitted-source return create fallback.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test -- distribution.service.spec.ts` passed (`102/102`).
+- `node scripts/live-api-full-smoke.mjs` now progresses through broad create/list coverage, with remaining live-instance variability tied to deployment/environment state.
+
+### Notes
+
+- This block is focused on end-to-end backend operability checks (all planned GET/POST surfaces) and scoped-user return create reliability.
+
 ## Task: Prisma Startup Retry/Backoff Resilience (V1.16.69)
 
 Date: 2026-03-27

@@ -2283,6 +2283,38 @@ describe("DistributionService", () => {
     expect(result.id).toBe("ret-1");
   });
 
+  it("defaults source_branch_id from user scope when omitted on return create", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReturn(
+      {
+        return_type: "CUSTOMER_RETURN",
+        destination_branch_id: BRANCH_2,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 1
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2
+        })
+      })
+    );
+  });
+
   it("rejects return create when only linked_source_type is provided", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

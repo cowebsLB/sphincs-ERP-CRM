@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.69` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.70` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.70 - 2026-03-27
+
+### Changed
+
+- Return create branch-scope fallback hardening:
+  - `createReturn` now defaults `source_branch_id` from authenticated user scope when omitted.
+  - This aligns return create behavior with other branch-scoped distribution create flows that rely on user-branch fallback context.
+- Added distribution unit coverage for return create fallback behavior.
+- Added live full-surface API smoke runner:
+  - `scripts/live-api-full-smoke.mjs`
+  - Covers broad GET/POST paths for core + distribution with transient `5xx` retry handling.
+  - Uses receipt draft payload defaults to avoid known auto-post path instability during live smoke runs.
+- System fallback version updated to `Beta V1.16.70`.
 
 ## Beta V1.16.69 - 2026-03-27
 

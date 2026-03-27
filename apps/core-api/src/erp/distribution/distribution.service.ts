@@ -3252,7 +3252,8 @@ export class DistributionService {
       throw new BadRequestException("return_type is required");
     }
 
-    const sourceBranchId = this.parseOptionalUuid(body.source_branch_id ?? body.sourceBranchId, "source_branch_id");
+    const sourceBranchId =
+      this.parseOptionalUuid(body.source_branch_id ?? body.sourceBranchId, "source_branch_id") ?? user.branchId ?? null;
     const destinationBranchId = this.parseOptionalUuid(
       body.destination_branch_id ?? body.destinationBranchId,
       "destination_branch_id"
