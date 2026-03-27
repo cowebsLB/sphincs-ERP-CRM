@@ -1,5 +1,27 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Prisma Startup Retry/Backoff Resilience (V1.16.69)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added Prisma startup retry/backoff in `PrismaService.onModuleInit()`:
+  - retries `$connect()` with exponential delay
+  - configurable via:
+    - `PRISMA_CONNECT_MAX_RETRIES` (default `8`)
+    - `PRISMA_CONNECT_RETRY_DELAY_MS` (default `2000`)
+- Added explicit retry/failure logging for Prisma connection attempts.
+- Added `onModuleDestroy()` disconnect handling (`$disconnect`) for clean shutdown.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api build` passed.
+
+### Notes
+
+- This reduces deploy/runtime flakiness from transient DB pool saturation (`PrismaClientInitializationError` pool timeout) during startup.
+
 ## Task: Prisma Shutdown Hook Alignment for Render Runtime (V1.16.68)
 
 Date: 2026-03-27

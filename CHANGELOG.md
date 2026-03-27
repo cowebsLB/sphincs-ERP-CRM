@@ -7,7 +7,20 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.68` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.69` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.69 - 2026-03-27
+
+### Changed
+
+- Prisma startup resilience hardening:
+  - `PrismaService` now retries `$connect()` with exponential backoff on startup.
+  - Added configurable retry env vars:
+    - `PRISMA_CONNECT_MAX_RETRIES` (default `8`)
+    - `PRISMA_CONNECT_RETRY_DELAY_MS` (default `2000`)
+  - Added explicit Prisma connection retry/final-failure logging.
+  - Added module destroy disconnect (`$disconnect`) for cleaner shutdown.
+- System fallback version updated to `Beta V1.16.69`.
 
 ## Beta V1.16.68 - 2026-03-27
 
