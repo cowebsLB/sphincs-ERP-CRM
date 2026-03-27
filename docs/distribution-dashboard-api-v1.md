@@ -138,6 +138,7 @@ As of `Beta V1.16.54`, additional DB indexes optimize distribution report/list q
 As of `Beta V1.16.55`, DB-level status/type domain constraints protect key distribution/logistics status fields on new writes.
 As of `Beta V1.16.56`, DB-level temporal invariants enforce required lifecycle dates for progressed statuses.
 As of `Beta V1.16.57`, DB-level lot/pick/pack quantity guardrails enforce additional logistics quantity consistency rules.
+As of `Beta V1.16.58`, DB-level temporal order guardrails enforce chronological consistency across lifecycle timestamps.
 
 ## Response Shape
 

@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Temporal Order Guardrails (V1.16.58)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_temporal_order_guardrails`
+- Introduced DB temporal ordering checks for lifecycle timestamps in:
+  - `goods_receipts`
+  - `stock_transfers`
+  - `stock_adjustments`
+  - `stock_dispatches`
+  - `stock_returns`
+- Constraints are `NOT VALID` for safe rollout and immediate enforcement on new writes.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `138/138` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This hardens lifecycle data quality by preventing inverted or illogical timestamp ordering at DB level.
+
 ## Task: DB Lot/Pick/Pack Quantity Guardrails (V1.16.57)
 
 Date: 2026-03-27

@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.57` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.58` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.58 - 2026-03-27
+
+### Added
+
+- Database-level temporal ordering guardrail migration:
+  - `20260327_distribution_temporal_order_guardrails`
+- Added `NOT VALID` temporal ordering checks for:
+  - `goods_receipts.received_date >= created_at` (when present)
+  - `stock_transfers.dispatched_date >= created_at` and `received_date >= dispatched_date` (when present)
+  - `stock_adjustments.applied_at >= created_at` (when present)
+  - `stock_dispatches.dispatch_date >= created_at` (when present)
+  - `stock_returns.processed_date >= created_at` (when present)
+
+### Changed
+
+- Distribution lifecycle timestamps now have DB-level chronological consistency enforcement for new writes.
+- System fallback version updated to `Beta V1.16.58`.
 
 ## Beta V1.16.57 - 2026-03-27
 
