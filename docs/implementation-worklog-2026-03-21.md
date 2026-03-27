@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Return Completion Movement Auto-Posting (V1.16.44)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added return completion movement auto-posting support with deterministic movement mapping.
+- Introduced return completion movement helper for reusable posting behavior across create and transition flows.
+- Wired movement auto-post behavior for:
+  - return create when status is `COMPLETED`
+  - return transition when moving from `INSPECTED` to `COMPLETED`
+- Implemented return completion movement mapping:
+  - `RETURN_IN` for restockable line quantities
+  - `DAMAGED_WRITE_OFF` for damaged line quantities
+- Added unit coverage for return completion movement auto-post behavior on create and transition paths.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `130/130` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This closes return-side ledger consistency for completion workflows and extends the distribution auto-post integration set.
+
 ## Task: Transfer Movement Auto-Posting (V1.16.43)
 
 Date: 2026-03-27

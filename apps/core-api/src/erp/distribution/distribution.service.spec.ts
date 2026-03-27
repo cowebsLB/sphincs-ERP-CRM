@@ -1747,6 +1747,66 @@ describe("DistributionService", () => {
     expect(result.id).toBe("ret-1");
   });
 
+  it("auto-posts return completion movements when return is created as COMPLETED", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReturn(
+      {
+        return_type: "CUSTOMER_RETURN",
+        status: "COMPLETED",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        source_location_id: LOCATION_PARENT_BRANCH_1,
+        destination_location_id: LOCATION_PARENT_BRANCH_2,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 2,
+            restock: true,
+            damaged: false
+          },
+          {
+            item_id: "11111111-1111-4111-8111-111111111111",
+            quantity: 1,
+            restock: false,
+            damaged: true
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "RETURN_IN",
+          quantity: 2,
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          reference_type: "STOCK_RETURN",
+          reference_id: "ret-1"
+        })
+      })
+    );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "DAMAGED_WRITE_OFF",
+          quantity: 1,
+          branch_id: BRANCH_2,
+          source_branch_id: BRANCH_2,
+          reference_type: "STOCK_RETURN",
+          reference_id: "ret-1"
+        })
+      })
+    );
+  });
+
   it("lists returns with filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -1843,6 +1903,25 @@ describe("DistributionService", () => {
       source_branch_id: BRANCH_1,
       destination_branch_id: BRANCH_2
     });
+    prismaMock.stockReturn.update.mockResolvedValue({
+      id: "ret-1",
+      return_number: "RET-20260321120000-ABCD",
+      status: "COMPLETED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      source_location_id: LOCATION_PARENT_BRANCH_1,
+      destination_location_id: LOCATION_PARENT_BRANCH_2,
+      processed_date: new Date("2026-03-27T13:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity: 2,
+          restock: true,
+          damaged: false,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
     const service = new DistributionService(prismaMock as never);
 
     await service.transitionReturn(
@@ -1861,6 +1940,18 @@ describe("DistributionService", () => {
           status: "COMPLETED",
           processed_by: "user-1",
           processed_date: expect.any(Date)
+        })
+      })
+    );
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          movement_type: "RETURN_IN",
+          quantity: 2,
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          reference_type: "STOCK_RETURN",
+          reference_id: "ret-1"
         })
       })
     );

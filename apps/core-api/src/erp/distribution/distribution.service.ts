@@ -1280,6 +1280,59 @@ export class DistributionService {
     });
   }
 
+  private async postReturnCompletionMovements(input: {
+    organizationId: string;
+    returnId: string;
+    sourceBranchId: string | null;
+    destinationBranchId: string | null;
+    sourceLocationId?: string | null;
+    destinationLocationId?: string | null;
+    performedBy: string;
+    occurredAt: Date;
+    lineItems: Array<{ item_id: string; quantity: number; restock: boolean; damaged: boolean }>;
+  }) {
+    for (const lineItem of input.lineItems) {
+      if (lineItem.quantity < 1) {
+        continue;
+      }
+
+      if (lineItem.restock) {
+        await this.createSystemMovementEntry({
+          organizationId: input.organizationId,
+          movementType: DistributionMovementType.RETURN_IN,
+          quantity: lineItem.quantity,
+          itemId: lineItem.item_id,
+          sourceBranchId: input.sourceBranchId,
+          destinationBranchId: input.destinationBranchId,
+          sourceLocationId: input.sourceLocationId ?? null,
+          destinationLocationId: input.destinationLocationId ?? null,
+          referenceType: "STOCK_RETURN",
+          referenceId: input.returnId,
+          notes: `Auto-posted restock movement from stock return ${input.returnId}`,
+          performedBy: input.performedBy,
+          occurredAt: input.occurredAt
+        });
+      }
+
+      if (lineItem.damaged) {
+        await this.createSystemMovementEntry({
+          organizationId: input.organizationId,
+          movementType: DistributionMovementType.DAMAGED_WRITE_OFF,
+          quantity: lineItem.quantity,
+          itemId: lineItem.item_id,
+          branchId: input.destinationBranchId,
+          sourceBranchId: input.destinationBranchId,
+          sourceLocationId: input.destinationLocationId ?? null,
+          referenceType: "STOCK_RETURN",
+          referenceId: input.returnId,
+          notes: `Auto-posted damaged write-off from stock return ${input.returnId}`,
+          performedBy: input.performedBy,
+          occurredAt: input.occurredAt
+        });
+      }
+    }
+  }
+
   async createMovement(body: Record<string, unknown>, scope?: UserScope) {
     const user = this.requireScope(scope);
 
@@ -2968,8 +3021,9 @@ export class DistributionService {
         .slice(2, 6)
         .toUpperCase()}`;
     const status = this.parseOptionalStockReturnStatus(body.status) ?? StockReturnStatus.DRAFT;
+    const processedDate = this.parseDate(body.processed_date ?? body.processedDate, "processed_date");
 
-    return this.prisma.stockReturn.create({
+    const created = await this.prisma.stockReturn.create({
       data: {
         organization_id: user.organizationId,
         return_number: returnNumber,
@@ -2987,7 +3041,7 @@ export class DistributionService {
         damaged: this.parseBoolean(body.damaged, false),
         processed_by:
           status === StockReturnStatus.COMPLETED || status === StockReturnStatus.INSPECTED ? user.id : null,
-        processed_date: this.parseDate(body.processed_date ?? body.processedDate, "processed_date"),
+        processed_date: processedDate,
         notes: this.parseOptionalString(body.notes),
         line_items: {
           create: lineItems
@@ -3033,6 +3087,22 @@ export class DistributionService {
         }
       }
     });
+
+    if (status === StockReturnStatus.COMPLETED) {
+      await this.postReturnCompletionMovements({
+        organizationId: user.organizationId,
+        returnId: created.id,
+        sourceBranchId,
+        destinationBranchId,
+        sourceLocationId,
+        destinationLocationId,
+        performedBy: user.id,
+        occurredAt: processedDate ?? new Date(),
+        lineItems
+      });
+    }
+
+    return created;
   }
 
   async transitionReturn(
@@ -3107,6 +3177,20 @@ export class DistributionService {
             name: true
           }
         },
+        source_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
+        destination_location: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        },
         line_items: {
           include: {
             item: {
@@ -3120,6 +3204,21 @@ export class DistributionService {
         }
       }
     });
+
+    if (targetStatus === StockReturnStatus.COMPLETED && stockReturn.status === StockReturnStatus.INSPECTED) {
+      await this.postReturnCompletionMovements({
+        organizationId: user.organizationId,
+        returnId: updated.id,
+        sourceBranchId: updated.source_branch_id,
+        destinationBranchId: updated.destination_branch_id,
+        sourceLocationId: updated.source_location_id,
+        destinationLocationId: updated.destination_location_id,
+        performedBy: user.id,
+        occurredAt: updated.processed_date ?? new Date(),
+        lineItems: updated.line_items
+      });
+    }
+
     await this.recordAuditEvent(user, "DISTRIBUTION_RETURN_TRANSITION", "stock_return", updated.id, {
       action,
       from_status: stockReturn.status,

@@ -7,7 +7,24 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.43` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.44` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.44 - 2026-03-27
+
+### Added
+
+- Automatic return-completion movement posting for stock return workflows:
+  - `POST /api/v1/distribution/returns` now auto-posts completion movements when created in `COMPLETED` status.
+  - `PATCH /api/v1/distribution/returns/:returnId/complete` now auto-posts completion movements on `INSPECTED -> COMPLETED`.
+- Return completion movement mapping:
+  - `RETURN_IN` for restockable quantities.
+  - `DAMAGED_WRITE_OFF` for damaged quantities.
+- Unit coverage for return completion auto-post behavior on create and transition paths.
+
+### Changed
+
+- Return completion workflows now write movement ledger history and stock snapshot updates automatically, keeping return processing consistent with transfer/receipt/dispatch/adjustment integrations.
+- System fallback version updated to `Beta V1.16.44`.
 
 ## Beta V1.16.43 - 2026-03-27
 
