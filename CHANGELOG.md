@@ -7,7 +7,17 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.66` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.67` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.67 - 2026-03-27
+
+### Changed
+
+- Core API bootstrap/runtime hardening for Render:
+  - explicit bind host support (`HOST`, default `0.0.0.0`)
+  - startup log now prints `host:port` after listen
+  - bootstrap wrapped in fail-fast `try/catch` with explicit fatal error logging
+- System fallback version updated to `Beta V1.16.67`.
 
 ## Beta V1.16.66 - 2026-03-27
 

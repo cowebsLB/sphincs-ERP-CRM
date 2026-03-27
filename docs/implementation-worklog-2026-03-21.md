@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Core API Render Startup Hardening (V1.16.67)
+
+Date: 2026-03-27
+
+### Scope
+
+- Updated core API bootstrap (`main.ts`) to improve runtime observability and binding behavior on Render:
+  - binds to configurable `HOST` env (default `0.0.0.0`)
+  - logs final bind target as `host:port`
+  - wraps bootstrap in `try/catch` and emits explicit fatal error logs before exit
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api build` passed.
+
+### Notes
+
+- This improves diagnosis for runtime exits that occur after route initialization but before stable service health.
+
 ## Task: Posted-Only Movement Branch Routing Guardrails (V1.16.66)
 
 Date: 2026-03-27
