@@ -142,6 +142,7 @@ As of `Beta V1.16.58`, DB-level temporal order guardrails enforce chronological 
 As of `Beta V1.16.59`, DB triggers enforce `updated_at` maintenance for distribution/logistics tables on direct updates.
 As of `Beta V1.16.60`, manual movement creation is transactionally bound to stock sync and movement-created audit logging.
 As of `Beta V1.16.61`, movement and return reference-link fields enforce pairwise consistency at service and DB levels (`type` and `id` must be provided together).
+As of `Beta V1.16.62`, reservation reference fields also enforce pairwise consistency at service and DB levels (`reference_type` and `reference_id` must be provided together).
 
 ## Response Shape
 

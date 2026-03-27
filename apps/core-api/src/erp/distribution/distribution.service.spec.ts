@@ -2814,7 +2814,8 @@ describe("DistributionService", () => {
         branch_id: BRANCH_1,
         item_id: "33333333-3333-4333-8333-333333333333",
         reserved_quantity: 3,
-        reference_type: "SALES_ORDER"
+        reference_type: "SALES_ORDER",
+        reference_id: "77777777-7777-4777-8777-777777777777"
       },
       {
         id: "user-1",
@@ -2829,11 +2830,35 @@ describe("DistributionService", () => {
           organization_id: "org-1",
           branch_id: BRANCH_1,
           reserved_quantity: 3,
+          reference_type: "SALES_ORDER",
+          reference_id: "77777777-7777-4777-8777-777777777777",
           status: "ACTIVE"
         })
       })
     );
     expect(result.id).toBe("res-1");
+  });
+
+  it("rejects reservation create when only reference_type is provided", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReservation(
+        {
+          branch_id: BRANCH_1,
+          item_id: "33333333-3333-4333-8333-333333333333",
+          reserved_quantity: 3,
+          reference_type: "SALES_ORDER"
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.inventoryReservation.create).not.toHaveBeenCalled();
   });
 
   it("lists reservations with status filter", async () => {

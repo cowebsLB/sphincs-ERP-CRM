@@ -4252,6 +4252,11 @@ export class DistributionService {
     }
 
     const status = this.parseOptionalInventoryReservationStatus(body.status) ?? InventoryReservationStatus.ACTIVE;
+    const referenceType = this.parseOptionalString(body.reference_type ?? body.referenceType);
+    const referenceId = this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id");
+    if ((referenceType && !referenceId) || (!referenceType && referenceId)) {
+      throw new BadRequestException("reference_type and reference_id must be provided together");
+    }
 
     return this.prisma.inventoryReservation.create({
       data: {
@@ -4259,8 +4264,8 @@ export class DistributionService {
         branch_id: branchId,
         item_id: itemId,
         reserved_quantity: reservedQuantity,
-        reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
-        reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
+        reference_type: referenceType,
+        reference_id: referenceId,
         reserved_by: user.id,
         reserved_date: this.parseDate(body.reserved_date ?? body.reservedDate, "reserved_date") ?? new Date(),
         expires_at: this.parseDate(body.expires_at ?? body.expiresAt, "expires_at"),

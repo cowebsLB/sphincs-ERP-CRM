@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Reservation Reference Pair Guardrails (V1.16.62)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_reservation_reference_pair_guardrails`
+- Added DB pairwise check constraint for:
+  - `inventory_reservations.reference_type` + `reference_id`
+- Updated service validation:
+  - `createReservation` rejects partial `reference_*` pairs.
+- Updated unit coverage:
+  - create reservation reject path when only `reference_type` is provided
+  - create reservation success path with complete `reference_type` + `reference_id`
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `143/143` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This extends the same DB/backend reference integrity model used for movements and returns to reservation workflows.
+
 ## Task: DB + Service Reference Pair Guardrails (V1.16.61)
 
 Date: 2026-03-27

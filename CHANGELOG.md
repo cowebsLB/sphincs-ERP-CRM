@@ -7,7 +7,22 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.61` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.62` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.62 - 2026-03-27
+
+### Added
+
+- Database-level reservation reference pair guardrail migration:
+  - `20260327_distribution_reservation_reference_pair_guardrails`
+- Added `NOT VALID` pairwise check constraint for:
+  - `inventory_reservations.reference_type` + `reference_id`
+
+### Changed
+
+- `createReservation` now rejects partial reservation reference pairs (type without id, or id without type).
+- Unit coverage updated for reservation pairwise validation behavior.
+- System fallback version updated to `Beta V1.16.62`.
 
 ## Beta V1.16.61 - 2026-03-27
 
