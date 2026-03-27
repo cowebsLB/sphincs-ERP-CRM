@@ -1,7 +1,6 @@
 import { Logger, RequestMethod, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { PrismaService } from "./prisma.service";
 
 async function bootstrap() {
   try {
@@ -22,7 +21,7 @@ async function bootstrap() {
       exclude: [{ path: "health", method: RequestMethod.GET }]
     });
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-    await app.get(PrismaService).enableShutdownHooks(app);
+    app.enableShutdownHooks();
 
     const port = Number(process.env.PORT || 3000);
     const host = process.env.HOST || "0.0.0.0";

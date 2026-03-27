@@ -7,7 +7,17 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.67` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.68` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.68 - 2026-03-27
+
+### Changed
+
+- Prisma/Nest shutdown lifecycle alignment:
+  - removed custom Prisma `beforeExit` app-close hook
+  - switched to Nest built-in `app.enableShutdownHooks()`
+- This avoids premature process close behavior during runtime bootstrap on Render.
+- System fallback version updated to `Beta V1.16.68`.
 
 ## Beta V1.16.67 - 2026-03-27
 

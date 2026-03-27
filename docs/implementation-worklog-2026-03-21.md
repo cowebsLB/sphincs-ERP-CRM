@@ -1,5 +1,23 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Prisma Shutdown Hook Alignment for Render Runtime (V1.16.68)
+
+Date: 2026-03-27
+
+### Scope
+
+- Removed custom Prisma service shutdown hook based on `process.on("beforeExit")`.
+- Switched startup lifecycle wiring to Nest native shutdown handling via `app.enableShutdownHooks()`.
+- Preserved explicit render bind/log bootstrap behavior introduced in prior block.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api build` passed.
+
+### Notes
+
+- This avoids premature shutdown paths caused by process-level `beforeExit` interactions during service startup.
+
 ## Task: Core API Render Startup Hardening (V1.16.67)
 
 Date: 2026-03-27
