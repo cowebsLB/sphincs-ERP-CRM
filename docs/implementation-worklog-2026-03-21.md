@@ -1,5 +1,29 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: PATCH Transition Smoke + Stock-Sync Negative-Write Guard (V1.16.71)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added PATCH lifecycle smoke runner:
+  - `scripts/live-api-patch-transitions-smoke.mjs`
+  - covers transition endpoints across distribution workflows (receipts, transfers, adjustments, dispatches, returns, reservations, lot/location lifecycle actions, and job transitions).
+  - applies safer retry behavior by avoiding unsafe automatic replay for state-changing requests.
+- Hardened inventory stock sync in movement auto-post path:
+  - `applyMovementToInventoryStock` now skips stock snapshot writes when computed next values would be negative.
+  - this prevents DB check-constraint crash paths from surfacing as unhandled `500` errors during transitions.
+- Added/updated unit coverage in `distribution.service.spec.ts` for negative-snapshot skip behavior in transfer dispatch flow.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test -- distribution.service.spec.ts` passed (`103/103`).
+- `node scripts/live-api-patch-transitions-smoke.mjs` currently reports `17/18` against deployed runtime until this block is deployed.
+
+### Notes
+
+- This block targets backend lifecycle completeness and runtime resilience while continuing the “finish backend first” execution path.
+
 ## Task: Full GET/POST Live Smoke Runner + Return Scope Fallback (V1.16.70)
 
 Date: 2026-03-27

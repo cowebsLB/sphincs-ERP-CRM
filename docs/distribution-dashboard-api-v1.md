@@ -148,6 +148,7 @@ As of `Beta V1.16.64`, stock-impacting movements enforce movement-type branch co
 As of `Beta V1.16.65`, manual movement stock sync is applied only for `POSTED` movements, and movement `status` input is validated (`DRAFT|POSTED|CANCELLED`) before persistence.
 As of `Beta V1.16.66`, movement-type branch-context requirements are scoped to `POSTED` movements so `DRAFT`/`CANCELLED` movement logs can be persisted without stock-routing context.
 As of `Beta V1.16.70`, return creation defaults `source_branch_id` from authenticated branch scope when omitted, preserving scoped-user operability across branch-id serialization variants.
+As of `Beta V1.16.71`, movement stock-sync guards skip invalid negative snapshot writes so lifecycle transitions avoid DB check-constraint `500` failures.
 
 ## Response Shape
 

@@ -1171,6 +1171,17 @@ export class DistributionService {
     return { onHandDelta: 0, availableDelta: 0, damagedDelta: 0 };
   }
 
+  private isNonNegativeStockSnapshot(input: {
+    movementType: DistributionMovementType;
+    itemId: string;
+    branchId: string;
+    nextOnHand: number;
+    nextAvailable: number;
+    nextDamaged: number;
+  }) {
+    return input.nextOnHand >= 0 && input.nextAvailable >= 0 && input.nextDamaged >= 0;
+  }
+
   private async applyMovementToInventoryStock(db: any, movement: {
     organization_id: string;
     movement_type: DistributionMovementType;
@@ -1224,6 +1235,17 @@ export class DistributionService {
     const nextOnHand = currentOnHand + deltas.onHandDelta;
     const nextAvailable = currentAvailable + deltas.availableDelta;
     const nextDamaged = currentDamaged + deltas.damagedDelta;
+    const hasValidSnapshot = this.isNonNegativeStockSnapshot({
+      movementType: movement.movement_type,
+      itemId: movement.item_id,
+      branchId: targetBranchId,
+      nextOnHand,
+      nextAvailable,
+      nextDamaged
+    });
+    if (!hasValidSnapshot) {
+      return;
+    }
 
     if (current) {
       await db.inventoryStock.update({

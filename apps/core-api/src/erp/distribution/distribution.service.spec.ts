@@ -529,18 +529,8 @@ describe("DistributionService", () => {
         })
       })
     );
-    expect(prismaMock.inventoryStock.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          organization_id: "org-1",
-          branch_id: BRANCH_1,
-          item_id: "11111111-1111-4111-8111-111111111111",
-          quantity_on_hand: -5,
-          available_quantity: -5,
-          damaged_quantity: 0
-        })
-      })
-    );
+    expect(prismaMock.inventoryStock.create).not.toHaveBeenCalled();
+    expect(prismaMock.inventoryStock.update).not.toHaveBeenCalled();
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -1488,6 +1478,50 @@ describe("DistributionService", () => {
         })
       })
     );
+  });
+
+  it("skips stock snapshot writes when DISPATCH transfer would push stock negative", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.stockTransfer.findFirst.mockResolvedValue({
+      id: "tr-1",
+      status: "APPROVED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      status_history: []
+    });
+    prismaMock.stockTransfer.update.mockResolvedValue({
+      id: "tr-1",
+      transfer_number: "TR-20260321120000-ABCD",
+      status: "DISPATCHED",
+      source_branch_id: BRANCH_1,
+      destination_branch_id: BRANCH_2,
+      source_location_id: LOCATION_PARENT_BRANCH_1,
+      destination_location_id: LOCATION_PARENT_BRANCH_2,
+      dispatched_date: new Date("2026-03-27T11:00:00.000Z"),
+      line_items: [
+        {
+          item_id: "33333333-3333-4333-8333-333333333333",
+          quantity_sent: 7,
+          quantity_received: 0,
+          item: { id: "33333333-3333-4333-8333-333333333333", name: "Widget", sku: "W-1" }
+        }
+      ]
+    });
+    prismaMock.inventoryStock.findFirst.mockResolvedValue(null);
+    const service = new DistributionService(prismaMock as never);
+
+    await service.transitionTransfer(
+      "33333333-3333-4333-8333-333333333333",
+      { action: "DISPATCH" },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryStock.create).not.toHaveBeenCalled();
+    expect(prismaMock.inventoryStock.update).not.toHaveBeenCalled();
   });
 
   it("transitions transfer to CANCELLED from REQUESTED", async () => {

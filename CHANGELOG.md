@@ -7,7 +7,21 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.70` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.71` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.71 - 2026-03-27
+
+### Changed
+
+- Hardened movement-to-stock sync to prevent negative snapshot writes:
+  - `applyMovementToInventoryStock` now skips stock snapshot update/create when the computed next snapshot would be negative.
+  - This avoids DB check-constraint crash paths that surfaced as `500` during lifecycle transitions (notably transfer dispatch).
+- Added PATCH transition live smoke runner:
+  - `scripts/live-api-patch-transitions-smoke.mjs`
+  - Covers lifecycle transition endpoints (`PATCH`) across receipts, transfers, adjustments, dispatches, returns, reservations, lot/location controls, and job transitions.
+  - Uses retry strategy that avoids replaying unsafe state-changing requests.
+- Updated distribution unit coverage for negative-snapshot skip semantics on transfer dispatch.
+- System fallback version updated to `Beta V1.16.71`.
 
 ## Beta V1.16.70 - 2026-03-27
 
