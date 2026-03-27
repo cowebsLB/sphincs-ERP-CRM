@@ -1,5 +1,26 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB-Enforced Movement Idempotency (V1.16.51)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added DB migration:
+  - `20260327_inventory_movement_system_idempotency_index`
+- Migration introduces a partial unique index for active referenced system movements to enforce idempotency under concurrency.
+- Updated service flow to handle unique-constraint race outcomes gracefully by resolving to duplicate-skip audit behavior instead of failing.
+- Added unit coverage for unique-constraint race fallback.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `134/134` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This strengthens backend consistency by combining app-layer duplicate checks with database-layer uniqueness guarantees.
+
 ## Task: Atomic System Movement Posting (V1.16.50)
 
 Date: 2026-03-27

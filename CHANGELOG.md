@@ -7,7 +7,23 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.50` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.51` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.51 - 2026-03-27
+
+### Added
+
+- Database-level idempotency guard for system movement postings:
+  - new partial unique index on `inventory_movements` for active referenced movement keys:
+    - `(organization_id, reference_type, reference_id, movement_type, item_id, quantity)`
+    - enforced only when `deleted_at IS NULL` and references are present.
+- Race-safe service handling for unique-conflict insert contention during system movement posting (`P2002` path).
+- Unit coverage for unique-constraint race fallback behavior.
+
+### Changed
+
+- System movement posting now has both service-level duplicate detection and DB-enforced uniqueness for stronger backend integrity under concurrency.
+- System fallback version updated to `Beta V1.16.51`.
 
 ## Beta V1.16.50 - 2026-03-27
 

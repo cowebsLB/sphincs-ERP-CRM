@@ -131,6 +131,7 @@ As of `Beta V1.16.47`, system-generated movement auto-posting applies duplicate-
 As of `Beta V1.16.48`, system-generated movement auto-posting also emits dedicated movement audit events for traceability.
 As of `Beta V1.16.49`, duplicate-suppression skip decisions are also explicitly audit-logged.
 As of `Beta V1.16.50`, movement auto-post write path runs atomically in a database transaction.
+As of `Beta V1.16.51`, database-level unique constraints now enforce idempotency for active referenced system movement posts.
 
 ## Response Shape
 

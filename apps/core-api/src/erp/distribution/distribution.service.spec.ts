@@ -1861,6 +1861,45 @@ describe("DistributionService", () => {
     );
   });
 
+  it("handles unique-constraint race by logging duplicate skip instead of failing", async () => {
+    const prismaMock = createPrismaMock();
+    prismaMock.inventoryMovement.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "raced-movement" });
+    prismaMock.inventoryMovement.create.mockRejectedValueOnce({ code: "P2002" });
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReceipt(
+      {
+        branch_id: BRANCH_1,
+        receiving_location_id: LOCATION_PARENT_BRANCH_1,
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            ordered_qty: 10,
+            received_qty: 6,
+            rejected_qty: 0
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+          entity_type: "inventory_movement",
+          entity_id: "raced-movement"
+        })
+      })
+    );
+  });
+
   it("transitions dispatch to CANCELLED from DRAFT", async () => {
     const prismaMock = createPrismaMock();
     prismaMock.stockDispatch.findFirst.mockResolvedValue({

@@ -287,6 +287,15 @@ export class DistributionService {
     return operation(this.prisma as any);
   }
 
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    );
+  }
+
   private withScopedBranchFilter<T extends Record<string, unknown>>(scope: UserScope, base: T): T {
     if (!scope.branchId) {
       return base;
@@ -1256,15 +1265,19 @@ export class DistributionService {
     }
 
     await this.runInTransaction(async (db) => {
+      const duplicateWhere = {
+        organization_id: input.organizationId,
+        reference_type: input.referenceType,
+        reference_id: input.referenceId,
+        movement_type: input.movementType,
+        item_id: input.itemId,
+        quantity: input.quantity,
+        deleted_at: null
+      };
+
       const existing = await db.inventoryMovement.findFirst({
         where: {
-          organization_id: input.organizationId,
-          reference_type: input.referenceType,
-          reference_id: input.referenceId,
-          movement_type: input.movementType,
-          item_id: input.itemId,
-          quantity: input.quantity,
-          deleted_at: null
+          ...duplicateWhere
         },
         select: { id: true }
       });
@@ -1290,26 +1303,61 @@ export class DistributionService {
         return;
       }
 
-      const created = await db.inventoryMovement.create({
-        data: {
-          organization_id: input.organizationId,
-          branch_id: input.branchId ?? null,
-          item_id: input.itemId,
-          movement_type: input.movementType,
-          quantity: input.quantity,
-          unit: "piece",
-          source_branch_id: input.sourceBranchId ?? null,
-          destination_branch_id: input.destinationBranchId ?? null,
-          source_location_id: input.sourceLocationId ?? null,
-          destination_location_id: input.destinationLocationId ?? null,
-          reference_type: input.referenceType,
-          reference_id: input.referenceId,
-          status: "POSTED",
-          notes: input.notes ?? null,
-          performed_by: input.performedBy,
-          occurred_at: input.occurredAt
+      let created: { id: string };
+      try {
+        created = await db.inventoryMovement.create({
+          data: {
+            organization_id: input.organizationId,
+            branch_id: input.branchId ?? null,
+            item_id: input.itemId,
+            movement_type: input.movementType,
+            quantity: input.quantity,
+            unit: "piece",
+            source_branch_id: input.sourceBranchId ?? null,
+            destination_branch_id: input.destinationBranchId ?? null,
+            source_location_id: input.sourceLocationId ?? null,
+            destination_location_id: input.destinationLocationId ?? null,
+            reference_type: input.referenceType,
+            reference_id: input.referenceId,
+            status: "POSTED",
+            notes: input.notes ?? null,
+            performed_by: input.performedBy,
+            occurred_at: input.occurredAt
+          }
+        });
+      } catch (error) {
+        if (!this.isUniqueConstraintError(error)) {
+          throw error;
         }
-      });
+        const raced = await db.inventoryMovement.findFirst({
+          where: {
+            ...duplicateWhere
+          },
+          select: { id: true }
+        });
+        if (!raced) {
+          throw error;
+        }
+        await db.auditLog.create({
+          data: {
+            organization_id: input.organizationId,
+            user_id: input.performedBy,
+            action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+            entity_type: "inventory_movement",
+            entity_id: raced.id,
+            metadata: {
+              movement_type: input.movementType,
+              quantity: input.quantity,
+              item_id: input.itemId,
+              reference_type: input.referenceType,
+              reference_id: input.referenceId
+            } as any,
+            created_by: input.performedBy,
+            updated_by: input.performedBy
+          }
+        });
+        return;
+      }
 
       await db.auditLog.create({
         data: {
