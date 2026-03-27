@@ -7,7 +7,28 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.51` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.52` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.52 - 2026-03-27
+
+### Added
+
+- Database-level quantity guardrails migration:
+  - `20260327_inventory_quantity_guardrails`
+- Added `NOT VALID` check constraints on:
+  - `inventory_stocks`:
+    - non-negative quantities
+    - `reserved_quantity <= quantity_on_hand`
+    - `available_quantity <= quantity_on_hand`
+  - `inventory_lot_balances`:
+    - non-negative quantities
+    - `reserved_quantity <= quantity_on_hand`
+    - `available_quantity <= quantity_on_hand`
+
+### Changed
+
+- Quantity integrity is now enforced at DB layer for new/updated rows, complementing existing service-level validation.
+- System fallback version updated to `Beta V1.16.52`.
 
 ## Beta V1.16.51 - 2026-03-27
 

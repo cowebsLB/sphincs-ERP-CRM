@@ -132,6 +132,7 @@ As of `Beta V1.16.48`, system-generated movement auto-posting also emits dedicat
 As of `Beta V1.16.49`, duplicate-suppression skip decisions are also explicitly audit-logged.
 As of `Beta V1.16.50`, movement auto-post write path runs atomically in a database transaction.
 As of `Beta V1.16.51`, database-level unique constraints now enforce idempotency for active referenced system movement posts.
+As of `Beta V1.16.52`, DB-level quantity check constraints protect inventory stock and lot-balance integrity on new writes.
 
 ## Response Shape
 

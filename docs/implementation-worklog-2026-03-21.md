@@ -1,5 +1,28 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Quantity Guardrails (V1.16.52)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_inventory_quantity_guardrails`
+- Introduced DB check constraints for quantity integrity on:
+  - `inventory_stocks`
+  - `inventory_lot_balances`
+- Guardrails include non-negative quantity checks and on-hand consistency (`reserved`/`available` cannot exceed `on_hand`).
+- Constraints are added as `NOT VALID` for safer rollout while enforcing new writes.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `134/134` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This hardens backend data integrity by moving critical quantity invariants into the database layer.
+
 ## Task: DB-Enforced Movement Idempotency (V1.16.51)
 
 Date: 2026-03-27
