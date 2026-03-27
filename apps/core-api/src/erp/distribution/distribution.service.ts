@@ -1499,6 +1499,11 @@ export class DistributionService {
     }
 
     const occurredAt = this.parseDate(body.occurred_at ?? body.occurredAt, "occurred_at") ?? new Date();
+    const referenceType = this.parseOptionalString(body.reference_type ?? body.referenceType);
+    const referenceId = this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id");
+    if ((referenceType && !referenceId) || (!referenceType && referenceId)) {
+      throw new BadRequestException("reference_type and reference_id must be provided together");
+    }
     return this.runInTransaction(async (db) => {
       const created = await db.inventoryMovement.create({
         data: {
@@ -1512,8 +1517,8 @@ export class DistributionService {
           destination_branch_id: destinationBranchId,
           source_location_id: sourceLocationId,
           destination_location_id: destinationLocationId,
-          reference_type: this.parseOptionalString(body.reference_type ?? body.referenceType),
-          reference_id: this.parseOptionalUuid(body.reference_id ?? body.referenceId, "reference_id"),
+          reference_type: referenceType,
+          reference_id: referenceId,
           status: String(body.status ?? "POSTED").trim().toUpperCase() || "POSTED",
           notes: this.parseOptionalString(body.notes),
           cost_impact: this.parseNumber(body.cost_impact ?? body.costImpact, "cost_impact"),
@@ -3273,6 +3278,11 @@ export class DistributionService {
       status === StockReturnStatus.COMPLETED
         ? processedDateInput ?? new Date()
         : processedDateInput;
+    const linkedSourceType = this.parseOptionalString(body.linked_source_type ?? body.linkedSourceType);
+    const linkedSourceId = this.parseOptionalUuid(body.linked_source_id ?? body.linkedSourceId, "linked_source_id");
+    if ((linkedSourceType && !linkedSourceId) || (!linkedSourceType && linkedSourceId)) {
+      throw new BadRequestException("linked_source_type and linked_source_id must be provided together");
+    }
 
     const created = await this.prisma.stockReturn.create({
       data: {
@@ -3280,8 +3290,8 @@ export class DistributionService {
         return_number: returnNumber,
         return_type: returnType,
         status,
-        linked_source_type: this.parseOptionalString(body.linked_source_type ?? body.linkedSourceType),
-        linked_source_id: this.parseOptionalUuid(body.linked_source_id ?? body.linkedSourceId, "linked_source_id"),
+        linked_source_type: linkedSourceType,
+        linked_source_id: linkedSourceId,
         source_branch_id: sourceBranchId,
         destination_branch_id: destinationBranchId,
         source_location_id: sourceLocationId,

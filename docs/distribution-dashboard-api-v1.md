@@ -141,6 +141,7 @@ As of `Beta V1.16.57`, DB-level lot/pick/pack quantity guardrails enforce additi
 As of `Beta V1.16.58`, DB-level temporal order guardrails enforce chronological consistency across lifecycle timestamps.
 As of `Beta V1.16.59`, DB triggers enforce `updated_at` maintenance for distribution/logistics tables on direct updates.
 As of `Beta V1.16.60`, manual movement creation is transactionally bound to stock sync and movement-created audit logging.
+As of `Beta V1.16.61`, movement and return reference-link fields enforce pairwise consistency at service and DB levels (`type` and `id` must be provided together).
 
 ## Response Shape
 

@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB + Service Reference Pair Guardrails (V1.16.61)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_reference_pair_guardrails`
+- Added DB pairwise check constraints for:
+  - `inventory_movements.reference_type` + `reference_id`
+  - `stock_returns.linked_source_type` + `linked_source_id`
+- Updated service validation:
+  - `createMovement` rejects partial `reference_*` pairs.
+  - `createReturn` rejects partial `linked_source_*` pairs.
+- Added unit coverage for return linked-source pair validation (reject partial, accept complete pair).
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `142/142` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- Pairwise constraints harden reference integrity and prevent dangling type/id metadata across manual and workflow return movement paths.
+
 ## Task: Manual Movement Transaction Hardening (V1.16.60)
 
 Date: 2026-03-27

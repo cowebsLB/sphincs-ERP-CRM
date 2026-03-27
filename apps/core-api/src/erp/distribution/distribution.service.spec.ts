@@ -574,6 +574,58 @@ describe("DistributionService", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it("rejects movement create when only reference_type is provided", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createMovement(
+        {
+          movement_type: "TRANSFER_OUT",
+          item_id: "11111111-1111-4111-8111-111111111111",
+          quantity: 1,
+          source_branch_id: BRANCH_1,
+          reference_type: "STOCK_TRANSFER"
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("creates movement when both reference_type and reference_id are provided", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createMovement(
+      {
+        movement_type: "TRANSFER_OUT",
+        item_id: "11111111-1111-4111-8111-111111111111",
+        quantity: 1,
+        source_branch_id: BRANCH_1,
+        reference_type: "STOCK_TRANSFER",
+        reference_id: "33333333-3333-4333-8333-333333333333"
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.inventoryMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          reference_type: "STOCK_TRANSFER",
+          reference_id: "33333333-3333-4333-8333-333333333333"
+        })
+      })
+    );
+  });
+
   it("lists movements with scoped filters", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);
@@ -2100,6 +2152,69 @@ describe("DistributionService", () => {
       })
     );
     expect(result.id).toBe("ret-1");
+  });
+
+  it("rejects return create when only linked_source_type is provided", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReturn(
+        {
+          return_type: "CUSTOMER_RETURN",
+          source_branch_id: BRANCH_1,
+          destination_branch_id: BRANCH_2,
+          linked_source_type: "STOCK_DISPATCH",
+          line_items: [
+            {
+              item_id: "33333333-3333-4333-8333-333333333333",
+              quantity: 1
+            }
+          ]
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.stockReturn.create).not.toHaveBeenCalled();
+  });
+
+  it("creates return when both linked source fields are provided", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await service.createReturn(
+      {
+        return_type: "CUSTOMER_RETURN",
+        source_branch_id: BRANCH_1,
+        destination_branch_id: BRANCH_2,
+        linked_source_type: "STOCK_DISPATCH",
+        linked_source_id: "33333333-3333-4333-8333-333333333333",
+        line_items: [
+          {
+            item_id: "33333333-3333-4333-8333-333333333333",
+            quantity: 1
+          }
+        ]
+      },
+      {
+        id: "user-1",
+        organizationId: "org-1",
+        branchId: BRANCH_1
+      }
+    );
+
+    expect(prismaMock.stockReturn.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          linked_source_type: "STOCK_DISPATCH",
+          linked_source_id: "33333333-3333-4333-8333-333333333333"
+        })
+      })
+    );
   });
 
   it("auto-assigns processed_date when return is created as COMPLETED", async () => {
