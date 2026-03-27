@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Reservation Quantity and Expiry Guardrails (V1.16.63)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_reservation_quantity_and_expiry_guardrails`
+- Added DB check constraints for:
+  - `inventory_reservations.reserved_quantity >= 1`
+  - `inventory_reservations.expires_at >= reserved_date` (when `expires_at` is present)
+- Updated reservation create validation:
+  - rejects `expires_at` earlier than `reserved_date`
+  - continues requiring positive reservation quantity
+- Added unit coverage for invalid reservation expiry chronology.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `144/144` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This hardens reservation lifecycle integrity by enforcing both quantity and time semantics for new writes at service and DB layers.
+
 ## Task: Reservation Reference Pair Guardrails (V1.16.62)
 
 Date: 2026-03-27

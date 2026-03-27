@@ -4257,6 +4257,11 @@ export class DistributionService {
     if ((referenceType && !referenceId) || (!referenceType && referenceId)) {
       throw new BadRequestException("reference_type and reference_id must be provided together");
     }
+    const reservedDate = this.parseDate(body.reserved_date ?? body.reservedDate, "reserved_date") ?? new Date();
+    const expiresAt = this.parseDate(body.expires_at ?? body.expiresAt, "expires_at");
+    if (expiresAt && expiresAt < reservedDate) {
+      throw new BadRequestException("expires_at cannot be earlier than reserved_date");
+    }
 
     return this.prisma.inventoryReservation.create({
       data: {
@@ -4267,8 +4272,8 @@ export class DistributionService {
         reference_type: referenceType,
         reference_id: referenceId,
         reserved_by: user.id,
-        reserved_date: this.parseDate(body.reserved_date ?? body.reservedDate, "reserved_date") ?? new Date(),
-        expires_at: this.parseDate(body.expires_at ?? body.expiresAt, "expires_at"),
+        reserved_date: reservedDate,
+        expires_at: expiresAt,
         status,
         notes: this.parseOptionalString(body.notes)
       },

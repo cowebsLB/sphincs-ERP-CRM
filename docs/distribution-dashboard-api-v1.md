@@ -143,6 +143,7 @@ As of `Beta V1.16.59`, DB triggers enforce `updated_at` maintenance for distribu
 As of `Beta V1.16.60`, manual movement creation is transactionally bound to stock sync and movement-created audit logging.
 As of `Beta V1.16.61`, movement and return reference-link fields enforce pairwise consistency at service and DB levels (`type` and `id` must be provided together).
 As of `Beta V1.16.62`, reservation reference fields also enforce pairwise consistency at service and DB levels (`reference_type` and `reference_id` must be provided together).
+As of `Beta V1.16.63`, reservations enforce quantity and expiry chronology guardrails (`reserved_quantity >= 1`, `expires_at >= reserved_date`) at service and DB levels.
 
 ## Response Shape
 

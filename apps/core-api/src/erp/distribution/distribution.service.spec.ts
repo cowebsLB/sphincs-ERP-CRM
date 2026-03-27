@@ -2909,6 +2909,29 @@ describe("DistributionService", () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it("rejects reservation create when expires_at is earlier than reserved_date", async () => {
+    const prismaMock = createPrismaMock();
+    const service = new DistributionService(prismaMock as never);
+
+    await expect(
+      service.createReservation(
+        {
+          branch_id: BRANCH_1,
+          item_id: "33333333-3333-4333-8333-333333333333",
+          reserved_quantity: 2,
+          reserved_date: "2026-03-27T10:00:00.000Z",
+          expires_at: "2026-03-27T09:59:59.000Z"
+        },
+        {
+          id: "user-1",
+          organizationId: "org-1",
+          branchId: BRANCH_1
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prismaMock.inventoryReservation.create).not.toHaveBeenCalled();
+  });
+
   it("transitions reservations to RELEASED and writes audit", async () => {
     const prismaMock = createPrismaMock();
     const service = new DistributionService(prismaMock as never);

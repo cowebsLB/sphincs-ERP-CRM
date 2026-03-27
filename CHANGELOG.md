@@ -7,7 +7,23 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.62` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.63` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.63 - 2026-03-27
+
+### Added
+
+- Database-level reservation quantity/time guardrail migration:
+  - `20260327_distribution_reservation_quantity_and_expiry_guardrails`
+- Added `NOT VALID` reservation constraints for:
+  - `inventory_reservations.reserved_quantity >= 1`
+  - `inventory_reservations.expires_at >= reserved_date` (when `expires_at` is present)
+
+### Changed
+
+- `createReservation` now validates `expires_at` is not earlier than `reserved_date`.
+- Unit coverage updated for reservation expiry chronology validation.
+- System fallback version updated to `Beta V1.16.63`.
 
 ## Beta V1.16.62 - 2026-03-27
 
