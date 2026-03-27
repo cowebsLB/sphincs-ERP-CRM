@@ -1,5 +1,24 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: Atomic System Movement Posting (V1.16.50)
+
+Date: 2026-03-27
+
+### Scope
+
+- Refactored system movement helper to execute in a single transaction unit.
+- Wrapped duplicate detection, movement write/skip audit event, and stock sync operations inside transactional execution.
+- Added transaction fallback behavior for test/mock environments where `$transaction` is unavailable.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `133/133` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This reduces partial-write risk and improves consistency between movement ledger, audit logs, and stock snapshots.
+
 ## Task: Duplicate-Skip Audit Visibility (V1.16.49)
 
 Date: 2026-03-27

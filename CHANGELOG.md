@@ -7,7 +7,19 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.49` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.50` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.50 - 2026-03-27
+
+### Changed
+
+- System movement auto-posting now executes as an atomic transaction:
+  - duplicate lookup
+  - movement insert (or duplicate skip)
+  - movement audit event emission
+  - inventory stock snapshot sync
+- Transaction fallback remains compatible with test mocks/environments that do not expose `$transaction`.
+- System fallback version updated to `Beta V1.16.50`.
 
 ## Beta V1.16.49 - 2026-03-27
 

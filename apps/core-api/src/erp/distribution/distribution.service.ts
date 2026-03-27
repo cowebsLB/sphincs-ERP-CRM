@@ -279,6 +279,14 @@ export class DistributionService {
     });
   }
 
+  private async runInTransaction<T>(operation: (db: any) => Promise<T>): Promise<T> {
+    const transaction = (this.prisma as any).$transaction;
+    if (typeof transaction === "function") {
+      return transaction.call(this.prisma, async (tx: any) => operation(tx));
+    }
+    return operation(this.prisma as any);
+  }
+
   private withScopedBranchFilter<T extends Record<string, unknown>>(scope: UserScope, base: T): T {
     if (!scope.branchId) {
       return base;
@@ -1143,7 +1151,7 @@ export class DistributionService {
     return { onHandDelta: 0, availableDelta: 0, damagedDelta: 0 };
   }
 
-  private async applyMovementToInventoryStock(movement: {
+  private async applyMovementToInventoryStock(db: any, movement: {
     organization_id: string;
     movement_type: DistributionMovementType;
     quantity: number;
@@ -1168,7 +1176,7 @@ export class DistributionService {
       return;
     }
 
-    const current = await this.prisma.inventoryStock.findFirst({
+    const current = await db.inventoryStock.findFirst({
       where: {
         organization_id: movement.organization_id,
         branch_id: targetBranchId,
@@ -1198,7 +1206,7 @@ export class DistributionService {
     const nextDamaged = currentDamaged + deltas.damagedDelta;
 
     if (current) {
-      await this.prisma.inventoryStock.update({
+      await db.inventoryStock.update({
         where: { id: current.id },
         data: {
           quantity_on_hand: nextOnHand,
@@ -1210,7 +1218,7 @@ export class DistributionService {
       return;
     }
 
-    await this.prisma.inventoryStock.create({
+    await db.inventoryStock.create({
       data: {
         organization_id: movement.organization_id,
         branch_id: targetBranchId,
@@ -1247,26 +1255,69 @@ export class DistributionService {
       return;
     }
 
-    const existing = await this.prisma.inventoryMovement.findFirst({
-      where: {
-        organization_id: input.organizationId,
-        reference_type: input.referenceType,
-        reference_id: input.referenceId,
-        movement_type: input.movementType,
-        item_id: input.itemId,
-        quantity: input.quantity,
-        deleted_at: null
-      },
-      select: { id: true }
-    });
-    if (existing) {
-      await this.prisma.auditLog.create({
+    await this.runInTransaction(async (db) => {
+      const existing = await db.inventoryMovement.findFirst({
+        where: {
+          organization_id: input.organizationId,
+          reference_type: input.referenceType,
+          reference_id: input.referenceId,
+          movement_type: input.movementType,
+          item_id: input.itemId,
+          quantity: input.quantity,
+          deleted_at: null
+        },
+        select: { id: true }
+      });
+      if (existing) {
+        await db.auditLog.create({
+          data: {
+            organization_id: input.organizationId,
+            user_id: input.performedBy,
+            action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+            entity_type: "inventory_movement",
+            entity_id: existing.id,
+            metadata: {
+              movement_type: input.movementType,
+              quantity: input.quantity,
+              item_id: input.itemId,
+              reference_type: input.referenceType,
+              reference_id: input.referenceId
+            } as any,
+            created_by: input.performedBy,
+            updated_by: input.performedBy
+          }
+        });
+        return;
+      }
+
+      const created = await db.inventoryMovement.create({
+        data: {
+          organization_id: input.organizationId,
+          branch_id: input.branchId ?? null,
+          item_id: input.itemId,
+          movement_type: input.movementType,
+          quantity: input.quantity,
+          unit: "piece",
+          source_branch_id: input.sourceBranchId ?? null,
+          destination_branch_id: input.destinationBranchId ?? null,
+          source_location_id: input.sourceLocationId ?? null,
+          destination_location_id: input.destinationLocationId ?? null,
+          reference_type: input.referenceType,
+          reference_id: input.referenceId,
+          status: "POSTED",
+          notes: input.notes ?? null,
+          performed_by: input.performedBy,
+          occurred_at: input.occurredAt
+        }
+      });
+
+      await db.auditLog.create({
         data: {
           organization_id: input.organizationId,
           user_id: input.performedBy,
-          action: "DISTRIBUTION_SYSTEM_MOVEMENT_SKIPPED_DUPLICATE",
+          action: "DISTRIBUTION_SYSTEM_MOVEMENT_POSTED",
           entity_type: "inventory_movement",
-          entity_id: existing.id,
+          entity_id: created.id,
           metadata: {
             movement_type: input.movementType,
             quantity: input.quantity,
@@ -1278,58 +1329,17 @@ export class DistributionService {
           updated_by: input.performedBy
         }
       });
-      return;
-    }
 
-    const created = await this.prisma.inventoryMovement.create({
-      data: {
+      await this.applyMovementToInventoryStock(db, {
         organization_id: input.organizationId,
-        branch_id: input.branchId ?? null,
-        item_id: input.itemId,
         movement_type: input.movementType,
         quantity: input.quantity,
-        unit: "piece",
+        item_id: input.itemId,
+        branch_id: input.branchId ?? null,
         source_branch_id: input.sourceBranchId ?? null,
         destination_branch_id: input.destinationBranchId ?? null,
-        source_location_id: input.sourceLocationId ?? null,
-        destination_location_id: input.destinationLocationId ?? null,
-        reference_type: input.referenceType,
-        reference_id: input.referenceId,
-        status: "POSTED",
-        notes: input.notes ?? null,
-        performed_by: input.performedBy,
         occurred_at: input.occurredAt
-      }
-    });
-
-    await this.prisma.auditLog.create({
-      data: {
-        organization_id: input.organizationId,
-        user_id: input.performedBy,
-        action: "DISTRIBUTION_SYSTEM_MOVEMENT_POSTED",
-        entity_type: "inventory_movement",
-        entity_id: created.id,
-        metadata: {
-          movement_type: input.movementType,
-          quantity: input.quantity,
-          item_id: input.itemId,
-          reference_type: input.referenceType,
-          reference_id: input.referenceId
-        } as any,
-        created_by: input.performedBy,
-        updated_by: input.performedBy
-      }
-    });
-
-    await this.applyMovementToInventoryStock({
-      organization_id: input.organizationId,
-      movement_type: input.movementType,
-      quantity: input.quantity,
-      item_id: input.itemId,
-      branch_id: input.branchId ?? null,
-      source_branch_id: input.sourceBranchId ?? null,
-      destination_branch_id: input.destinationBranchId ?? null,
-      occurred_at: input.occurredAt
+      });
     });
   }
 
@@ -1498,7 +1508,7 @@ export class DistributionService {
       }
     });
 
-    await this.applyMovementToInventoryStock({
+    await this.applyMovementToInventoryStock(this.prisma, {
       organization_id: user.organizationId,
       movement_type: movementType,
       quantity,
