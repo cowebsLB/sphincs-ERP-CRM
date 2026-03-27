@@ -7,7 +7,26 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.54` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.55` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.55 - 2026-03-27
+
+### Added
+
+- Database-level status/domain guardrails migration:
+  - `20260327_distribution_status_guardrails`
+- Added `NOT VALID` check constraints for:
+  - `inventory_movements.status`
+  - `stock_alerts.status`
+  - `warehouse_locations.location_type`
+  - `inventory_lots.status`
+  - `dispatch_pick_jobs.status`
+  - `dispatch_pack_jobs.status`
+
+### Changed
+
+- Core distribution/logistics status fields now have DB-domain enforcement on new writes, reducing drift from expected enums/domains.
+- System fallback version updated to `Beta V1.16.55`.
 
 ## Beta V1.16.54 - 2026-03-27
 

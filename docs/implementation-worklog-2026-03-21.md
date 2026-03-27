@@ -1,5 +1,31 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Status Domain Guardrails (V1.16.55)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_status_guardrails`
+- Introduced DB check constraints for status/type domains in:
+  - `inventory_movements`
+  - `stock_alerts`
+  - `warehouse_locations`
+  - `inventory_lots`
+  - `dispatch_pick_jobs`
+  - `dispatch_pack_jobs`
+- Constraints are added as `NOT VALID` for rollout safety while enforcing new writes.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `134/134` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This reduces backend status/type drift risk by moving allowed-domain enforcement to the DB layer.
+
 ## Task: Distribution Reporting Indexes (V1.16.54)
 
 Date: 2026-03-27

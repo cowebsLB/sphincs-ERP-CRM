@@ -135,6 +135,7 @@ As of `Beta V1.16.51`, database-level unique constraints now enforce idempotency
 As of `Beta V1.16.52`, DB-level quantity check constraints protect inventory stock and lot-balance integrity on new writes.
 As of `Beta V1.16.53`, DB-level line-item quantity invariants enforce receipt/transfer/adjustment/dispatch/return math rules on new writes.
 As of `Beta V1.16.54`, additional DB indexes optimize distribution report/list query patterns for larger datasets.
+As of `Beta V1.16.55`, DB-level status/type domain constraints protect key distribution/logistics status fields on new writes.
 
 ## Response Shape
 
