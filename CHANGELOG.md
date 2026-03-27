@@ -7,7 +7,25 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.52` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.53` - current active beta snapshot as of 2026-03-27
+
+## Beta V1.16.53 - 2026-03-27
+
+### Added
+
+- Database-level line-item quantity invariant migration:
+  - `20260327_distribution_line_quantity_invariants`
+- Added `NOT VALID` check constraints on:
+  - `goods_receipt_lines` (non-negative + received/rejected/remaining consistency)
+  - `stock_transfer_lines` (requested/sent/received consistency)
+  - `stock_adjustment_lines` (variance equals `adjusted_qty - previous_qty`)
+  - `stock_dispatch_lines` (`quantity >= 1`)
+  - `stock_return_lines` (`quantity >= 1`)
+
+### Changed
+
+- Distribution workflow quantity rules are now enforced at DB layer for new writes, not only in service validation.
+- System fallback version updated to `Beta V1.16.53`.
 
 ## Beta V1.16.52 - 2026-03-27
 

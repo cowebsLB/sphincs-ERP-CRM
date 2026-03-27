@@ -1,5 +1,30 @@
 # Implementation Worklog - 2026-03-21
 
+## Task: DB Line Quantity Invariants (V1.16.53)
+
+Date: 2026-03-27
+
+### Scope
+
+- Added migration:
+  - `20260327_distribution_line_quantity_invariants`
+- Introduced DB check constraints for line-level workflow math in:
+  - `goods_receipt_lines`
+  - `stock_transfer_lines`
+  - `stock_adjustment_lines`
+  - `stock_dispatch_lines`
+  - `stock_return_lines`
+- Constraints are added as `NOT VALID` for safe rollout with immediate protection on new writes.
+
+### Validation
+
+- `pnpm --filter @sphincs/core-api test` passed (`12/12` suites, `134/134` tests).
+- `pnpm build` passed at workspace level.
+
+### Notes
+
+- This pushes key distribution quantity invariants into the database layer and reduces risk from non-service write paths.
+
 ## Task: DB Quantity Guardrails (V1.16.52)
 
 Date: 2026-03-27
