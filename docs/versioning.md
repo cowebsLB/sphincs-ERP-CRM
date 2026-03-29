@@ -61,7 +61,7 @@ Examples:
 
 Current product version:
 
-- `Beta V1.16.71`
+- `Beta V1.16.72`
 
 Rationale:
 

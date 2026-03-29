@@ -1,8 +1,8 @@
-# SPHINCS ERP+POS
+# SPHINCS Enterprise Platform
 
 ## Project Overview
 
-SPHINCS ERP+POS is a monorepo that delivers:
+SPHINCS is a monorepo that delivers:
 
 - a shared backend API (`apps/core-api`)
 - ERP frontend (`apps/erp-web`)
@@ -13,7 +13,7 @@ The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flow
 
 Current product version:
 
-- `Beta V1.16.71`
+- `Beta V1.16.72`
 
 ## Features
 
@@ -77,5 +77,7 @@ For Beta V1 test execution:
 - [Issue Triage Workflow](./docs/issue-triage-workflow.md)
 - [Release Path Roadmap](./docs/release-path-roadmap.md)
 - [SPHINCS Full System Specification](./docs/sphincs-full-system-spec.md)
+- [Database System Design (reference blueprint, Word)](./SPHINCS_Database_System_Design.docx)
+- [Database System Design (reference notes)](./docs/database-system-design-reference.md)
 - [Implementation Worklog (2026-03-19)](./docs/implementation-worklog-2026-03-19.md)
 - [Implementation Worklog (2026-03-20)](./docs/implementation-worklog-2026-03-20.md)

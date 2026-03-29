@@ -7,7 +7,30 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.71` - current active beta snapshot as of 2026-03-27
+- `Beta V1.16.72` - current active beta snapshot as of 2026-03-29
+
+## Beta V1.16.72 - 2026-03-29
+
+### Added
+
+- Repository root: `SPHINCS_Database_System_Design.docx` — canonical **enterprise database blueprint** (107 tables, multi-domain: core, shared, sales, procurement, inventory, production, accounting, HR, governance, CRM, ecommerce, BI, EAM).
+- Documentation: [Database System Design (reference notes)](./docs/database-system-design-reference.md) and links from [docs/index.md](./docs/index.md), [index.md](./index.md), and [database-schema.md](./docs/database-schema.md).
+
+### Removed
+
+- **POS scope**: Removed the experimental POS sale API (`erp/pos-sales`), `PosSale` / `PosSaleLine` Prisma models, and `DistributionService.postPosSaleInventoryIssues`. Retail selling is modeled under **Sales** and **Ecommerce** in the blueprint, not as a standalone POS module.
+- Migration `20260329203000_remove_pos_sales` drops `pos_sale_lines`, `pos_sales`, and enum `PosSaleStatus` when present (idempotent `DROP IF EXISTS`).
+
+### Changed
+
+- Product positioning in [index.md](./index.md): title updated to **SPHINCS Enterprise Platform** (historical “ERP+POS” naming retired).
+- Prisma `migration_lock.toml` aligned with Prisma’s standard header comment format.
+- System fallback version and ERP/CRM in-app release label updated to `Beta V1.16.72`.
+
+### Notes
+
+- Deployments should run `prisma migrate deploy` so the remove-POS migration applies on databases that had POS tables created locally.
+- Migration `20260329141123_pos_sales` remains in history for environments that already recorded it; new environments apply create-then-remove in sequence.
 
 ## Beta V1.16.71 - 2026-03-27
 

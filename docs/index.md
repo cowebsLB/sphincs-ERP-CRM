@@ -12,6 +12,8 @@ This is the canonical entry point for all project documentation.
 
 ## Data & API
 
+- [Database System Design (reference blueprint, Word)](../SPHINCS_Database_System_Design.docx)
+- [Database System Design (reference notes)](./database-system-design-reference.md)
 - [Database Schema Standards](./database-schema.md)
 - [API Conventions](./api-conventions.md)
 - [API Snapshot (Beta V1)](./api-snapshot-beta-v1.md)
