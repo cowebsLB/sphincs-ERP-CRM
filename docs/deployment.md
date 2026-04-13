@@ -294,6 +294,30 @@ Safety behavior:
 - if `DIRECT_URL` migration fails, build script now retries migration with `DATABASE_URL`
   so deploys are not blocked by a single misconfigured direct URL.
 
+### Common error: `FATAL: Tenant or user not found` (Supabase pooler)
+
+Symptom during Render build (`prisma migrate deploy`):
+
+- Log shows `Schema engine error:` then `FATAL: Tenant or user not found`
+- Datasource host is `*.pooler.supabase.com` (often port `5432` for `DIRECT_URL` or `6543` for pooler)
+
+Meaning:
+
+- The **Supabase project is paused, deleted, or the DB user / project ref in the URL no longer exists**.
+- Less often: wrong **username** for the pooler (Supavisor expects `postgres.<project-ref>` on newer setups, or the legacy `postgres` user with the correct password only while the project exists).
+
+Why `DATABASE_URL` fallback does not help:
+
+- Both `DATABASE_URL` and `DIRECT_URL` still point at the same Supabase project; if that tenant is gone, **every** connection fails the same way.
+
+Fix (pick one):
+
+1. **Resume Supabase** (if you only paused it): Supabase Dashboard → project → restore / unpause → copy fresh **Database** connection strings into Render → redeploy.
+2. **New Postgres**: Create a database (new Supabase project, [Render Postgres](https://render.com/docs/databases), Neon, etc.), set Render `DATABASE_URL` and `DIRECT_URL` to the new strings (pooler + direct pattern as in [Render + Supabase Connection Mode](#render--supabase-connection-mode-for-login-performance-2026-03-18)), run `prisma migrate deploy` locally against the new URL once if needed, then redeploy.
+3. **Rotate credentials** only if the project still exists but passwords were reset: update both env vars on Render with URL-encoded passwords.
+
+There is no application-code workaround: the build **must** reach a live Postgres to run migrations.
+
 ## Security Note: Deferred DB Password Rotation (2026-03-18)
 
 Current project decision:

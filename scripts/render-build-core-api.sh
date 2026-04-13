@@ -37,12 +37,18 @@ if [[ -n "${DIRECT_URL:-}" ]]; then
   if [[ $DIRECT_MIGRATE_EXIT -ne 0 ]]; then
     echo "[render-build] DIRECT_URL migration failed, falling back to DATABASE_URL"
     resolve_failed_migration "DATABASE_URL fallback"
-    pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
+    if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
+      echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
+      exit 1
+    fi
   fi
 else
   echo "[render-build] DIRECT_URL not set, using DATABASE_URL for migration deploy"
   resolve_failed_migration "DATABASE_URL"
-  pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
+  if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
+    echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
+    exit 1
+  fi
 fi
 
 echo "[render-build] prisma seed"
