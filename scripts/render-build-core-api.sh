@@ -10,6 +10,8 @@ pnpm --filter @sphincs/core-api install --frozen-lockfile --prod=false --force
 echo "[render-build] prisma generate"
 pnpm --filter @sphincs/core-api exec prisma generate --schema prisma/schema.prisma
 
+echo "[render-build] SKIP_PRISMA_MIGRATE=${SKIP_PRISMA_MIGRATE:-<unset>} (set to 1|true|yes|on to skip migrate+seed)"
+
 FAILED_MIGRATION_NAME="20260321_distribution_db_foundation"
 
 resolve_failed_migration() {
@@ -28,7 +30,18 @@ resolve_failed_migration() {
 
 skip_migrate_and_seed() {
   local v="${SKIP_PRISMA_MIGRATE:-}"
-  [[ "$v" == "1" || "$v" == "true" || "$v" == "TRUE" ]]
+  v="${v//[[:space:]]/}"
+  case "$v" in
+    1|true|TRUE|yes|YES|on|ON) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+migrate_failed_hint() {
+  echo "[render-build] prisma migrate deploy failed (database unreachable or bad credentials)."
+  echo "[render-build] Fix: set live DATABASE_URL and DIRECT_URL on this Render service, then redeploy."
+  echo "[render-build] Temporary build-only bypass: Dashboard → Environment → add SKIP_PRISMA_MIGRATE = 1 (exact name), save, clear build cache optional, redeploy. Remove after DB is fixed."
+  echo "[render-build] Docs: docs/deployment.md (Supabase 'Tenant or user not found')."
 }
 
 if skip_migrate_and_seed; then
@@ -47,7 +60,7 @@ else
       echo "[render-build] DIRECT_URL migration failed, falling back to DATABASE_URL"
       resolve_failed_migration "DATABASE_URL fallback"
       if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
-        echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
+        migrate_failed_hint
         exit 1
       fi
     fi
@@ -55,7 +68,7 @@ else
     echo "[render-build] DIRECT_URL not set, using DATABASE_URL for migration deploy"
     resolve_failed_migration "DATABASE_URL"
     if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
-      echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
+      migrate_failed_hint
       exit 1
     fi
   fi

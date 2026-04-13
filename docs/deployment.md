@@ -322,8 +322,8 @@ There is no application-code workaround: the build **must** reach a live Postgre
 
 If you must produce a **deployable image** while Postgres URLs are still broken (not recommended for production):
 
-1. In Render → service → **Environment**, add **`SKIP_PRISMA_MIGRATE`** = `1`.
-2. Redeploy. The build runs `prisma generate` and `nest build` but **skips** `prisma migrate deploy` and `prisma seed`.
+1. In Render → **your API service** (the one whose build command runs `scripts/render-build-core-api.sh`) → **Environment** → add variable name exactly **`SKIP_PRISMA_MIGRATE`** with value **`1`** (or `true`, `yes`, `on`). Save.
+2. Trigger a **new deploy**. Build logs must show `SKIP_PRISMA_MIGRATE=1` on the `[render-build] SKIP_PRISMA_MIGRATE=...` line; if you still see `prisma migrate deploy` without a skip line first, the variable is on the wrong service or not saved.
 3. As soon as you have valid `DATABASE_URL` / `DIRECT_URL`, **remove** `SKIP_PRISMA_MIGRATE` and redeploy so migrations and seed run.
 
 The running service will **not** match the database until migrations apply successfully.
