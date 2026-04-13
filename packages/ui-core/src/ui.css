@@ -977,3 +977,107 @@ body {
     position: static;
   }
 }
+
+/* ERP Distribution hub */
+.distribution-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.distribution-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.distribution-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.distribution-tab {
+  border: 1px solid var(--ui-border, #d0d5dd);
+  background: var(--ui-surface, #fff);
+  color: inherit;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.distribution-tab.is-active {
+  border-color: var(--ui-accent, #2563eb);
+  background: var(--ui-accent-soft, #eff6ff);
+  font-weight: 600;
+}
+
+.distribution-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.distribution-metric-card {
+  border: 1px solid var(--ui-border, #e4e7ec);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.distribution-metric-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.distribution-metric-label {
+  font-size: 0.8rem;
+  color: var(--ui-muted, #667085);
+}
+
+.distribution-alert-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distribution-alert-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--ui-border, #e4e7ec);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.distribution-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.distribution-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.distribution-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}

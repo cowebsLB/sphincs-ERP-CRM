@@ -13,13 +13,14 @@ The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flow
 
 Current product version:
 
-- `Beta V1.16.72`
+- `Beta V1.16.77`
 
 ## Features
 
 - JWT auth with refresh-token rotation and lockout controls
-- ERP modules: items, suppliers, purchase orders
+- ERP modules: items, suppliers, purchase orders, **Distribution** (dashboard, stock, movements, transfers, receipts, dispatches, adjustments — see `apps/erp-web`)
 - CRM modules: contacts, leads, opportunities
+- ERP/CRM **portal navigation** fixed for Vite dev (explicit localhost ports + hash routes); production still supports sibling-folder relative links
 - Soft-delete + restore flows
 - Role-based access controls
 - User-scoped data isolation for beta privacy defaults
@@ -37,20 +38,14 @@ Primary docs entry:
 
 - [Documentation Index](./docs/index.md)
 
-For Beta V1 test execution:
+For releases and testers:
 
-- [Beta V1 Checklist](./docs/beta-v1-checklist.md)
-- [Beta V2 Plan](./docs/beta-v2-plan.md)
-- [Beta V2 Checklist](./docs/beta-v2-checklist.md)
+- [Implementation roadmap](./docs/implementation-roadmap.md) (blueprint-driven planning)
+- [Blueprint vs Prisma tables](./docs/blueprint-vs-prisma-tables.md) (schema gap analysis)
 - [Beta Release Checklist](./docs/beta-release-checklist.md)
 - [Beta Tester Release Notes Template](./docs/beta-release-notes-template.md)
 - [Issue Triage Workflow](./docs/issue-triage-workflow.md)
 - [GitHub Labels And Milestones Standard](./docs/github-labels-and-milestones.md)
-- [Release Path Roadmap](./docs/release-path-roadmap.md)
-- [Beta V3 Checklist](./docs/beta-v3-checklist.md)
-- [Beta V4 Checklist](./docs/beta-v4-checklist.md)
-- [Beta V5 Checklist](./docs/beta-v5-checklist.md)
-- [Beta V6 Checklist](./docs/beta-v6-checklist.md)
 - [Beta Tester Access List](./docs/beta-tester-access-list.md)
 - [Beta Tester Instructions](./docs/beta-tester-instructions.md)
 - [Testing Strategy](./docs/testing.md)
@@ -72,12 +67,14 @@ For Beta V1 test execution:
 - [Versioning Strategy](./docs/versioning.md)
 - [Changelog](./CHANGELOG.md)
 - [Milestones And Tickets](./docs/milestones.md)
-- [Beta V2 Checklist](./docs/beta-v2-checklist.md)
+- [Implementation roadmap](./docs/implementation-roadmap.md)
 - [Beta Release Checklist](./docs/beta-release-checklist.md)
 - [Issue Triage Workflow](./docs/issue-triage-workflow.md)
-- [Release Path Roadmap](./docs/release-path-roadmap.md)
 - [SPHINCS Full System Specification](./docs/sphincs-full-system-spec.md)
 - [Database System Design (reference blueprint, Word)](./SPHINCS_Database_System_Design.docx)
+- [Database System Design (full text extraction)](./docs/SPHINCS-Database-System-Design.md)
 - [Database System Design (reference notes)](./docs/database-system-design-reference.md)
 - [Implementation Worklog (2026-03-19)](./docs/implementation-worklog-2026-03-19.md)
 - [Implementation Worklog (2026-03-20)](./docs/implementation-worklog-2026-03-20.md)
+- [Implementation Worklog (2026-03-29)](./docs/implementation-worklog-2026-03-29.md)
+- [Implementation Worklog (2026-04-13)](./docs/implementation-worklog-2026-04-13.md)

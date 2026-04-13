@@ -1,9 +1,16 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { OrganizationsService } from "./organizations.service";
 
 @Controller("organizations")
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
+
+  @Get(":id/settings")
+  @Roles("Admin")
+  findSettings(@Param("id") id: string) {
+    return this.organizationsService.findSettings(id);
+  }
 
   @Get()
   findAll(@Query("includeDeleted") includeDeleted?: string) {

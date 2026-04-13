@@ -7,7 +7,9 @@
     "dev": "pnpm -r --parallel --if-present dev",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
-    "lint": "pnpm -r --if-present lint"
+    "lint": "pnpm -r --if-present lint",
+    "extract:blueprint": "python scripts/extract_docx_blueprint.py",
+    "compare:blueprint": "python scripts/compare_blueprint_prisma_tables.py"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

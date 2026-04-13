@@ -131,8 +131,28 @@ enum AlertSeverity {
   CRITICAL
 }
 
+model SubscriptionPlan {
+  id              Int      @id @default(autoincrement())
+  name            String
+  slug            String   @unique
+  max_users       Int?
+  max_branches    Int      @default(1)
+  max_storage_gb  Int      @default(5)
+  features        Json     @default("{}")
+  price_monthly   Decimal  @default(0) @db.Decimal(10, 2)
+  price_yearly    Decimal  @default(0) @db.Decimal(10, 2)
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+
+  organizations Organization[]
+
+  @@map("subscription_plans")
+}
+
 model Organization {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plan_id    Int?
   name       String
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   updated_at DateTime  @updatedAt @db.Timestamptz(6)
@@ -140,6 +160,7 @@ model Organization {
   created_by String?   @db.Uuid
   updated_by String?   @db.Uuid
 
+  plan                   SubscriptionPlan? @relation(fields: [plan_id], references: [id])
   branches               Branch[]
   users                  User[]
   items                  Item[]
@@ -164,7 +185,9 @@ model Organization {
   inventory_lot_balances InventoryLotBalance[]
   dispatch_pick_jobs     DispatchPickJob[]
   dispatch_pack_jobs     DispatchPackJob[]
+  organization_settings  OrganizationSetting[]
 
+  @@index([plan_id], map: "idx_organizations_plan_id")
   @@map("organizations")
 }
 
@@ -229,6 +252,8 @@ model User {
   branch         Branch?        @relation(fields: [branch_id], references: [id])
   user_roles     UserRole[]
   refresh_tokens RefreshToken[]
+  role_permissions_granted RolePermission[] @relation("RolePermissionGrantedBy")
+  organization_settings_updated OrganizationSetting[] @relation("OrganizationSettingUpdatedBy")
 
   @@index([organization_id], map: "idx_users_org")
   @@index([branch_id], map: "idx_users_branch")
@@ -264,7 +289,8 @@ model Role {
   created_by String?   @db.Uuid
   updated_by String?   @db.Uuid
 
-  user_roles UserRole[]
+  user_roles       UserRole[]
+  role_permissions RolePermission[]
 
   @@index([deleted_at], map: "idx_roles_deleted_at")
   @@index([created_at], map: "idx_roles_created_at")
@@ -289,6 +315,55 @@ model UserRole {
   @@index([role_id], map: "idx_user_roles_role")
   @@index([deleted_at], map: "idx_user_roles_deleted_at")
   @@map("user_roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  module      String   @db.VarChar(50)
+  resource    String   @db.VarChar(60)
+  action      String   @db.VarChar(30)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+
+  role_permissions RolePermission[]
+
+  @@unique([module, resource, action], map: "uq_permissions_module_resource_action")
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String   @db.Uuid
+  permission_id Int
+  granted_at    DateTime @default(now()) @db.Timestamptz(6)
+  granted_by    String?  @db.Uuid
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  granter    User?      @relation("RolePermissionGrantedBy", fields: [granted_by], references: [id], onDelete: SetNull)
+
+  @@id([role_id, permission_id])
+  @@index([permission_id], map: "idx_role_permissions_permission")
+  @@map("role_permissions")
+}
+
+model OrganizationSetting {
+  id              Int      @id @default(autoincrement())
+  organization_id String   @db.Uuid
+  key             String   @db.VarChar(100)
+  value           Json     @default("{}")
+  description     String?  @db.Text
+  updated_by      String?  @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  updater      User?        @relation("OrganizationSettingUpdatedBy", fields: [updated_by], references: [id], onDelete: SetNull)
+
+  @@unique([organization_id, key], map: "uq_organization_settings_org_key")
+  @@index([organization_id], map: "idx_organization_settings_org")
+  @@map("organization_settings")
 }
 
 model Item {

@@ -4,11 +4,13 @@ Date: 2026-03-29
 
 ## Canonical blueprint
 
-The repository root includes a Word document that defines the **long-term target** database for SPHINCS as a full enterprise platform:
+The **full backend and database system design** for SPHINCS is described in the Word document at the repository root. Treat that file as the authoritative specification when planning schema, APIs, and cross-module behavior; this Markdown page is only a short pointer and summary.
 
 - [SPHINCS Database System Design (Word)](../SPHINCS_Database_System_Design.docx)
+- [SPHINCS Database System Design (full text extraction)](./SPHINCS-Database-System-Design.md) — searchable copy; regenerate with `pnpm extract:blueprint`
+- [Implementation roadmap](./implementation-roadmap.md) — how the blueprint, extraction, and Prisma fit together
 
-That design specifies **107 tables** across domains such as core tenancy, shared reference data, sales, procurement, inventory, production, accounting, HR, governance, CRM, ecommerce, BI, and enterprise asset management. It is written for **NestJS + Prisma + PostgreSQL** with multi-tenant row-level isolation and branch-aware scoping.
+The blueprint defines the **long-term target** database for the enterprise platform: **107 tables** across domains such as core tenancy, shared reference data, sales, procurement, inventory, production, accounting, HR, governance, CRM, ecommerce, BI, and enterprise asset management. It is written for **NestJS + Prisma + PostgreSQL** with multi-tenant row-level isolation and branch-aware scoping.
 
 ## Relationship to the current Prisma schema
 

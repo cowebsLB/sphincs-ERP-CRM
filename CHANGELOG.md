@@ -7,7 +7,86 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 ## Current Release
 
-- `Beta V1.16.72` - current active beta snapshot as of 2026-03-29
+- `Beta V1.16.77` - working tree snapshot (see [docs/implementation-worklog-2026-04-13.md](./docs/implementation-worklog-2026-04-13.md))
+
+## Beta V1.16.77 - 2026-04-13 (unreleased)
+
+### Added
+
+- ERP **Distribution** UI (`apps/erp-web/src/distribution-hub.tsx`) and route `#/distribution`: operational tabs against existing distribution API; shared layout styles in `packages/ui-core/src/ui.css`.
+- Core API (unreleased in tree): permissions module, subscription/org settings migrations and seed extensions — see worklog for full file list.
+
+### Changed
+
+- **CRM / ERP portal navigation**: dev-time explicit URLs (`localhost:5173` / `5174`) and `HashRouter` `basename` from Vite `BASE_URL`; production keeps relative sibling links when env vars unset.
+- **Vite**: fixed dev ports ERP `5173`, CRM `5174` with `strictPort`.
+- **Docs**: [setup.md](./docs/setup.md) (frontend dev URLs + env vars), [frontend-guide.md](./docs/frontend-guide.md) (Distribution + roles), [versioning.md](./docs/versioning.md) / root [index.md](./index.md) current version string.
+- **Purchase Orders** (ERP): copy points users to Distribution for warehouse flows.
+
+### Removed
+
+- Legacy staged roadmap docs (`docs/beta-v*-*.md`, `docs/release-path-roadmap.md`) — already noted in earlier changelog entries; tree may still show deletes until commit.
+
+## Beta V1.16.76 - 2026-04-07
+
+### Added
+
+- Prisma models aligned with blueprint: `permissions`, `role_permissions`, `organization_settings` (migration `20260407212318_add_permissions_role_permissions_org_settings`).
+- API (Admin-only): `GET /api/v1/permissions`, `GET /api/v1/roles/:id/permissions`, `GET /api/v1/organizations/:id/settings`.
+- Seed: eight read permissions, all linked to the `Admin` role; default org setting `modules.beta.scope`.
+
+### Changed
+
+- [docs/blueprint-implementation-backlog.md](./docs/blueprint-implementation-backlog.md) and [docs/blueprint-vs-prisma-tables.md](./docs/blueprint-vs-prisma-tables.md) refreshed (40 mapped tables, 88 blueprint gaps).
+
+## Beta V1.16.75 - 2026-03-29
+
+### Added
+
+- Core schema foundation for blueprint parity:
+  - `subscription_plans` table
+  - `organizations.plan_id` optional foreign key to `subscription_plans.id`
+- Prisma migration: `20260407062143_add_subscription_plans_core` (minimal SQL scope).
+
+### Changed
+
+- Local database flow now defaults to Docker Postgres on `localhost:5433` to avoid common conflicts with existing local Postgres services.
+- Seed updates in `apps/core-api/prisma/seed.ts`:
+  - creates/updates an `enterprise` subscription plan
+  - links seeded organization to that plan.
+- Organization service accepts optional `plan_id` on create/update.
+- Blueprint gap report refreshed after the new table:
+  - Prisma mapped tables: `37`
+  - Missing blueprint tables: `91`
+  - See [docs/blueprint-vs-prisma-tables.md](./docs/blueprint-vs-prisma-tables.md)
+
+## Beta V1.16.74 - 2026-03-29
+
+### Added
+
+- Root `docker-compose.yml`: local Postgres 16 (`sphincs_erp_crm`, dev credentials) for offline work without Supabase.
+- `apps/core-api/.env.example` and `.gitignore` exception `!.env.example`.
+- `scripts/compare_blueprint_prisma_tables.py` and `pnpm compare:blueprint` — reports blueprint **107** tables vs Prisma `@@map` names; output [docs/blueprint-vs-prisma-tables.md](./docs/blueprint-vs-prisma-tables.md).
+
+### Changed
+
+- [docs/setup.md](./docs/setup.md): Docker-first local database instructions, link to gap analysis.
+
+## Beta V1.16.73 - 2026-03-29
+
+### Added
+
+- `docs/SPHINCS-Database-System-Design.md` — full UTF-8 extraction of the canonical Word blueprint (regenerate with `pnpm extract:blueprint`).
+- `scripts/extract_docx_blueprint.py` and root script `extract:blueprint`.
+- `docs/implementation-roadmap.md` — single planning entry point for blueprint vs Prisma.
+
+### Removed
+
+- Legacy staged roadmap docs: `docs/release-path-roadmap.md`, `docs/beta-v1-checklist.md`, `docs/beta-v2-plan.md`, `docs/beta-v2-checklist.md`, `docs/beta-v3-checklist.md`, `docs/beta-v4-checklist.md`, `docs/beta-v5-checklist.md`, `docs/beta-v6-checklist.md`. Schema work is driven by [SPHINCS_Database_System_Design.docx](./SPHINCS_Database_System_Design.docx) and the extracted Markdown.
+
+### Changed
+
+- [index.md](./index.md), [docs/index.md](./docs/index.md), [database-system-design-reference.md](./docs/database-system-design-reference.md), and [database-schema.md](./docs/database-schema.md) updated to point at the extraction and implementation roadmap.
 
 ## Beta V1.16.72 - 2026-03-29
 

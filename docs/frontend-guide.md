@@ -20,7 +20,7 @@ Both apps use:
 
 ## Role Access
 
-- ERP app checks for `Admin` or `ERP Manager`.
+- ERP app checks for `Admin`, `ERP Manager`, or `Staff` (plus optional **Distribution** visibility for additional operational roles — see `hasDistributionAccess` in `apps/erp-web`).
 - CRM app checks for `Admin` or `CRM Manager`.
 
 ## Modules Wired
@@ -30,6 +30,7 @@ ERP:
 - `/erp/items`
 - `/erp/suppliers`
 - `/erp/purchase-orders`
+- `/distribution/*` (API-backed **Distribution** hub in-app at route `#/distribution`; see `distribution-hub.tsx`)
 
 CRM:
 
@@ -81,6 +82,8 @@ pnpm dev
 
 Expected URLs:
 
-- ERP: `http://localhost:5173`
-- CRM: `http://localhost:5174`
+- ERP: `http://localhost:5173` (fixed port; `strictPort: true` — change port in `vite.config.ts` if 5173 is taken)
+- CRM: `http://localhost:5174` (same)
 - API: `http://localhost:3000`
+
+Open each app with a **hash** route, e.g. `http://localhost:5174/#/contacts` and `http://localhost:5173/#/items`. Header links target those origins so you can jump between apps during local development.

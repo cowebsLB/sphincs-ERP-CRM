@@ -3,13 +3,45 @@ import { HashRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } f
 import { ApiClient, ApiHttpError, AuthSessionExpiredError, type AuthUser, type SessionState } from "@sphincs/api-client";
 import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
+import { DistributionHub } from "./distribution-hub";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.erp.session", "sphincs.crm.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.16.72";
+const APP_RELEASE_VERSION = "Beta V1.16.77";
 const client = new ApiClient(API_BASE_URL);
+
+function hashRouterBasename(): string | undefined {
+  const base = import.meta.env.BASE_URL ?? "/";
+  const normalized = (base.endsWith("/") ? base.slice(0, -1) : base) || "/";
+  return normalized === "/" ? undefined : normalized;
+}
+
+function getPortalNavLinks(): { home: string; erp: string; crm: string } {
+  const strip = (value: string) => value.replace(/\/+$/, "");
+  const home = (import.meta.env.VITE_HOME_URL as string | undefined)?.trim();
+  const erp = (import.meta.env.VITE_ERP_WEB_URL as string | undefined)?.trim();
+  const crm = (import.meta.env.VITE_CRM_WEB_URL as string | undefined)?.trim();
+
+  if (import.meta.env.DEV) {
+    return {
+      home: strip(home ?? erp ?? "http://localhost:5173"),
+      erp: strip(erp ?? "http://localhost:5173"),
+      crm: strip(crm ?? "http://localhost:5174")
+    };
+  }
+
+  const { origin, pathname } = window.location;
+  const pathPrefix = pathname.endsWith("/") ? pathname : `${pathname}/`;
+  const baseForRelative = `${origin}${pathPrefix}`;
+
+  return {
+    home: `${strip(home ?? new URL("..", baseForRelative).href)}/`,
+    erp: `${strip(erp ?? new URL("../erp/", baseForRelative).href)}/`,
+    crm: `${strip(crm ?? new URL("../crm/", baseForRelative).href)}/`
+  };
+}
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
 type ItemRecord = RecordData & {
@@ -324,6 +356,21 @@ function hasRole(session: SessionState | null, ...roles: string[]): boolean {
   return !!session && roles.some((role) => session.user.roles.includes(role));
 }
 
+function hasDistributionAccess(session: SessionState | null): boolean {
+  if (!session) {
+    return false;
+  }
+  const allowed = [
+    "Admin",
+    "ERP Manager",
+    "Staff",
+    "Warehouse Staff",
+    "Branch Manager",
+    "Read-Only Auditor"
+  ];
+  return session.user.roles.some((role) => allowed.includes(role));
+}
+
 async function withAuth<T>(
   session: SessionState,
   setSession: (next: SessionState | null) => void,
@@ -395,7 +442,7 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
 
   return (
     <main className="auth-page">
-      <a className="ui-btn ui-btn-secondary auth-back-btn" href="../">
+      <a className="ui-btn ui-btn-secondary auth-back-btn" href={`${getPortalNavLinks().home.replace(/\/+$/, "")}/`}>
         Back
       </a>
       <section className="auth-card">
@@ -2751,7 +2798,8 @@ function PurchaseOrdersPage({
           <div>
             <h2 className="ui-title">Purchase Orders</h2>
             <p className="ui-muted purchase-orders-copy">
-              This is now a full workflow screen: supplier and timing up top, line items in the center, totals and logistics on the side.
+              Supplier and timing up top, line items in the center, and totals on the side. Use Distribution for
+              warehouse stock, transfers, receipts, and outbound dispatches.
             </p>
           </div>
           <div className="items-header-actions">
@@ -3288,6 +3336,18 @@ function ERPApp({
     setTimeout(() => setToast(null), 2600);
   }, []);
 
+  const portalNav = getPortalNavLinks();
+  const homeEntry = `${portalNav.home.replace(/\/+$/, "")}/`;
+  const erpEntry = `${portalNav.erp.replace(/\/+$/, "")}#/items`;
+  const crmEntry = `${portalNav.crm.replace(/\/+$/, "")}#/contacts`;
+
+  const distributionFetch = React.useCallback(
+    <T,>(path: string, init?: RequestInit) => withAuth<T>(session, setSession, path, init),
+    [session, setSession]
+  );
+  const canDistWrite = hasRole(session, "Admin", "ERP Manager", "Staff", "Warehouse Staff", "Branch Manager");
+  const canDistApprove = hasRole(session, "Admin", "ERP Manager", "Branch Manager");
+
   React.useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
@@ -3422,6 +3482,9 @@ function ERPApp({
         <Link to="/items" onClick={() => setMobileNavOpen(false)}>Items</Link>
         <Link to="/suppliers" onClick={() => setMobileNavOpen(false)}>Suppliers</Link>
         <Link to="/purchase-orders" onClick={() => setMobileNavOpen(false)}>Purchase Orders</Link>
+        {hasDistributionAccess(session) && (
+          <Link to="/distribution" onClick={() => setMobileNavOpen(false)}>Distribution</Link>
+        )}
         {hasRole(session, "Admin") && <Link to="/access" onClick={() => setMobileNavOpen(false)}>Access</Link>}
       </aside>
       <button
@@ -3448,9 +3511,9 @@ function ERPApp({
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <nav className="app-topnav">
-              <a href="../">Home</a>
-              <a href="../erp/">ERP</a>
-              <a href="../crm/">CRM</a>
+              <a href={homeEntry}>Home</a>
+              <a href={erpEntry}>ERP</a>
+              <a href={crmEntry}>CRM</a>
             </nav>
             <button
               className="ui-btn ui-btn-secondary"
@@ -3594,6 +3657,22 @@ function ERPApp({
             }
           />
           <Route
+            path="/distribution"
+            element={
+              hasDistributionAccess(session) ? (
+                <DistributionHub
+                  fetchApi={distributionFetch}
+                  notify={notify}
+                  canWrite={canDistWrite}
+                  canApprove={canDistApprove}
+                  userBranchId={session.user.branchId}
+                />
+              ) : (
+                <Navigate to="/items" replace />
+              )
+            }
+          />
+          <Route
             path="/access"
             element={
               hasRole(session, "Admin") ? (
@@ -3626,7 +3705,7 @@ export function RootApp() {
   }
 
   return (
-    <HashRouter>
+    <HashRouter basename={hashRouterBasename()}>
       <Routes>
         <Route
           path="/login"

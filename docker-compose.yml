@@ -1,0 +1,26 @@
+name: sphincs
+
+# Local PostgreSQL for development (replaces cloud Supabase when working offline).
+# Usage: docker compose up -d
+# Then set DATABASE_URL in apps/core-api/.env — see apps/core-api/.env.example
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sphincs_erp_crm
+    volumes:
+      - sphincs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sphincs_erp_crm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sphincs_pgdata:

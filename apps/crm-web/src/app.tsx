@@ -6,9 +6,44 @@ import "@sphincs/ui-core/ui.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
+/** ERP web origin (no trailing slash). Dev default pairs with `apps/erp-web` Vite port 5173. */
+const ERP_WEB_ORIGIN =
+  (import.meta.env.VITE_ERP_WEB_URL as string | undefined)?.replace(/\/$/, "") ??
+  (import.meta.env.DEV ? "http://localhost:5173" : "");
+
+function hashRouterBasename(): string | undefined {
+  const base = import.meta.env.BASE_URL ?? "/";
+  const normalized = (base.endsWith("/") ? base.slice(0, -1) : base) || "/";
+  return normalized === "/" ? undefined : normalized;
+}
+
+function getPortalNavLinks(): { home: string; erp: string; crm: string } {
+  const strip = (value: string) => value.replace(/\/+$/, "");
+  const home = (import.meta.env.VITE_HOME_URL as string | undefined)?.trim();
+  const erp = (import.meta.env.VITE_ERP_WEB_URL as string | undefined)?.trim();
+  const crm = (import.meta.env.VITE_CRM_WEB_URL as string | undefined)?.trim();
+
+  if (import.meta.env.DEV) {
+    return {
+      home: strip(home ?? erp ?? "http://localhost:5173"),
+      erp: strip(erp ?? "http://localhost:5173"),
+      crm: strip(crm ?? "http://localhost:5174")
+    };
+  }
+
+  const { origin, pathname } = window.location;
+  const pathPrefix = pathname.endsWith("/") ? pathname : `${pathname}/`;
+  const baseForRelative = `${origin}${pathPrefix}`;
+
+  return {
+    home: `${strip(home ?? new URL("..", baseForRelative).href)}/`,
+    erp: `${strip(erp ?? new URL("../erp/", baseForRelative).href)}/`,
+    crm: `${strip(crm ?? new URL("../crm/", baseForRelative).href)}/`
+  };
+}
 const STORAGE_KEY = "sphincs.session";
 const LEGACY_STORAGE_KEYS = ["sphincs.crm.session", "sphincs.erp.session"] as const;
-const APP_RELEASE_VERSION = "Beta V1.16.72";
+const APP_RELEASE_VERSION = "Beta V1.16.77";
 const client = new ApiClient(API_BASE_URL);
 
 type RecordData = Record<string, unknown> & { id: string; deleted_at?: string | null };
@@ -25,6 +60,11 @@ type OpportunityRecord = RecordData & {
   lead_id?: string | null;
   lead_name?: string;
   status?: string | null;
+};
+
+type PurchaseOrderHandoffResult = {
+  id: string;
+  po_number?: string | null;
 };
 
 const AUTH_NOTICE_KEY = "sphincs.auth.notice";
@@ -228,7 +268,7 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
 
   return (
     <main className="auth-page">
-      <a className="ui-btn ui-btn-secondary auth-back-btn" href="../">
+      <a className="ui-btn ui-btn-secondary auth-back-btn" href={`${getPortalNavLinks().home.replace(/\/$/, "")}/`}>
         Back
       </a>
       <section className="auth-card">
@@ -1072,6 +1112,7 @@ function OpportunitiesPage({
   });
   const [leadPickerOpen, setLeadPickerOpen] = React.useState<"create" | "edit" | null>(null);
   const [leadPickerSearch, setLeadPickerSearch] = React.useState("");
+  const [handoffBusyId, setHandoffBusyId] = React.useState<string | null>(null);
 
   const contactMap = React.useMemo(
     () =>
@@ -1267,6 +1308,34 @@ function OpportunitiesPage({
     }
   }
 
+  async function handoffDraftPurchaseOrder(row: OpportunityRecord) {
+    if (row.deleted_at || String(row.status).toUpperCase() !== "WON") {
+      return;
+    }
+    setHandoffBusyId(row.id);
+    try {
+      const po = await withAuth<PurchaseOrderHandoffResult>(
+        session,
+        setSession,
+        `/crm/opportunities/${row.id}/handoff/purchase-order`,
+        {
+          method: "POST",
+          body: JSON.stringify({})
+        }
+      );
+      const ref = po.po_number?.trim() ? String(po.po_number) : po.id.slice(0, 8);
+      notify(
+        "success",
+        `Draft purchase order ${ref} created in ERP. Complete supplier and lines there when ready.`
+      );
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "ERP handoff failed");
+    } finally {
+      setHandoffBusyId(null);
+    }
+  }
+
   function validateOpportunityForm(form: OpportunityFormState) {
     if (!form.lead_id.trim()) {
       return "Choose a lead before saving the opportunity.";
@@ -1283,7 +1352,32 @@ function OpportunitiesPage({
         <div>
           <h2 className="ui-title">Opportunities</h2>
           <p className="ui-muted purchase-orders-copy">
+            Each opportunity ties a qualified lead to a pipeline outcome: <strong>OPEN</strong> (in progress),{" "}
+            <strong>WON</strong> (deal closed—ready for operational follow-up), or <strong>LOST</strong> (closed
+            without a win). CRM status is separate from ERP documents: nothing is created in ERP until you explicitly
+            hand off a <strong>WON</strong> opportunity, which creates a <strong>draft purchase order</strong> you
+            finish in ERP (supplier, lines, approval).
+          </p>
+          <p className="ui-muted purchase-orders-copy">
             Link opportunities to leads using readable labels instead of raw lead IDs.
+            {ERP_WEB_ORIGIN ? (
+              <>
+                {" "}
+                After a handoff, open{" "}
+                <a
+                  href={`${ERP_WEB_ORIGIN}/#/purchase-orders`}
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  Purchase orders in ERP
+                </a>
+                .
+              </>
+            ) : (
+              <>
+                {" "}
+                Configure <code style={{ fontSize: "0.92em" }}>VITE_ERP_WEB_URL</code> to show a shortcut link.
+              </>
+            )}
           </p>
         </div>
         <label className="ui-checkline">
@@ -1375,6 +1469,16 @@ function OpportunitiesPage({
               <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
                 Edit
               </button>
+              {!row.deleted_at && String(row.status).toUpperCase() === "WON" && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  disabled={handoffBusyId === row.id}
+                  onClick={() => void handoffDraftPurchaseOrder(row)}
+                >
+                  {handoffBusyId === row.id ? "Creating draft…" : "Create draft PO in ERP"}
+                </button>
+              )}
               {!row.deleted_at && (
                 <button
                   className="ui-btn ui-btn-danger"
@@ -1513,6 +1617,11 @@ function CRMApp({
     setToast({ type, message });
     setTimeout(() => setToast(null), 2600);
   }, []);
+
+  const portalNav = getPortalNavLinks();
+  const homeEntry = `${portalNav.home.replace(/\/+$/, "")}/`;
+  const erpEntry = `${portalNav.erp.replace(/\/+$/, "")}#/items`;
+  const crmEntry = `${portalNav.crm.replace(/\/+$/, "")}#/contacts`;
 
   React.useEffect(() => {
     setMobileNavOpen(false);
@@ -1672,9 +1781,9 @@ function CRMApp({
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <nav className="app-topnav">
-              <a href="../">Home</a>
-              <a href="../erp/">ERP</a>
-              <a href="../crm/">CRM</a>
+              <a href={homeEntry}>Home</a>
+              <a href={erpEntry}>ERP</a>
+              <a href={crmEntry}>CRM</a>
             </nav>
             <button
               className="ui-btn ui-btn-secondary"
@@ -1834,7 +1943,7 @@ export function RootApp() {
   }
 
   return (
-    <HashRouter>
+    <HashRouter basename={hashRouterBasename()}>
       <Routes>
         <Route
           path="/login"

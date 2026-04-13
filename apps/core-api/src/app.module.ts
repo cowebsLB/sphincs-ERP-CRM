@@ -5,6 +5,7 @@ import { AuthModule } from "./core/auth/auth.module";
 import { UsersModule } from "./core/users/users.module";
 import { RolesModule } from "./core/roles/roles.module";
 import { OrganizationsModule } from "./core/organizations/organizations.module";
+import { PermissionsModule } from "./core/permissions/permissions.module";
 import { BranchesModule } from "./core/branches/branches.module";
 import { ItemsModule } from "./erp/items/items.module";
 import { PurchasingModule } from "./erp/purchasing/purchasing.module";
@@ -30,6 +31,7 @@ import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
     UsersModule,
     RolesModule,
     OrganizationsModule,
+    PermissionsModule,
     BranchesModule,
     ItemsModule,
     PurchasingModule,

@@ -1,6 +1,6 @@
 # Database Schema Standards
 
-For the **long-term enterprise target** (107 tables, all domains), see the canonical Word blueprint linked from [Database System Design (reference notes)](./database-system-design-reference.md).
+For the **long-term enterprise target** (107 tables, all domains), see [Database System Design (reference notes)](./database-system-design-reference.md), the [full text extraction](./SPHINCS-Database-System-Design.md), and [implementation roadmap](./implementation-roadmap.md).
 
 - PostgreSQL (Supabase), UUID primary keys via `gen_random_uuid()`
 - `pgcrypto` extension is enabled in initial migration for UUID generation
