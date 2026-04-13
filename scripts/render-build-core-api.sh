@@ -26,33 +26,43 @@ resolve_failed_migration() {
   fi
 }
 
-echo "[render-build] prisma migrate deploy"
-if [[ -n "${DIRECT_URL:-}" ]]; then
-  echo "[render-build] using DIRECT_URL for migration deploy"
-  DATABASE_URL="$DIRECT_URL" resolve_failed_migration "DIRECT_URL"
-  set +e
-  DATABASE_URL="$DIRECT_URL" pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
-  DIRECT_MIGRATE_EXIT=$?
-  set -e
-  if [[ $DIRECT_MIGRATE_EXIT -ne 0 ]]; then
-    echo "[render-build] DIRECT_URL migration failed, falling back to DATABASE_URL"
-    resolve_failed_migration "DATABASE_URL fallback"
+skip_migrate_and_seed() {
+  local v="${SKIP_PRISMA_MIGRATE:-}"
+  [[ "$v" == "1" || "$v" == "true" || "$v" == "TRUE" ]]
+}
+
+if skip_migrate_and_seed; then
+  echo "[render-build] SKIP_PRISMA_MIGRATE=$SKIP_PRISMA_MIGRATE — skipping prisma migrate deploy and prisma seed"
+  echo "[render-build] WARNING: deploy a working DATABASE_URL/DIRECT_URL and redeploy without this flag, or run migrate deploy against the DB before relying on this service."
+else
+  echo "[render-build] prisma migrate deploy"
+  if [[ -n "${DIRECT_URL:-}" ]]; then
+    echo "[render-build] using DIRECT_URL for migration deploy"
+    DATABASE_URL="$DIRECT_URL" resolve_failed_migration "DIRECT_URL"
+    set +e
+    DATABASE_URL="$DIRECT_URL" pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma
+    DIRECT_MIGRATE_EXIT=$?
+    set -e
+    if [[ $DIRECT_MIGRATE_EXIT -ne 0 ]]; then
+      echo "[render-build] DIRECT_URL migration failed, falling back to DATABASE_URL"
+      resolve_failed_migration "DATABASE_URL fallback"
+      if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
+        echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
+        exit 1
+      fi
+    fi
+  else
+    echo "[render-build] DIRECT_URL not set, using DATABASE_URL for migration deploy"
+    resolve_failed_migration "DATABASE_URL"
     if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
       echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
       exit 1
     fi
   fi
-else
-  echo "[render-build] DIRECT_URL not set, using DATABASE_URL for migration deploy"
-  resolve_failed_migration "DATABASE_URL"
-  if ! pnpm --filter @sphincs/core-api exec prisma migrate deploy --schema prisma/schema.prisma; then
-    echo "[render-build] prisma migrate deploy failed. If logs show 'Tenant or user not found' against Supabase, the project is paused/deleted or env URLs are wrong — see docs/deployment.md"
-    exit 1
-  fi
-fi
 
-echo "[render-build] prisma seed"
-pnpm --filter @sphincs/core-api prisma:seed
+  echo "[render-build] prisma seed"
+  pnpm --filter @sphincs/core-api prisma:seed
+fi
 
 echo "[render-build] nest build"
 pnpm --filter @sphincs/core-api build

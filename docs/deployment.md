@@ -318,6 +318,16 @@ Fix (pick one):
 
 There is no application-code workaround: the build **must** reach a live Postgres to run migrations.
 
+### Emergency: skip migrate/seed on Render (build only)
+
+If you must produce a **deployable image** while Postgres URLs are still broken (not recommended for production):
+
+1. In Render → service → **Environment**, add **`SKIP_PRISMA_MIGRATE`** = `1`.
+2. Redeploy. The build runs `prisma generate` and `nest build` but **skips** `prisma migrate deploy` and `prisma seed`.
+3. As soon as you have valid `DATABASE_URL` / `DIRECT_URL`, **remove** `SKIP_PRISMA_MIGRATE` and redeploy so migrations and seed run.
+
+The running service will **not** match the database until migrations apply successfully.
+
 ## Security Note: Deferred DB Password Rotation (2026-03-18)
 
 Current project decision:
