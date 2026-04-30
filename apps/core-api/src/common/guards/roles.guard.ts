@@ -49,10 +49,16 @@ export class RolesGuard implements CanActivate {
     }
 
     const userRoleRecords = await this.prisma.userRole.findMany({
-      where: { user_id: user.id, deleted_at: null },
+      where: {
+        user_id: user.id,
+        deleted_at: null,
+        role: { deleted_at: null }
+      },
       include: { role: true }
     });
-    const userRoles = userRoleRecords.map((entry) => entry.role.name);
+    const userRoles = userRoleRecords
+      .map((entry) => entry.role?.name)
+      .filter((name): name is string => Boolean(name));
     request.user = {
       id: user.id,
       email: user.email,

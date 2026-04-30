@@ -376,13 +376,19 @@ export class AuthService {
       throw new UnauthorizedException(this.accountStatusMessage(user.status));
     }
     const roles = await this.prisma.userRole.findMany({
-      where: { user_id: user.id, deleted_at: null },
+      where: {
+        user_id: user.id,
+        deleted_at: null,
+        role: { deleted_at: null }
+      },
       select: { role: { select: { name: true } } }
     });
     return {
       id: user.id,
       email: user.email,
-      roles: roles.map((record) => record.role.name),
+      roles: roles
+        .map((record) => record.role?.name)
+        .filter((name): name is string => Boolean(name)),
       organizationId: user.organization_id,
       branchId: user.branch_id
     };

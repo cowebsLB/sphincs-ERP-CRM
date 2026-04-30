@@ -28,6 +28,11 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 - **Purchase Orders** (ERP): copy points users to Distribution for warehouse flows.
 - **`packages/ui-core`**: sidebar flex layout; devDependencies `@types/react` for TS consumers.
 - **`apps/core-api`**: default CORS includes `http://127.0.0.1:5173` and `:5174`; `.env.example` documents `PORT`.
+- **Distribution UI** (`apps/erp-web` + `packages/ui-core`): mobile card layout for data-heavy screens on small viewports, desktop tables unchanged; updated tab/subtitle/card visual tokens.
+- **Session UX** (`apps/erp-web`): removed blocking "Restoring session..." screen; bootstrap now runs without gating route render.
+- **Router warnings** (`apps/erp-web`): enabled React Router future flags (`v7_startTransition`, `v7_relativeSplatPath`).
+- **Client safety** (`apps/erp-web`): destructive actions upgraded from single confirm to typed double-confirm helper (`apps/erp-web/src/confirm.ts`) and applied across ERP/CRM and key Distribution operations.
+- **Core API auth resilience** (`apps/core-api`): role mapping for `/auth/me` and auth guard now filters stale role links; Prisma connect retry defaults tuned to production fast-fail behavior with documented env overrides.
 
 ### Removed
 

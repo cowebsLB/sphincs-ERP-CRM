@@ -4,6 +4,7 @@ import { ApiClient, ApiHttpError, AuthSessionExpiredError, type AuthUser, type S
 import { DataTable } from "@sphincs/ui-core";
 import "@sphincs/ui-core/ui.css";
 import { DistributionHub } from "./distribution-hub";
+import { confirmDestructiveAction } from "./confirm";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/v1";
 const API_ROOT = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
@@ -1499,7 +1500,11 @@ function ItemsPage({
                   className="ui-btn ui-btn-danger"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Soft-delete this item? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this item? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchItem(row.id, { deleted_at: new Date().toISOString() });
@@ -1513,7 +1518,11 @@ function ItemsPage({
                   className="ui-btn ui-btn-primary"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Restore this item to the active ERP catalog?")) {
+                    if (
+                      !confirmDestructiveAction("Restore this item to the active ERP catalog?", {
+                        keyword: "RESTORE"
+                      })
+                    ) {
                       return;
                     }
                     void withAuth(session, setSession, `/erp/items/${row.id}/restore`, {
@@ -2180,7 +2189,11 @@ function SuppliersPage({
                   className="ui-btn ui-btn-danger"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Soft-delete this supplier? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this supplier? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchSupplier(row.id, { deleted_at: new Date().toISOString() });
@@ -2194,7 +2207,11 @@ function SuppliersPage({
                   className="ui-btn ui-btn-primary"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Restore this supplier to the active ERP list?")) {
+                    if (
+                      !confirmDestructiveAction("Restore this supplier to the active ERP list?", {
+                        keyword: "RESTORE"
+                      })
+                    ) {
                       return;
                     }
                     void withAuth(session, setSession, `/erp/suppliers/${row.id}/restore`, {
@@ -2501,7 +2518,11 @@ function PurchaseOrdersPage({
   }
 
   function removeLineItem(target: "create" | "edit", index: number) {
-    if (!window.confirm("Remove this line item from the purchase order draft?")) {
+    if (
+      !confirmDestructiveAction("Remove this line item from the purchase order draft?", {
+        keyword: "REMOVE"
+      })
+    ) {
       return;
     }
     const setForm = target === "create" ? setCreateForm : setEditForm;
@@ -2954,7 +2975,11 @@ function PurchaseOrdersPage({
                 </button>
                 {!row.deleted_at && (
                   <button className="ui-btn ui-btn-danger" type="button" onClick={() => {
-                    if (!window.confirm("Soft-delete this purchase order? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this purchase order? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchPurchaseOrder(row.id, { deleted_at: new Date().toISOString() });
@@ -2967,7 +2992,11 @@ function PurchaseOrdersPage({
                     className="ui-btn ui-btn-primary"
                     type="button"
                     onClick={() => {
-                      if (!window.confirm("Restore this purchase order to the active ERP list?")) {
+                      if (
+                        !confirmDestructiveAction("Restore this purchase order to the active ERP list?", {
+                          keyword: "RESTORE"
+                        })
+                      ) {
                         return;
                       }
                       void withAuth(session, setSession, `/erp/purchase-orders/${row.id}/restore`, {
@@ -3143,10 +3172,11 @@ function AccessPage({
 
   async function toggleUserStatus(record: UserAccessRecord) {
     const nextStatus = record.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
-    const confirmed = window.confirm(
+    const confirmed = confirmDestructiveAction(
       nextStatus === "DISABLED"
         ? `Disable ${record.email}? Active sessions will be revoked.`
-        : `Re-enable ${record.email}?`
+        : `Re-enable ${record.email}?`,
+      { keyword: "CONFIRM" }
     );
     if (!confirmed) {
       return;
@@ -3167,7 +3197,7 @@ function AccessPage({
   }
 
   async function restoreUser(record: UserAccessRecord) {
-    const confirmed = window.confirm(`Restore ${record.email}?`);
+    const confirmed = confirmDestructiveAction(`Restore ${record.email}?`, { keyword: "RESTORE" });
     if (!confirmed) {
       return;
     }
@@ -3621,7 +3651,11 @@ function ContactsPage({
                   className="ui-btn ui-btn-danger"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Soft-delete this contact? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this contact? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchContact(row.id, { deleted_at: new Date().toISOString() });
@@ -3635,7 +3669,11 @@ function ContactsPage({
                   className="ui-btn ui-btn-primary"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Restore this contact to the active CRM list?")) {
+                    if (
+                      !confirmDestructiveAction("Restore this contact to the active CRM list?", {
+                        keyword: "RESTORE"
+                      })
+                    ) {
                       return;
                     }
                     void withAuth(session, setSession, `/crm/contacts/${row.id}/restore`, {
@@ -3984,7 +4022,11 @@ function LeadsPage({
                   className="ui-btn ui-btn-danger"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Soft-delete this lead? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this lead? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchLead(row.id, { deleted_at: new Date().toISOString() });
@@ -3998,7 +4040,11 @@ function LeadsPage({
                   className="ui-btn ui-btn-primary"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Restore this lead to the active CRM list?")) {
+                    if (
+                      !confirmDestructiveAction("Restore this lead to the active CRM list?", {
+                        keyword: "RESTORE"
+                      })
+                    ) {
                       return;
                     }
                     void withAuth(session, setSession, `/crm/leads/${row.id}/restore`, {
@@ -4471,7 +4517,11 @@ function OpportunitiesPage({
                   className="ui-btn ui-btn-danger"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Soft-delete this opportunity? You can restore it later.")) {
+                    if (
+                      !confirmDestructiveAction("Soft-delete this opportunity? You can restore it later.", {
+                        keyword: "DELETE"
+                      })
+                    ) {
                       return;
                     }
                     void patchOpportunity(row.id, { deleted_at: new Date().toISOString() });
@@ -4485,7 +4535,11 @@ function OpportunitiesPage({
                   className="ui-btn ui-btn-primary"
                   type="button"
                   onClick={() => {
-                    if (!window.confirm("Restore this opportunity to the active CRM list?")) {
+                    if (
+                      !confirmDestructiveAction("Restore this opportunity to the active CRM list?", {
+                        keyword: "RESTORE"
+                      })
+                    ) {
                       return;
                     }
                     void withAuth(session, setSession, `/crm/opportunities/${row.id}/restore`, {
@@ -5021,21 +5075,13 @@ function ERPApp({
 
 export function RootApp() {
   const { session, setSession } = useSessionState();
-  const checkingSession = useSessionBootstrap(session, setSession);
-
-  if (checkingSession) {
-    return (
-      <main className="auth-page">
-        <section className="auth-card">
-          <h1>Restoring session...</h1>
-          <p className="ui-muted">We are syncing your current access before opening the app.</p>
-        </section>
-      </main>
-    );
-  }
+  useSessionBootstrap(session, setSession);
 
   return (
-    <HashRouter basename={hashRouterBasename()}>
+    <HashRouter
+      basename={hashRouterBasename()}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route
           path="/login"

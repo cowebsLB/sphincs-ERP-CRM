@@ -14,8 +14,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   private async connectWithRetry(): Promise<void> {
-    const maxRetries = this.parsePositiveInt(process.env.PRISMA_CONNECT_MAX_RETRIES, 8);
-    const baseDelayMs = this.parsePositiveInt(process.env.PRISMA_CONNECT_RETRY_DELAY_MS, 2000);
+    const isProduction = process.env.NODE_ENV === "production";
+    const defaultMaxRetries = isProduction ? 3 : 5;
+    const defaultBaseDelayMs = isProduction ? 1000 : 750;
+    const maxRetries = this.parsePositiveInt(process.env.PRISMA_CONNECT_MAX_RETRIES, defaultMaxRetries);
+    const baseDelayMs = this.parsePositiveInt(process.env.PRISMA_CONNECT_RETRY_DELAY_MS, defaultBaseDelayMs);
+
+    this.logger.log(
+      `Prisma connect policy: maxRetries=${maxRetries}, baseDelayMs=${baseDelayMs}, env=${process.env.NODE_ENV ?? "unknown"}`
+    );
 
     for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
       try {

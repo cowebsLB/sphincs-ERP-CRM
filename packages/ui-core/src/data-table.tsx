@@ -13,7 +13,8 @@ export function DataTable<T extends { id: string }>({
   onSearchTextChange,
   renderActions,
   onRowClick,
-  pageSize = 10
+  pageSize = 10,
+  mobileCardLayout = false
 }: {
   rows: T[];
   columns: Array<ColumnDef<T>>;
@@ -22,7 +23,12 @@ export function DataTable<T extends { id: string }>({
   renderActions?: (row: T) => React.ReactNode;
   onRowClick?: (row: T) => void;
   pageSize?: number;
+  mobileCardLayout?: boolean;
 }) {
+  const stopActionEvent = React.useCallback((event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  }, []);
+
   const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
   const [page, setPage] = React.useState(1);
@@ -98,11 +104,51 @@ export function DataTable<T extends { id: string }>({
               {columns.map((column) => (
                 <td key={`${row.id}-${String(column.key)}`}>{String(row[column.key] ?? "")}</td>
               ))}
-              {renderActions && <td onClick={(e) => e.stopPropagation()}>{renderActions(row)}</td>}
+              {renderActions && (
+                <td
+                  onClick={stopActionEvent}
+                  onClickCapture={stopActionEvent}
+                  onMouseDownCapture={stopActionEvent}
+                  onPointerDownCapture={stopActionEvent}
+                  onTouchStartCapture={stopActionEvent}
+                >
+                  {renderActions(row)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
+      {mobileCardLayout && (
+        <div className="ui-table-mobile-cards">
+          {paged.map((row) => (
+            <article
+              key={`${row.id}-card`}
+              className={`ui-table-mobile-card${onRowClick ? " ui-table-row-clickable" : ""}`}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+            >
+              {columns.map((column) => (
+                <div key={`${row.id}-card-${String(column.key)}`} className="ui-table-mobile-row">
+                  <span className="ui-table-mobile-label">{column.label}</span>
+                  <span>{String(row[column.key] ?? "")}</span>
+                </div>
+              ))}
+              {renderActions && (
+                <div
+                  className="ui-table-mobile-actions"
+                  onClick={stopActionEvent}
+                  onClickCapture={stopActionEvent}
+                  onMouseDownCapture={stopActionEvent}
+                  onPointerDownCapture={stopActionEvent}
+                  onTouchStartCapture={stopActionEvent}
+                >
+                  {renderActions(row)}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
       <div className="ui-table-footer">
         <button className="ui-btn ui-btn-secondary" type="button" onClick={() => setPage((p) => Math.max(1, p - 1))}>
           Prev

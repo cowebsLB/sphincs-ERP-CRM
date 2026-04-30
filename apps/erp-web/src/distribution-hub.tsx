@@ -1,5 +1,6 @@
 import React from "react";
 import { DataTable } from "@sphincs/ui-core";
+import { confirmDestructiveAction } from "./confirm";
 
 const MOVEMENT_TYPES = [
   "PURCHASE_RECEIPT",
@@ -388,6 +389,10 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
   }
 
   async function resolveAlert(alertId: string) {
+    const confirmed = confirmDestructiveAction("Resolve this alert now?", { keyword: "RESOLVE" });
+    if (!confirmed) {
+      return;
+    }
     try {
       await fetchApi(`/distribution/alerts/${alertId}/resolve`, {
         method: "PATCH",
@@ -524,6 +529,10 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
       buttons.push(
         <button key="can" className="ui-btn ui-btn-danger" type="button" onClick={(e) => {
           stop(e);
+          const confirmed = confirmDestructiveAction("Cancel this transfer request?", { keyword: "CANCEL" });
+          if (!confirmed) {
+            return;
+          }
           void patchTransfer(`/distribution/transfers/${row.id}/cancel`);
         }}>
           Cancel
@@ -752,6 +761,32 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
                       ))}
                     </tbody>
                   </table>
+                  <div className="distribution-mobile-cards">
+                    {dashboard.branch_stock_summary.map((b) => (
+                      <article key={`${b.branch_id}-mobile`} className="ui-table-mobile-card">
+                        <div className="ui-table-mobile-row">
+                          <span className="ui-table-mobile-label">Branch</span>
+                          <span>{b.branch_name}</span>
+                        </div>
+                        <div className="ui-table-mobile-row">
+                          <span className="ui-table-mobile-label">On hand</span>
+                          <span>{b.stock_on_hand}</span>
+                        </div>
+                        <div className="ui-table-mobile-row">
+                          <span className="ui-table-mobile-label">Low-stock SKUs</span>
+                          <span>{b.low_stock_items}</span>
+                        </div>
+                        <div className="ui-table-mobile-row">
+                          <span className="ui-table-mobile-label">In transit</span>
+                          <span>{b.in_transit_quantity}</span>
+                        </div>
+                        <div className="ui-table-mobile-row">
+                          <span className="ui-table-mobile-label">Incoming</span>
+                          <span>{b.incoming_quantity}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </section>
 
@@ -817,6 +852,37 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
                       })}
                     </tbody>
                   </table>
+                  <div className="distribution-mobile-cards">
+                    {dashboard.recent_inventory_activity.map((m) => {
+                      const item = m.item as { name?: string } | undefined;
+                      return (
+                        <article key={`${String(m.id)}-mobile`} className="ui-table-mobile-card">
+                          <div className="ui-table-mobile-row">
+                            <span className="ui-table-mobile-label">Type</span>
+                            <span>{String(m.movement_type ?? "")}</span>
+                          </div>
+                          <div className="ui-table-mobile-row">
+                            <span className="ui-table-mobile-label">Qty</span>
+                            <span>
+                              {String(m.quantity ?? "")} {String(m.unit ?? "")}
+                            </span>
+                          </div>
+                          <div className="ui-table-mobile-row">
+                            <span className="ui-table-mobile-label">Status</span>
+                            <span>{String(m.status ?? "")}</span>
+                          </div>
+                          <div className="ui-table-mobile-row">
+                            <span className="ui-table-mobile-label">Item</span>
+                            <span>{item?.name ?? "—"}</span>
+                          </div>
+                          <div className="ui-table-mobile-row">
+                            <span className="ui-table-mobile-label">When</span>
+                            <span>{m.occurred_at ? new Date(String(m.occurred_at)).toLocaleString() : "—"}</span>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
               </section>
             </>
@@ -845,6 +911,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
               ]}
               searchText={search}
               onSearchTextChange={setSearch}
+              mobileCardLayout
               renderActions={
                 canWrite
                   ? (row) => (
@@ -1050,6 +1117,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
                 ]}
                 searchText={search}
                 onSearchTextChange={setSearch}
+                mobileCardLayout
               />
             )}
           </section>
@@ -1157,6 +1225,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
                 ]}
                 searchText={search}
                 onSearchTextChange={setSearch}
+                mobileCardLayout
                 renderActions={(row) => {
                   const full = transfers.find((t) => t.id === row.id);
                   return full ? renderTransferActions(full) : null;
@@ -1183,6 +1252,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
               ]}
               searchText={search}
               onSearchTextChange={setSearch}
+              mobileCardLayout
             />
           )}
           <p className="ui-muted" style={{ marginTop: "12px" }}>
@@ -1208,6 +1278,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
               ]}
               searchText={search}
               onSearchTextChange={setSearch}
+              mobileCardLayout
               renderActions={(row) => {
                 const full = dispatches.find((d) => d.id === row.id);
                 return full ? renderDispatchActions(full) : null;
@@ -1234,6 +1305,7 @@ export function DistributionHub({ fetchApi, notify, canWrite, canApprove, userBr
               ]}
               searchText={search}
               onSearchTextChange={setSearch}
+              mobileCardLayout
               renderActions={(row) => {
                 const full = adjustments.find((a) => a.id === row.id);
                 return full ? renderAdjustmentActions(full) : null;
