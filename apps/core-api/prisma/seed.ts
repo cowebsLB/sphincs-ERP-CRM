@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/common/security/password";
+import { seedDemoGraph } from "./seed/demo-graph";
 
 const prisma = new PrismaClient();
 
@@ -238,10 +239,13 @@ async function main() {
     }
   });
 
+  await seedDemoGraph(prisma, admin.id);
+
   console.log("Seed complete");
   console.log(`Organization: ${organization.name}`);
   console.log(`Branch: ${branch.name}`);
   console.log(`Admin user: ${admin.email}`);
+  console.log("Demo graph: items, suppliers, PO, CRM chain, inventory, distribution, audit (see prisma/seed/demo-graph.ts)");
 }
 
 main()

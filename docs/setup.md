@@ -4,7 +4,7 @@
 
 - Node.js 20+
 - pnpm 10+
-- **PostgreSQL 16** (recommended: Docker via the repo `docker-compose.yml`)
+- **PostgreSQL 16** (Supabase recommended for parity; Docker optional for offline local DB)
 
 You can use a hosted Postgres (e.g. Supabase) or **local Docker** — set `DATABASE_URL` in `apps/core-api/.env` either way.
 
@@ -14,7 +14,30 @@ You can use a hosted Postgres (e.g. Supabase) or **local Docker** — set `DATAB
 pnpm install
 ```
 
-## Local database with Docker (recommended)
+## Supabase database (recommended)
+
+Create `apps/core-api/.env` from the template:
+
+```bash
+cp apps/core-api/.env.example apps/core-api/.env
+```
+
+Update these values from your Supabase dashboard:
+
+- `DATABASE_URL` (Supavisor pooler URL, port `6543`)
+- `DIRECT_URL` (direct database URL, port `5432`)
+
+Then apply migrations and seed:
+
+```bash
+pnpm --filter @sphincs/core-api prisma:generate
+pnpm --filter @sphincs/core-api prisma:deploy
+pnpm --filter @sphincs/core-api prisma:seed
+```
+
+The seed includes a **demo dataset** across implemented Prisma tables. See [Database Schema Standards — Demo database seed](./database-schema.md#demo-database-seed-implemented-prisma-models).
+
+## Local database with Docker (optional)
 
 From the **repository root**:
 
@@ -44,6 +67,8 @@ pnpm --filter @sphincs/core-api prisma:generate
 pnpm --filter @sphincs/core-api prisma:deploy
 pnpm --filter @sphincs/core-api prisma:seed
 ```
+
+The seed includes a **demo dataset** across implemented Prisma tables (second branch, catalog, procurement, CRM chain, inventory, distribution, audit). Details: [Database Schema Standards — Demo database seed](./database-schema.md#demo-database-seed-implemented-prisma-models).
 
 ## Run the stack
 
@@ -108,24 +133,26 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 
 Use returned bearer token for protected endpoints.
 
-## Frontend: ERP / CRM in development
+## Frontend: unified ERP + CRM (`erp-web`)
 
-When you run **`pnpm dev`**, workspaces start in parallel. By default (this repo):
+**Primary UI:** `apps/erp-web` serves **both** ERP and CRM in one React app (hash routes `#/items`, `#/contacts`, etc.). Run it at:
 
-| App   | Vite dev URL (hash router)   | Port |
-| ----- | ---------------------------- | ---- |
-| ERP   | `http://localhost:5173/#/…`  | 5173 |
-| CRM   | `http://localhost:5174/#/…`  | 5174 |
+| App   | Role | Vite dev URL (hash router)   | Port |
+| ----- | ---- | ---------------------------- | ---- |
+| ERP + CRM (unified) | main | `http://localhost:5173/#/…`  | 5173 |
 
-**Top navigation (Home / ERP / CRM)** no longer relies only on relative `../` paths (which break across ports). In **development**, links use the origins above unless overridden:
+Copy **`apps/erp-web/.env.example`** to **`.env.local`** and set **`VITE_API_BASE_URL`** to match **`core-api`** (default **`http://localhost:3000/api/v1`** — same host and port as `PORT` in `apps/core-api`, usually **3000**). The UI cannot load data if the API is not running.
+
+**Legacy CRM port (`5174`):** `apps/crm-web` is a **redirect stub** (no React UI). Opening `http://localhost:5174/#/…` immediately redirects to the unified app, preserving the hash. Set **`VITE_ERP_WEB_URL`** in `crm-web` when the ERP origin is not the dev default.
+
+**Top navigation (Home / ERP / CRM):** In **development**, “Home” can still use `VITE_HOME_URL` (optional). ERP and CRM entries in the header are **in-app** `Link` components when the user has access. Optional env vars for external portal URLs:
 
 - `VITE_HOME_URL` — portal “Home” (optional; defaults to ERP origin in dev).
-- `VITE_ERP_WEB_URL` — ERP origin, no trailing slash (optional; defaults to `http://localhost:5173` in dev).
-- `VITE_CRM_WEB_URL` — CRM origin (optional; defaults to `http://localhost:5174` in dev).
+- `VITE_ERP_WEB_URL` / `VITE_CRM_WEB_URL` — still used where absolute ERP/CRM origins are needed (e.g. redirect stub, legacy scripts).
 
-In **production** (e.g. static hosting with sibling folders), the same code falls back to relative `../`, `../erp/`, `../crm/` when those variables are unset.
+In **production** (e.g. static hosting with sibling folders), the same helpers can fall back to relative paths when those variables are unset.
 
-**Subpath deploys:** If you set `VITE_PUBLIC_BASE` (Vite `base`) to something like `/erp/`, ensure **`VITE_ERP_WEB_URL` / `VITE_CRM_WEB_URL`** match the real public URLs so header links stay correct. React `HashRouter` uses **`basename`** derived from `import.meta.env.BASE_URL` so in-app routes align with the base path.
+**Subpath deploys:** If you set `VITE_PUBLIC_BASE` (Vite `base`) to something like `/erp/`, ensure public URLs in env match your hosting layout. React `HashRouter` uses **`basename`** derived from `import.meta.env.BASE_URL` so in-app routes align with the base path.
 
 ## Notes
 

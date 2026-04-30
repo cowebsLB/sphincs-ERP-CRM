@@ -2,14 +2,14 @@
 
 ## Apps
 
-- ERP web app: `apps/erp-web`
-- CRM web app: `apps/crm-web`
+- **Unified web app:** `apps/erp-web` (ERP + CRM in one shell)
+- **Legacy CRM entry:** `apps/crm-web` redirects to `erp-web` (same hash routes; no separate React app)
 
-Both apps use:
+Both the unified app and the redirect stub use:
 
-- React + Vite
-- `react-router-dom` for protected routing
-- `@sphincs/api-client` for auth/login/refresh and authorized requests
+- React + Vite (**`erp-web`** only; **`crm-web`** is vanilla TS entry)
+- `react-router-dom` for protected routing (**`erp-web`**)
+- `@sphincs/api-client` for auth/login/refresh and authorized requests (**`erp-web`**)
 
 ## Auth Flow
 
@@ -20,8 +20,9 @@ Both apps use:
 
 ## Role Access
 
-- ERP app checks for `Admin`, `ERP Manager`, or `Staff` (plus optional **Distribution** visibility for additional operational roles — see `hasDistributionAccess` in `apps/erp-web`).
-- CRM app checks for `Admin` or `CRM Manager`.
+- **ERP module** (items, suppliers, POs, distribution, access): `Admin`, `ERP Manager`, or `Staff`, plus **Distribution** visibility via `hasDistributionAccess` in `apps/erp-web`.
+- **CRM module** (contacts, leads, opportunities): `Admin`, `CRM Manager`, or `Staff` (see `hasCrmPortalAccess` / `CrmAccessGate` in `apps/erp-web`).
+- Shell access: user needs **at least one** of the ERP or CRM role sets to enter the app; landing route is `/items` or `/contacts` accordingly.
 
 ## Modules Wired
 
@@ -82,8 +83,8 @@ pnpm dev
 
 Expected URLs:
 
-- ERP: `http://localhost:5173` (fixed port; `strictPort: true` — change port in `vite.config.ts` if 5173 is taken)
-- CRM: `http://localhost:5174` (same)
-- API: `http://localhost:3000`
+- **Unified UI:** `http://localhost:5173` (ERP + CRM; fixed port unless you change `vite.config.ts`)
+- **CRM redirect (optional):** `http://localhost:5174` → redirects to `5173` with the same hash
+- **API:** `http://localhost:3000` (ensure `apps/core-api` is running; set `VITE_API_BASE_URL` in `apps/erp-web/.env.local` to match)
 
-Open each app with a **hash** route, e.g. `http://localhost:5174/#/contacts` and `http://localhost:5173/#/items`. Header links target those origins so you can jump between apps during local development.
+Use **hash** routes, e.g. `http://localhost:5173/#/items` and `http://localhost:5173/#/contacts`. **`core-api` must be listening** or the browser will show connection errors.

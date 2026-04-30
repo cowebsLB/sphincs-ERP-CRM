@@ -96,6 +96,7 @@ type PurchaseOrderRecord = RecordData & {
   supplier_id?: string | null;
   supplier_name?: string;
   status?: string | null;
+  created_at?: string | null;
   order_date?: string | null;
   expected_delivery_date?: string | null;
   payment_terms?: string | null;
@@ -124,6 +125,38 @@ type PurchaseOrderLineItemRecord = {
   line_total?: number | string | null;
   received_quantity?: number | null;
 };
+
+type ContactRecord = RecordData & {
+  full_name?: string | null;
+  email?: string | null;
+};
+type LeadRecord = RecordData & {
+  contact_id?: string | null;
+  contact_name?: string;
+  status?: string | null;
+};
+type OpportunityRecord = RecordData & {
+  lead_id?: string | null;
+  lead_name?: string;
+  status?: string | null;
+};
+type PurchaseOrderHandoffResult = {
+  id: string;
+  po_number?: string | null;
+};
+type LeadFormState = {
+  contact_id: string;
+  status: string;
+};
+type OpportunityFormState = {
+  lead_id: string;
+  status: string;
+};
+type ContactFormState = {
+  full_name: string;
+  email: string;
+};
+
 type SystemInfo = {
   version?: string;
   environment?: string;
@@ -339,9 +372,7 @@ function useSessionState() {
     if (next) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       LEGACY_STORAGE_KEYS.forEach((key) => {
-        if (key !== STORAGE_KEY) {
-          localStorage.removeItem(key);
-        }
+        localStorage.removeItem(key);
       });
     } else {
       localStorage.removeItem(STORAGE_KEY);
@@ -432,7 +463,13 @@ function LoginPage({ setSession }: { setSession: (next: SessionState | null) => 
         refreshToken: tokens.refreshToken,
         user: tokens.user
       });
-      navigate("/items");
+      navigate(
+        defaultAppLandingPath({
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          user: tokens.user
+        })
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -779,7 +816,7 @@ function toPurchaseOrderFormState(order?: PurchaseOrderRecord | null): PurchaseO
     po_number: String(order.po_number ?? ""),
     supplier_id: String(order.supplier_id ?? ""),
     status: String(order.status ?? "DRAFT"),
-    order_date: toDateInputValue(order.order_date ?? order.created_at ?? null),
+    order_date: toDateInputValue(order.order_date ?? order.created_at),
     expected_delivery_date: toDateInputValue(order.expected_delivery_date ?? null),
     payment_terms: String(order.payment_terms ?? "Net 30"),
     payment_status: String(order.payment_status ?? "UNPAID"),
@@ -3305,6 +3342,1238 @@ function AccessPage({
   );
 }
 
+function hasCrmPortalAccess(session: SessionState): boolean {
+  return hasRole(session, "Admin", "CRM Manager", "Staff");
+}
+
+function defaultAppLandingPath(session: SessionState): string {
+  if (hasRole(session, "Admin", "ERP Manager", "Staff")) {
+    return "/items";
+  }
+  if (hasCrmPortalAccess(session)) {
+    return "/contacts";
+  }
+  return "/items";
+}
+
+function CrmAccessGate({
+  session,
+  setSession,
+  children
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  children: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+  if (!hasCrmPortalAccess(session)) {
+    return (
+      <main style={{ padding: "24px" }}>
+        <p>
+          {session.user.roles.length === 0
+            ? "Your account has no active platform roles."
+            : "Your account does not have CRM access."}
+        </p>
+        <button
+          className="ui-btn ui-btn-secondary"
+          type="button"
+          onClick={() => {
+            setSession(null);
+            navigate("/login");
+          }}
+        >
+          Switch account
+        </button>
+      </main>
+    );
+  }
+  return <>{children}</>;
+}
+
+
+function ContactsPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [rows, setRows] = React.useState<ContactRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [createForm, setCreateForm] = React.useState<ContactFormState>({ full_name: "", email: "" });
+  const [editing, setEditing] = React.useState<ContactRecord | null>(null);
+  const [editForm, setEditForm] = React.useState<ContactFormState>({ full_name: "", email: "" });
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const data = await withAuth<ContactRecord[]>(session, setSession, `/crm/contacts${query}`);
+      setRows(data);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load contacts");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function updateForm(target: "create" | "edit", patch: Partial<ContactFormState>) {
+    if (target === "create") {
+      setCreateForm((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function startEdit(row: ContactRecord) {
+    setEditing(row);
+    setEditForm({
+      full_name: row.full_name ? String(row.full_name) : "",
+      email: row.email ? String(row.email) : ""
+    });
+  }
+
+  async function createContact(e: React.FormEvent) {
+    e.preventDefault();
+    const validationError = validateContactForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, "/crm/contacts", {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: createForm.full_name || undefined,
+          email: createForm.email || undefined
+        })
+      });
+      notify("success", "Contacts: record created");
+      setCreateForm({ full_name: "", email: "" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
+  }
+
+  async function updateContact(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
+    const validationError = validateContactForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/crm/contacts/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          full_name: editForm.full_name || undefined,
+          email: editForm.email || null
+        })
+      });
+      notify("success", "Contacts: record updated");
+      setEditing(null);
+      setEditForm({ full_name: "", email: "" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchContact(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/crm/contacts/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", "Contacts: record updated");
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  function validateContactForm(form: ContactFormState) {
+    if (!form.full_name.trim()) {
+      return "Full name is required.";
+    }
+    if (form.email.trim() && !isValidEmailAddress(form.email.trim())) {
+      return "Email must be a valid email address.";
+    }
+    return null;
+  }
+
+  return (
+    <section className="ui-card">
+      <div className="purchase-orders-header">
+        <div>
+          <h2 className="ui-title">Contacts</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Keep contact creation lightweight so Leads and Opportunities can link to real people without friction.
+          </p>
+        </div>
+        <label className="ui-checkline">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => setIncludeDeleted(e.target.checked)}
+          />
+          Include deleted
+        </label>
+      </div>
+
+      <form className="ui-form purchase-order-form" onSubmit={createContact}>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Full Name</span>
+          <input
+            className="ui-input"
+            value={createForm.full_name}
+            onChange={(e) => updateForm("create", { full_name: e.target.value })}
+            placeholder="Contact name"
+            required
+          />
+        </label>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Email</span>
+          <input
+            className="ui-input"
+            type="email"
+            value={createForm.email}
+            onChange={(e) => updateForm("create", { email: e.target.value })}
+            placeholder="contact@example.com"
+          />
+        </label>
+        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
+          Create
+        </button>
+      </form>
+
+      {editing && (
+        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updateContact}>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Full Name</span>
+            <input
+              className="ui-input"
+              value={editForm.full_name}
+              onChange={(e) => updateForm("edit", { full_name: e.target.value })}
+              required
+            />
+          </label>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Email</span>
+            <input
+              className="ui-input"
+              type="email"
+              value={editForm.email}
+              onChange={(e) => updateForm("edit", { email: e.target.value })}
+            />
+          </label>
+          <div className="purchase-order-actions">
+            <button className="ui-btn ui-btn-primary" type="submit">
+              Save
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setEditForm({ full_name: "", email: "" });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : rows.length === 0 ? (
+        <div className="ui-empty">No contacts found yet. Create one here so lead and opportunity flows have something to connect to.</div>
+      ) : (
+        <DataTable<ContactRecord>
+          rows={rows}
+          columns={[
+            { key: "full_name", label: "Full Name", sortable: true },
+            { key: "email", label: "Email", sortable: true },
+            { key: "created_at", label: "Created At", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this contact? You can restore it later.")) {
+                      return;
+                    }
+                    void patchContact(row.id, { deleted_at: new Date().toISOString() });
+                  }}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Restore this contact to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/contacts/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Contacts: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      });
+                  }}
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+    </section>
+  );
+}
+
+function LeadsPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [rows, setRows] = React.useState<LeadRecord[]>([]);
+  const [contacts, setContacts] = React.useState<ContactRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [createForm, setCreateForm] = React.useState<LeadFormState>({
+    contact_id: "",
+    status: "NEW"
+  });
+  const [editing, setEditing] = React.useState<LeadRecord | null>(null);
+  const [editForm, setEditForm] = React.useState<LeadFormState>({
+    contact_id: "",
+    status: "NEW"
+  });
+  const [contactPickerOpen, setContactPickerOpen] = React.useState<"create" | "edit" | null>(null);
+  const [contactPickerSearch, setContactPickerSearch] = React.useState("");
+
+  const contactMap = React.useMemo(
+    () =>
+      new Map(
+        contacts.map((contact) => [
+          contact.id,
+          contact.full_name?.trim() || contact.email?.trim() || "Unnamed contact"
+        ])
+      ),
+    [contacts]
+  );
+
+  const contactOptions = React.useMemo(
+    () =>
+      contacts.map((contact) => ({
+        id: contact.id,
+        name: contact.full_name?.trim() || "Unnamed contact",
+        meta: [contact.email].filter(Boolean).join(" • ")
+      })),
+    [contacts]
+  );
+
+  const filteredContactOptions = React.useMemo(() => {
+    const query = contactPickerSearch.trim().toLowerCase();
+    if (!query) {
+      return contactOptions;
+    }
+    return contactOptions.filter((contact) =>
+      `${contact.name} ${contact.meta}`.toLowerCase().includes(query)
+    );
+  }, [contactOptions, contactPickerSearch]);
+
+  const rowsWithContactNames = React.useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        contact_name: row.contact_id ? contactMap.get(String(row.contact_id)) || "Unknown contact" : "No contact"
+      })),
+    [rows, contactMap]
+  );
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const [leads, visibleContacts] = await Promise.all([
+        withAuth<LeadRecord[]>(session, setSession, `/crm/leads${query}`),
+        withAuth<ContactRecord[]>(session, setSession, "/crm/contacts")
+      ]);
+      setRows(leads);
+      setContacts(visibleContacts);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load leads");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function updateForm(target: "create" | "edit", patch: Partial<LeadFormState>) {
+    if (target === "create") {
+      setCreateForm((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function startEdit(row: LeadRecord) {
+    setEditing(row);
+    setEditForm({
+      contact_id: row.contact_id ? String(row.contact_id) : "",
+      status: row.status ? String(row.status) : "NEW"
+    });
+  }
+
+  function getContactName(contactId: string) {
+    return contactMap.get(contactId) || "Unknown contact";
+  }
+
+  function renderContactPicker(target: "create" | "edit") {
+    const currentContactId = target === "create" ? createForm.contact_id : editForm.contact_id;
+
+    return (
+      <div className="supplier-picker">
+        <div className="supplier-picker-row">
+          <button
+            className="ui-btn ui-btn-secondary"
+            type="button"
+            onClick={() => {
+              setContactPickerSearch("");
+              setContactPickerOpen(target);
+            }}
+          >
+            {currentContactId ? "Change contact" : "Browse contacts"}
+          </button>
+          {currentContactId && (
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => updateForm(target, { contact_id: "" })}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <p className="ui-muted supplier-picker-hint">
+          {currentContactId
+            ? `Selected: ${getContactName(currentContactId)}`
+            : contacts.length > 0
+              ? "Choose a contact by name instead of typing an internal ID."
+              : "No contacts available yet. Create one in Contacts first."}
+        </p>
+      </div>
+    );
+  }
+
+  async function createLead(e: React.FormEvent) {
+    e.preventDefault();
+    const validationError = validateLeadForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, "/crm/leads", {
+        method: "POST",
+        body: JSON.stringify({
+          contact_id: createForm.contact_id || undefined,
+          status: createForm.status || undefined
+        })
+      });
+      notify("success", "Leads: record created");
+      setCreateForm({ contact_id: "", status: "NEW" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
+  }
+
+  async function updateLead(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
+    const validationError = validateLeadForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/crm/leads/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          contact_id: editForm.contact_id || null,
+          status: editForm.status || undefined
+        })
+      });
+      notify("success", "Leads: record updated");
+      setEditing(null);
+      setEditForm({ contact_id: "", status: "NEW" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchLead(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/crm/leads/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", "Leads: record updated");
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  function validateLeadForm(form: LeadFormState) {
+    if (!form.contact_id.trim()) {
+      return "Choose a contact before saving the lead.";
+    }
+    if (!form.status.trim()) {
+      return "Lead status is required.";
+    }
+    return null;
+  }
+
+  return (
+    <section className="ui-card">
+      <div className="purchase-orders-header">
+        <div>
+          <h2 className="ui-title">Leads</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Link leads to contacts by name. The app keeps the internal contact ID behind the scenes.
+          </p>
+        </div>
+        <label className="ui-checkline">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => setIncludeDeleted(e.target.checked)}
+          />
+          Include deleted
+        </label>
+      </div>
+
+      <form className="ui-form purchase-order-form" onSubmit={createLead}>
+        <div className="purchase-order-field">
+          <span className="purchase-order-label">Contact</span>
+          {renderContactPicker("create")}
+        </div>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Status</span>
+          <select
+            className="ui-input"
+            value={createForm.status}
+            onChange={(e) => updateForm("create", { status: e.target.value })}
+          >
+            <option value="NEW">NEW</option>
+            <option value="QUALIFIED">QUALIFIED</option>
+            <option value="DISQUALIFIED">DISQUALIFIED</option>
+            <option value="CONVERTED">CONVERTED</option>
+          </select>
+        </label>
+        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
+          Create
+        </button>
+      </form>
+
+      {editing && (
+        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updateLead}>
+          <div className="purchase-order-field">
+            <span className="purchase-order-label">Contact</span>
+            {renderContactPicker("edit")}
+          </div>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Status</span>
+            <select
+              className="ui-input"
+              value={editForm.status}
+              onChange={(e) => updateForm("edit", { status: e.target.value })}
+            >
+              <option value="NEW">NEW</option>
+              <option value="QUALIFIED">QUALIFIED</option>
+              <option value="DISQUALIFIED">DISQUALIFIED</option>
+              <option value="CONVERTED">CONVERTED</option>
+            </select>
+          </label>
+          <div className="purchase-order-actions">
+            <button className="ui-btn ui-btn-primary" type="submit">
+              Save
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setEditForm({ contact_id: "", status: "NEW" });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : rowsWithContactNames.length === 0 ? (
+        <p className="ui-empty">
+          No leads found yet. Create one here once you have contacts ready to connect.
+        </p>
+      ) : (
+        <DataTable<LeadRecord>
+          rows={rowsWithContactNames}
+          columns={[
+            { key: "contact_name", label: "Contact", sortable: true },
+            { key: "status", label: "Status", sortable: true },
+            { key: "created_at", label: "Created At", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this lead? You can restore it later.")) {
+                      return;
+                    }
+                    void patchLead(row.id, { deleted_at: new Date().toISOString() });
+                  }}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Restore this lead to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/leads/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Leads: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      });
+                  }}
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+
+      {contactPickerOpen && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card supplier-modal">
+            <div className="supplier-modal-header">
+              <div>
+                <h3>Select Contact</h3>
+                <p className="ui-muted supplier-modal-copy">
+                  Showing contacts available to this signed-in user.
+                </p>
+              </div>
+              <button
+                className="ui-btn ui-btn-secondary"
+                type="button"
+                onClick={() => {
+                  setContactPickerSearch("");
+                  setContactPickerOpen(null);
+                }}
+              >
+                Close
+              </button>
+            </div>
+            {contactOptions.length === 0 ? (
+              <p className="ui-empty">No contacts found yet. Create one from the Contacts page first.</p>
+            ) : (
+              <>
+                <input
+                  className="ui-input"
+                  placeholder="Search contacts by name or email"
+                  value={contactPickerSearch}
+                  onChange={(e) => setContactPickerSearch(e.target.value)}
+                />
+                {filteredContactOptions.length === 0 ? (
+                  <p className="ui-empty">No contacts match that search yet.</p>
+                ) : (
+                  <div className="supplier-grid">
+                    {filteredContactOptions.map((contact) => (
+                      <button
+                        key={contact.id}
+                        className={`supplier-option${(
+                          contactPickerOpen === "create" ? createForm.contact_id : editForm.contact_id
+                        ) === contact.id
+                          ? " supplier-option-active"
+                          : ""}`}
+                        type="button"
+                        onClick={() => {
+                          updateForm(contactPickerOpen, { contact_id: contact.id });
+                          setContactPickerSearch("");
+                          setContactPickerOpen(null);
+                        }}
+                      >
+                        <strong>{contact.name}</strong>
+                        <span>{contact.meta || "No email saved"}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OpportunitiesPage({
+  session,
+  setSession,
+  notify
+}: {
+  session: SessionState;
+  setSession: (next: SessionState | null) => void;
+  notify: (type: "success" | "error", message: string) => void;
+}) {
+  const [rows, setRows] = React.useState<OpportunityRecord[]>([]);
+  const [leads, setLeads] = React.useState<LeadRecord[]>([]);
+  const [contacts, setContacts] = React.useState<ContactRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [includeDeleted, setIncludeDeleted] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [createForm, setCreateForm] = React.useState<OpportunityFormState>({
+    lead_id: "",
+    status: "OPEN"
+  });
+  const [editing, setEditing] = React.useState<OpportunityRecord | null>(null);
+  const [editForm, setEditForm] = React.useState<OpportunityFormState>({
+    lead_id: "",
+    status: "OPEN"
+  });
+  const [leadPickerOpen, setLeadPickerOpen] = React.useState<"create" | "edit" | null>(null);
+  const [leadPickerSearch, setLeadPickerSearch] = React.useState("");
+  const [handoffBusyId, setHandoffBusyId] = React.useState<string | null>(null);
+
+  const contactMap = React.useMemo(
+    () =>
+      new Map(
+        contacts.map((contact) => [
+          contact.id,
+          contact.full_name?.trim() || contact.email?.trim() || "Unnamed contact"
+        ])
+      ),
+    [contacts]
+  );
+
+  const leadMap = React.useMemo(
+    () =>
+      new Map(
+        leads.map((lead) => {
+          const label = lead.contact_id
+            ? `${contactMap.get(String(lead.contact_id)) || "Unknown contact"} (${lead.status || "NEW"})`
+            : `Lead ${lead.id.slice(0, 8)} (${lead.status || "NEW"})`;
+          return [lead.id, label];
+        })
+      ),
+    [contactMap, leads]
+  );
+
+  const leadOptions = React.useMemo(
+    () =>
+      leads.map((lead) => ({
+        id: lead.id,
+        name: leadMap.get(lead.id) || `Lead ${lead.id.slice(0, 8)}`,
+        meta: lead.contact_id ? `Contact: ${contactMap.get(String(lead.contact_id)) || "Unknown"}` : "No contact linked"
+      })),
+    [contactMap, leadMap, leads]
+  );
+
+  const filteredLeadOptions = React.useMemo(() => {
+    const query = leadPickerSearch.trim().toLowerCase();
+    if (!query) {
+      return leadOptions;
+    }
+    return leadOptions.filter((lead) => `${lead.name} ${lead.meta}`.toLowerCase().includes(query));
+  }, [leadOptions, leadPickerSearch]);
+
+  const rowsWithLeadNames = React.useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        lead_name: row.lead_id ? leadMap.get(String(row.lead_id)) || "Unknown lead" : "No lead"
+      })),
+    [leadMap, rows]
+  );
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = includeDeleted ? "?includeDeleted=true" : "";
+      const [opportunities, visibleLeads, visibleContacts] = await Promise.all([
+        withAuth<OpportunityRecord[]>(session, setSession, `/crm/opportunities${query}`),
+        withAuth<LeadRecord[]>(session, setSession, "/crm/leads"),
+        withAuth<ContactRecord[]>(session, setSession, "/crm/contacts")
+      ]);
+      setRows(opportunities);
+      setLeads(visibleLeads);
+      setContacts(visibleContacts);
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Failed to load opportunities");
+    } finally {
+      setLoading(false);
+    }
+  }, [includeDeleted, notify, session, setSession]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  function updateForm(target: "create" | "edit", patch: Partial<OpportunityFormState>) {
+    if (target === "create") {
+      setCreateForm((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function startEdit(row: OpportunityRecord) {
+    setEditing(row);
+    setEditForm({
+      lead_id: row.lead_id ? String(row.lead_id) : "",
+      status: row.status ? String(row.status) : "OPEN"
+    });
+  }
+
+  function getLeadName(leadId: string) {
+    return leadMap.get(leadId) || "Unknown lead";
+  }
+
+  function renderLeadPicker(target: "create" | "edit") {
+    const currentLeadId = target === "create" ? createForm.lead_id : editForm.lead_id;
+
+    return (
+      <div className="supplier-picker">
+        <div className="supplier-picker-row">
+          <button
+            className="ui-btn ui-btn-secondary"
+            type="button"
+            onClick={() => {
+              setLeadPickerSearch("");
+              setLeadPickerOpen(target);
+            }}
+          >
+            {currentLeadId ? "Change lead" : "Browse leads"}
+          </button>
+          {currentLeadId && (
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => updateForm(target, { lead_id: "" })}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <p className="ui-muted supplier-picker-hint">
+          {currentLeadId
+            ? `Selected: ${getLeadName(currentLeadId)}`
+            : leads.length > 0
+              ? "Choose a lead by label instead of typing an internal ID."
+              : "No leads available yet. Create one in Leads first."}
+        </p>
+      </div>
+    );
+  }
+
+  async function createOpportunity(e: React.FormEvent) {
+    e.preventDefault();
+    const validationError = validateOpportunityForm(createForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, "/crm/opportunities", {
+        method: "POST",
+        body: JSON.stringify({
+          lead_id: createForm.lead_id || undefined,
+          status: createForm.status || undefined
+        })
+      });
+      notify("success", "Opportunities: record created");
+      setCreateForm({ lead_id: "", status: "OPEN" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Create failed");
+    }
+  }
+
+  async function updateOpportunity(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) {
+      return;
+    }
+    const validationError = validateOpportunityForm(editForm);
+    if (validationError) {
+      notify("error", validationError);
+      return;
+    }
+    try {
+      await withAuth(session, setSession, `/crm/opportunities/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          lead_id: editForm.lead_id || null,
+          status: editForm.status || undefined
+        })
+      });
+      notify("success", "Opportunities: record updated");
+      setEditing(null);
+      setEditForm({ lead_id: "", status: "OPEN" });
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function patchOpportunity(id: string, payload: Record<string, unknown>) {
+    try {
+      await withAuth(session, setSession, `/crm/opportunities/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      notify("success", "Opportunities: record updated");
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "Update failed");
+    }
+  }
+
+  async function handoffDraftPurchaseOrder(row: OpportunityRecord) {
+    if (row.deleted_at || String(row.status).toUpperCase() !== "WON") {
+      return;
+    }
+    setHandoffBusyId(row.id);
+    try {
+      const po = await withAuth<PurchaseOrderHandoffResult>(
+        session,
+        setSession,
+        `/crm/opportunities/${row.id}/handoff/purchase-order`,
+        {
+          method: "POST",
+          body: JSON.stringify({})
+        }
+      );
+      const ref = po.po_number?.trim() ? String(po.po_number) : po.id.slice(0, 8);
+      notify(
+        "success",
+        `Draft purchase order ${ref} created in ERP. Complete supplier and lines there when ready.`
+      );
+      await load();
+    } catch (error) {
+      notify("error", error instanceof Error ? error.message : "ERP handoff failed");
+    } finally {
+      setHandoffBusyId(null);
+    }
+  }
+
+  function validateOpportunityForm(form: OpportunityFormState) {
+    if (!form.lead_id.trim()) {
+      return "Choose a lead before saving the opportunity.";
+    }
+    if (!form.status.trim()) {
+      return "Opportunity status is required.";
+    }
+    return null;
+  }
+
+  return (
+    <section className="ui-card">
+      <div className="purchase-orders-header">
+        <div>
+          <h2 className="ui-title">Opportunities</h2>
+          <p className="ui-muted purchase-orders-copy">
+            Each opportunity ties a qualified lead to a pipeline outcome: <strong>OPEN</strong> (in progress),{" "}
+            <strong>WON</strong> (deal closed—ready for operational follow-up), or <strong>LOST</strong> (closed
+            without a win). CRM status is separate from ERP documents: nothing is created in ERP until you explicitly
+            hand off a <strong>WON</strong> opportunity, which creates a <strong>draft purchase order</strong> you
+            finish in ERP (supplier, lines, approval).
+          </p>
+          <p className="ui-muted purchase-orders-copy">
+            Link opportunities to leads using readable labels instead of raw lead IDs. After a handoff, open{" "}
+            <Link to="/purchase-orders" style={{ color: "inherit", textDecoration: "underline" }}>
+              Purchase orders
+            </Link>{" "}
+            in this app to finish supplier and line details.
+          </p>
+        </div>
+        <label className="ui-checkline">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => setIncludeDeleted(e.target.checked)}
+          />
+          Include deleted
+        </label>
+      </div>
+
+      <form className="ui-form purchase-order-form" onSubmit={createOpportunity}>
+        <div className="purchase-order-field">
+          <span className="purchase-order-label">Lead</span>
+          {renderLeadPicker("create")}
+        </div>
+        <label className="purchase-order-field">
+          <span className="purchase-order-label">Status</span>
+          <select
+            className="ui-input"
+            value={createForm.status}
+            onChange={(e) => updateForm("create", { status: e.target.value })}
+          >
+            <option value="OPEN">OPEN</option>
+            <option value="WON">WON</option>
+            <option value="LOST">LOST</option>
+          </select>
+        </label>
+        <button className="ui-btn ui-btn-primary purchase-order-submit" type="submit">
+          Create
+        </button>
+      </form>
+
+      {editing && (
+        <form className="ui-form ui-form-edit purchase-order-form" onSubmit={updateOpportunity}>
+          <div className="purchase-order-field">
+            <span className="purchase-order-label">Lead</span>
+            {renderLeadPicker("edit")}
+          </div>
+          <label className="purchase-order-field">
+            <span className="purchase-order-label">Status</span>
+            <select
+              className="ui-input"
+              value={editForm.status}
+              onChange={(e) => updateForm("edit", { status: e.target.value })}
+            >
+              <option value="OPEN">OPEN</option>
+              <option value="WON">WON</option>
+              <option value="LOST">LOST</option>
+            </select>
+          </label>
+          <div className="purchase-order-actions">
+            <button className="ui-btn ui-btn-primary" type="submit">
+              Save
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary"
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setEditForm({ lead_id: "", status: "OPEN" });
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="ui-loading">Loading data...</div>
+      ) : rowsWithLeadNames.length === 0 ? (
+        <p className="ui-empty">
+          No opportunities found yet. Create one here once you have a lead worth tracking.
+        </p>
+      ) : (
+        <DataTable<OpportunityRecord>
+          rows={rowsWithLeadNames}
+          columns={[
+            { key: "lead_name", label: "Lead", sortable: true },
+            { key: "status", label: "Status", sortable: true },
+            { key: "created_at", label: "Created At", sortable: true }
+          ]}
+          searchText={search}
+          onSearchTextChange={setSearch}
+          renderActions={(row) => (
+            <>
+              <button className="ui-btn ui-btn-secondary" type="button" onClick={() => startEdit(row)}>
+                Edit
+              </button>
+              {!row.deleted_at && String(row.status).toUpperCase() === "WON" && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  disabled={handoffBusyId === row.id}
+                  onClick={() => void handoffDraftPurchaseOrder(row)}
+                >
+                  {handoffBusyId === row.id ? "Creating draft…" : "Create draft PO in ERP"}
+                </button>
+              )}
+              {!row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-danger"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Soft-delete this opportunity? You can restore it later.")) {
+                      return;
+                    }
+                    void patchOpportunity(row.id, { deleted_at: new Date().toISOString() });
+                  }}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {row.deleted_at && (
+                <button
+                  className="ui-btn ui-btn-primary"
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Restore this opportunity to the active CRM list?")) {
+                      return;
+                    }
+                    void withAuth(session, setSession, `/crm/opportunities/${row.id}/restore`, {
+                      method: "POST",
+                      body: JSON.stringify({})
+                    })
+                      .then(async () => {
+                        notify("success", "Opportunities: record restored");
+                        await load();
+                      })
+                      .catch((error: unknown) => {
+                        notify("error", error instanceof Error ? error.message : "Restore failed");
+                      });
+                  }}
+                >
+                  Restore
+                </button>
+              )}
+            </>
+          )}
+        />
+      )}
+
+      {leadPickerOpen && (
+        <div className="ui-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="ui-modal-card supplier-modal">
+            <div className="supplier-modal-header">
+              <div>
+                <h3>Select Lead</h3>
+                <p className="ui-muted supplier-modal-copy">
+                  Showing leads available to this signed-in user.
+                </p>
+              </div>
+              <button
+                className="ui-btn ui-btn-secondary"
+                type="button"
+                onClick={() => {
+                  setLeadPickerSearch("");
+                  setLeadPickerOpen(null);
+                }}
+              >
+                Close
+              </button>
+            </div>
+            {leadOptions.length === 0 ? (
+              <p className="ui-empty">No leads found yet. Create one from the Leads page first.</p>
+            ) : (
+              <>
+                <input
+                  className="ui-input"
+                  placeholder="Search leads by contact or status"
+                  value={leadPickerSearch}
+                  onChange={(e) => setLeadPickerSearch(e.target.value)}
+                />
+                {filteredLeadOptions.length === 0 ? (
+                  <p className="ui-empty">No leads match that search yet.</p>
+                ) : (
+                  <div className="supplier-grid">
+                    {filteredLeadOptions.map((lead) => (
+                      <button
+                        key={lead.id}
+                        className={`supplier-option${(
+                          leadPickerOpen === "create" ? createForm.lead_id : editForm.lead_id
+                        ) === lead.id
+                          ? " supplier-option-active"
+                          : ""}`}
+                        type="button"
+                        onClick={() => {
+                          updateForm(leadPickerOpen, { lead_id: lead.id });
+                          setLeadPickerSearch("");
+                          setLeadPickerOpen(null);
+                        }}
+                      >
+                        <strong>{lead.name}</strong>
+                        <span>{lead.meta}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ERPApp({
   session,
   setSession
@@ -3338,8 +4607,24 @@ function ERPApp({
 
   const portalNav = getPortalNavLinks();
   const homeEntry = `${portalNav.home.replace(/\/+$/, "")}/`;
-  const erpEntry = `${portalNav.erp.replace(/\/+$/, "")}#/items`;
-  const crmEntry = `${portalNav.crm.replace(/\/+$/, "")}#/contacts`;
+  const canUseErp = hasRole(session, "Admin", "ERP Manager", "Staff");
+  const canUseCrm = hasCrmPortalAccess(session);
+  const onCrmPath =
+    location.pathname === "/contacts" ||
+    location.pathname === "/leads" ||
+    location.pathname === "/opportunities";
+  const shellTitle = onCrmPath ? "CRM Operations" : "ERP Operations";
+
+  React.useEffect(() => {
+    const path = location.pathname;
+    const erpPaths = ["/items", "/suppliers", "/purchase-orders", "/distribution", "/access"];
+    const crmPaths = ["/contacts", "/leads", "/opportunities"];
+    if (erpPaths.includes(path) && !canUseErp) {
+      navigate(defaultAppLandingPath(session), { replace: true });
+    } else if (crmPaths.includes(path) && !canUseCrm) {
+      navigate(defaultAppLandingPath(session), { replace: true });
+    }
+  }, [session, canUseErp, canUseCrm, location.pathname, navigate]);
 
   const distributionFetch = React.useCallback(
     <T,>(path: string, init?: RequestInit) => withAuth<T>(session, setSession, path, init),
@@ -3394,13 +4679,13 @@ function ERPApp({
     }
   }
 
-  if (!hasRole(session, "Admin", "ERP Manager", "Staff")) {
+  if (!canUseErp && !canUseCrm) {
     return (
       <main style={{ padding: "24px" }}>
         <p>
           {session.user.roles.length === 0
             ? "Your account has no active platform roles."
-            : "Your account does not have ERP access."}
+            : "Your account does not have access to the ERP or CRM modules."}
         </p>
         <button
           className="ui-btn ui-btn-secondary"
@@ -3439,7 +4724,7 @@ function ERPApp({
             module: bugForm.module,
             contactEmail: bugForm.contactEmail || undefined,
             screenshotUrl: bugForm.screenshotUrl || undefined,
-            sourceApp: "ERP",
+            sourceApp: onCrmPath ? "CRM" : "ERP",
             route: window.location.hash.replace(/^#/, "") || "/",
             pageUrl: window.location.href,
             appVersion: APP_RELEASE_VERSION,
@@ -3477,15 +4762,28 @@ function ERPApp({
       }}
     >
       <aside className={`app-sidebar${mobileNavOpen ? " is-open" : ""}`}>
-        <h2>SPHINCS ERP</h2>
+        <h2>SPHINCS</h2>
         <p className="ui-muted">{session.user.email}</p>
-        <Link to="/items" onClick={() => setMobileNavOpen(false)}>Items</Link>
-        <Link to="/suppliers" onClick={() => setMobileNavOpen(false)}>Suppliers</Link>
-        <Link to="/purchase-orders" onClick={() => setMobileNavOpen(false)}>Purchase Orders</Link>
-        {hasDistributionAccess(session) && (
-          <Link to="/distribution" onClick={() => setMobileNavOpen(false)}>Distribution</Link>
+        {canUseErp && (
+          <>
+            <Link to="/items" onClick={() => setMobileNavOpen(false)}>Items</Link>
+            <Link to="/suppliers" onClick={() => setMobileNavOpen(false)}>Suppliers</Link>
+            <Link to="/purchase-orders" onClick={() => setMobileNavOpen(false)}>Purchase Orders</Link>
+            {hasDistributionAccess(session) && (
+              <Link to="/distribution" onClick={() => setMobileNavOpen(false)}>Distribution</Link>
+            )}
+            {hasRole(session, "Admin") && (
+              <Link to="/access" onClick={() => setMobileNavOpen(false)}>Access</Link>
+            )}
+          </>
         )}
-        {hasRole(session, "Admin") && <Link to="/access" onClick={() => setMobileNavOpen(false)}>Access</Link>}
+        {canUseCrm && (
+          <>
+            <Link to="/contacts" onClick={() => setMobileNavOpen(false)}>Contacts</Link>
+            <Link to="/leads" onClick={() => setMobileNavOpen(false)}>Leads</Link>
+            <Link to="/opportunities" onClick={() => setMobileNavOpen(false)}>Opportunities</Link>
+          </>
+        )}
       </aside>
       <button
         className={`app-sidebar-overlay${mobileNavOpen ? " is-visible" : ""}`}
@@ -3507,13 +4805,21 @@ function ERPApp({
               <span />
               <span />
             </button>
-            <strong>ERP Operations</strong>
+            <strong>{shellTitle}</strong>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <nav className="app-topnav">
               <a href={homeEntry}>Home</a>
-              <a href={erpEntry}>ERP</a>
-              <a href={crmEntry}>CRM</a>
+              {canUseErp && (
+                <Link to="/items" onClick={() => setMobileNavOpen(false)}>
+                  ERP
+                </Link>
+              )}
+              {canUseCrm && (
+                <Link to="/contacts" onClick={() => setMobileNavOpen(false)}>
+                  CRM
+                </Link>
+              )}
             </nav>
             <button
               className="ui-btn ui-btn-secondary"
@@ -3668,7 +4974,7 @@ function ERPApp({
                   userBranchId={session.user.branchId}
                 />
               ) : (
-                <Navigate to="/items" replace />
+                <Navigate to={defaultAppLandingPath(session)} replace />
               )
             }
           />
@@ -3678,11 +4984,35 @@ function ERPApp({
               hasRole(session, "Admin") ? (
                 <AccessPage session={session} setSession={setSession} notify={notify} />
               ) : (
-                <Navigate to="/items" replace />
+                <Navigate to={defaultAppLandingPath(session)} replace />
               )
             }
           />
-          <Route path="*" element={<Navigate to="/items" replace />} />
+          <Route
+            path="/contacts"
+            element={
+              <CrmAccessGate session={session} setSession={setSession}>
+                <ContactsPage session={session} setSession={setSession} notify={notify} />
+              </CrmAccessGate>
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <CrmAccessGate session={session} setSession={setSession}>
+                <LeadsPage session={session} setSession={setSession} notify={notify} />
+              </CrmAccessGate>
+            }
+          />
+          <Route
+            path="/opportunities"
+            element={
+              <CrmAccessGate session={session} setSession={setSession}>
+                <OpportunitiesPage session={session} setSession={setSession} notify={notify} />
+              </CrmAccessGate>
+            }
+          />
+          <Route path="*" element={<Navigate to={defaultAppLandingPath(session)} replace />} />
         </Routes>
       </section>
     </main>
@@ -3710,7 +5040,11 @@ export function RootApp() {
         <Route
           path="/login"
           element={
-            session ? <Navigate to="/items" replace /> : <LoginPage setSession={setSession} />
+            session ? (
+              <Navigate to={defaultAppLandingPath(session)} replace />
+            ) : (
+              <LoginPage setSession={setSession} />
+            )
           }
         />
         <Route

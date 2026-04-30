@@ -50,4 +50,5 @@ This is the canonical entry point for all project documentation.
 - [Implementation Worklog (2026-03-21)](./implementation-worklog-2026-03-21.md)
 - [Implementation Worklog (2026-03-29)](./implementation-worklog-2026-03-29.md)
 - [Implementation Worklog (2026-04-13)](./implementation-worklog-2026-04-13.md)
+- [Worklog (2026-04-30)](./Worklog-30-04-2026.md)
 - [Milestones And Tickets](./milestones.md)

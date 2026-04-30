@@ -15,6 +15,10 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 
 - ERP **Distribution** UI (`apps/erp-web/src/distribution-hub.tsx`) and route `#/distribution`: operational tabs against existing distribution API; shared layout styles in `packages/ui-core/src/ui.css`.
 - Core API (unreleased in tree): permissions module, subscription/org settings migrations and seed extensions — see worklog for full file list.
+- **Unified ERP + CRM** in `apps/erp-web`: CRM routes `#/contacts`, `#/leads`, `#/opportunities`; `CrmAccessGate`; `defaultAppLandingPath`; role-based sidebar and in-app ERP/CRM links.
+- **`apps/crm-web`**: redirect stub (`redirect.ts`, `main.ts`) to unified app; Vitest for URL builder.
+- **Expanded Prisma demo seed** (`prisma/seed/demo-graph.ts`) — see [Worklog 2026-04-30](./docs/Worklog-30-04-2026.md).
+- **`apps/erp-web`**: `typecheck` script; **`apps/erp-web/.env.example`** for `VITE_API_BASE_URL`.
 
 ### Changed
 
@@ -22,6 +26,8 @@ The product release line for the beta program uses `Beta V<major>.<minor>.<patch
 - **Vite**: fixed dev ports ERP `5173`, CRM `5174` with `strictPort`.
 - **Docs**: [setup.md](./docs/setup.md) (frontend dev URLs + env vars), [frontend-guide.md](./docs/frontend-guide.md) (Distribution + roles), [versioning.md](./docs/versioning.md) / root [index.md](./index.md) current version string.
 - **Purchase Orders** (ERP): copy points users to Distribution for warehouse flows.
+- **`packages/ui-core`**: sidebar flex layout; devDependencies `@types/react` for TS consumers.
+- **`apps/core-api`**: default CORS includes `http://127.0.0.1:5173` and `:5174`; `.env.example` documents `PORT`.
 
 ### Removed
 

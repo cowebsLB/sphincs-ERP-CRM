@@ -46,11 +46,11 @@ describe("ERP RootApp", () => {
     await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+      expect(screen.getByRole("heading", { name: "SPHINCS" })).toBeInTheDocument()
     );
   });
 
-  it("blocks non-erp roles", async () => {
+  it("opens CRM shell for CRM-only roles", async () => {
     localStorage.setItem(
       "sphincs.session",
       JSON.stringify({
@@ -78,9 +78,7 @@ describe("ERP RootApp", () => {
       return { data: [], tokens };
     });
     render(<RootApp />);
-    await waitFor(() =>
-      expect(screen.getByText("Your account does not have ERP access.")).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText("CRM Operations")).toBeInTheDocument());
   });
 
   it("reuses the shared session key to open ERP without a second login", async () => {
@@ -102,7 +100,7 @@ describe("ERP RootApp", () => {
     render(<RootApp />);
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+      expect(screen.getByRole("heading", { name: "SPHINCS" })).toBeInTheDocument()
     );
   });
 
@@ -127,7 +125,7 @@ describe("ERP RootApp", () => {
     expect(localStorage.getItem("sphincs.session")).toBeNull();
   });
 
-  it("shows the refreshed no-access state after startup role sync", async () => {
+  it("shows CRM shell after startup role sync drops ERP roles but keeps CRM", async () => {
     localStorage.setItem(
       "sphincs.session",
       JSON.stringify({
@@ -151,9 +149,7 @@ describe("ERP RootApp", () => {
 
     render(<RootApp />);
 
-    await waitFor(() =>
-      expect(screen.getByText("Your account does not have ERP access.")).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText("CRM Operations")).toBeInTheDocument());
   });
 
   it("shows the no-role account message after startup sync", async () => {
@@ -210,7 +206,7 @@ describe("ERP RootApp", () => {
     render(<RootApp />);
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+      expect(screen.getByRole("heading", { name: "SPHINCS" })).toBeInTheDocument()
     );
 
     const stored = JSON.parse(localStorage.getItem("sphincs.session") || "{}");
@@ -237,7 +233,7 @@ describe("ERP RootApp", () => {
     render(<RootApp />);
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: "SPHINCS ERP" })).toBeInTheDocument()
+      expect(screen.getByRole("heading", { name: "SPHINCS" })).toBeInTheDocument()
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Logout" }));

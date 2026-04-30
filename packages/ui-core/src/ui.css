@@ -36,6 +36,8 @@ body {
 }
 
 .app-sidebar {
+  display: flex;
+  flex-direction: column;
   background: #0f141c;
   color: var(--text);
   padding: 20px 16px;

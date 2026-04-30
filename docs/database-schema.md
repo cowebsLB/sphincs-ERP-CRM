@@ -151,6 +151,29 @@ Schema notes:
 - totals are computed in the application layer and stored on the order header.
 - partial delivery is represented at the line level through `received_quantity`.
 
+## Demo database seed (implemented Prisma models)
+
+`pnpm --filter @sphincs/core-api prisma:seed` runs:
+
+1. **Baseline** (`prisma/seed.ts`) — subscription plan, default org/branch, roles, admin user, baseline permissions, org setting `modules.beta.scope`.
+2. **Demo graph** (`prisma/seed/demo-graph.ts`) — deterministic UUIDs and stable business keys (`SEED-*`) so re-runs **upsert** safely.
+
+The demo graph populates **every Prisma-mapped domain table** except **`refresh_tokens`** (session data only; not seeded). It includes:
+
+- second **branch**, **staff** user (`staff@sphincs.local`, same dev password as admin) with **Staff** role  
+- **items** (stocked + service SKU), **suppliers**, **purchase order** + **lines**  
+- **warehouse locations** (parent/child on main branch, dock on secondary)  
+- **inventory stocks** (main + secondary branch), **inventory movements** (with valid `reference_type` / `reference_id` pairs where used)  
+- **CRM**: contact → lead → opportunity  
+- **goods receipt** + line, **inventory lot** + **lot balance** (timestamps satisfy DB temporal checks)  
+- **stock transfer** + line (cross-branch, **COMPLETED** with ordered dispatch/receive dates)  
+- **stock adjustment** + line (**APPLIED** with `applied_at` after `created_at`)  
+- **stock dispatch** + line, **dispatch pick/pack jobs** + lines  
+- **stock return** + line  
+- **inventory reservation** (reference paired to dispatch), **reorder rule**, **stock alert**, **audit log** row  
+
+Full blueprint (**107** logical tables) is **not** fully modeled in Prisma yet; see [Blueprint vs Prisma tables](./blueprint-vs-prisma-tables.md). This seed covers the **~40** `@@map` tables present in `schema.prisma` (minus refresh tokens).
+
 ## Migration Baseline
 
 - Initial migration: `apps/core-api/prisma/migrations/20260316_init/migration.sql`

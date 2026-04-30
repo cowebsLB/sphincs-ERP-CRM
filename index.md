@@ -5,8 +5,8 @@
 SPHINCS is a monorepo that delivers:
 
 - a shared backend API (`apps/core-api`)
-- ERP frontend (`apps/erp-web`)
-- CRM frontend (`apps/crm-web`)
+- a **unified** web frontend (`apps/erp-web`) for ERP + CRM (hash routes)
+- a **legacy redirect** package (`apps/crm-web`) that forwards to `erp-web` for old bookmarks
 - shared packages for API client/types/UI (`packages/*`)
 
 The current delivery target is Beta V1 with functional auth, scoped ERP/CRM flows, and deployment-ready documentation.
@@ -20,7 +20,7 @@ Current product version:
 - JWT auth with refresh-token rotation and lockout controls
 - ERP modules: items, suppliers, purchase orders, **Distribution** (dashboard, stock, movements, transfers, receipts, dispatches, adjustments — see `apps/erp-web`)
 - CRM modules: contacts, leads, opportunities
-- ERP/CRM **portal navigation** fixed for Vite dev (explicit localhost ports + hash routes); production still supports sibling-folder relative links
+- Single **unified app** at `erp-web` (`#/items`, `#/contacts`, …); `crm-web` dev port redirects to the same UI with hash preserved
 - Soft-delete + restore flows
 - Role-based access controls
 - User-scoped data isolation for beta privacy defaults
@@ -78,3 +78,4 @@ For releases and testers:
 - [Implementation Worklog (2026-03-20)](./docs/implementation-worklog-2026-03-20.md)
 - [Implementation Worklog (2026-03-29)](./docs/implementation-worklog-2026-03-29.md)
 - [Implementation Worklog (2026-04-13)](./docs/implementation-worklog-2026-04-13.md)
+- [Worklog (2026-04-30)](./docs/Worklog-30-04-2026.md)
